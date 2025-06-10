@@ -1,0 +1,109 @@
+﻿<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Class="FuelEase.Hardware.MainWindow"
+    xmlns:local="clr-namespace:FuelEase.Hardware"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+        mc:Ignorable="d"
+    WindowState="Maximized"
+    MinHeight="600"
+    MinWidth="800"
+        Title="{x:Static local:App.ProductName}">
+
+    <Window.Resources>
+
+        <ContextMenu x:Key="ControllerMenu">
+            <MenuItem Header="Удалить"
+                      Command="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor}, Path=DataContext.FuelTransferColumnDeleteCommand}"/>
+        </ContextMenu>
+
+        <ContextMenu x:Key="CashRegisterMenu">
+            <MenuItem Header="Удалить"
+                      Command="{Binding RelativeSource={RelativeSource AncestorType=Window, Mode=FindAncestor}, Path=DataContext.CashRegisterDeleteCommand}"/>
+        </ContextMenu>
+
+        <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource HardWareTreeViewItem}" x:Key="ControllerTreeViewItem">
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="ContextMenu" Value="{StaticResource ControllerMenu}"/>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource HardWareTreeViewItem}" x:Key="CashRegisterTreeViewItem">
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="{x:Type TreeViewItem}">
+                        <Setter Property="ContextMenu" Value="{StaticResource CashRegisterMenu}"/>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+    <dxmvvm:Interaction.Behaviors>
+        <dxmvvm:WindowService/>
+        <dx:DXMessageBoxService/>
+        <dxmvvm:EventToCommand Event="Loaded"
+                               Command="{Binding WindowLoadedCommand}"/>
+    </dxmvvm:Interaction.Behaviors>
+
+    <dx:LoadingDecorator FadeInDuration="0" FadeOutDuration="0:0:0:1">
+
+        <dxlc:LayoutControl Orientation="Vertical"
+                    Padding="5">
+
+            <Menu VerticalAlignment="Top">
+                <MenuItem Header="Выход"/>
+                <MenuItem Header="О программе"/>
+            </Menu>
+
+            <dxlc:LayoutGroup>
+
+                <TreeView MinWidth="200"
+                  HorizontalAlignment="Left"
+                  Style="{StaticResource HardWareTreeView}">
+
+                    <dxmvvm:Interaction.Behaviors>
+                        <dxmvvm:EventToCommand Event="MouseRightButtonDown"
+                                               Command="{Binding MouseRightButtonDownCommand}"
+                                               PassEventArgsToCommand="True"/>
+                        <dxmvvm:EventToCommand Event="Loaded"
+                                               Command="{Binding TreeViewLoadedCommand}"
+                                               PassEventArgsToCommand="True"/>
+                        <dxmvvm:EventToCommand EventName="SelectedItemChanged"
+                                               Command="{Binding TreeViewSelectedItemChangedCommand}"
+                                               PassEventArgsToCommand="True"/>
+                    </dxmvvm:Interaction.Behaviors>
+
+                    <TreeViewItem Header="Устройства ТРК"
+                                  Tag="FuelTransferColumn"
+                                  ItemsSource="{Binding Controllers}"
+                                  Style="{StaticResource ControllerTreeViewItem}"
+                                  ContextMenu="{StaticResource ControllerContextMenu}"/>
+                    <TreeViewItem Header="ККМ"
+                                  Tag="CashRegister"
+                                  ItemsSource="{Binding CashRegisters}"
+                                  Style="{StaticResource CashRegisterTreeViewItem}"
+                                  ContextMenu="{StaticResource CashRegisterContextMenu}"/>
+                    <TreeViewItem Header="Сканер Штрих-кодов"
+                          Tag="BarcodeScanner"/>
+                    <TreeViewItem Header="Чековый принтер"
+                          Tag="CheckPrinter"/>
+                </TreeView>
+
+                <ContentControl Content="{Binding SelectedBaseViewModel}"/>
+
+            </dxlc:LayoutGroup>
+
+        </dxlc:LayoutControl>
+
+    </dx:LoadingDecorator>
+
+</Window>

@@ -1,0 +1,35 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style TargetType="{x:Type Button}" x:Key="CommandButton">
+        <Setter Property="Width" Value="100"/>
+    </Style>
+
+    <Style TargetType="{x:Type Button}" x:Key="SaveBtton"
+           BasedOn="{StaticResource CommandButton}">
+        <Setter Property="Content" Value="Сохранить"/>
+        <Setter Property="Command" Value="{Binding CreateCommand}"/>
+        <Setter Property="IsDefault" Value="True"/>
+    </Style>
+
+    <Style TargetType="{x:Type Button}" x:Key="HardwareConfigurationDetailViewButton"
+           BasedOn="{StaticResource SaveBtton}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Path=DataContext.HardWareType, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 Value="FuelTransferColumn">
+                <Setter Property="Command" Value="{Binding FuelTransferColumnCreateCommand}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Path=DataContext.HardWareType, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 Value="CashRegister">
+                <Setter Property="Command" Value="{Binding CashRegisterCreateCommand}"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type Button}" x:Key="CancelButton"
+       BasedOn="{StaticResource CommandButton}">
+        <Setter Property="Content" Value="Отменить"/>
+        <Setter Property="Command" Value="{Binding CloseCommand}"/>
+    </Style>
+
+</ResourceDictionary>

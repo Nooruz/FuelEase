@@ -1,0 +1,100 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    xmlns:local="clr-namespace:FuelEase.Views.Base"
+    x:Class="FuelEase.Views.FuelSaleView"
+    MinWidth="250">
+
+    <dxmvvm:Interaction.Behaviors>
+        <dxmvvm:EventToCommand Event="Loaded"
+                               Command="{Binding UserControlLoadedCommand}"/>
+    </dxmvvm:Interaction.Behaviors>
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <dxlc:LayoutItem Label="Номер ТРК (пистолет)" 
+                         TabIndex="0"
+                         LabelPosition="Top">
+            <dxe:TextEdit EditValue="{Binding Tube, UpdateSourceTrigger=PropertyChanged}">
+                <dxmvvm:Interaction.Behaviors>
+                    <dxmvvm:KeyToCommand KeyGesture="Enter"
+                                         Command="{Binding TubeEnterCommand}"/>
+                </dxmvvm:Interaction.Behaviors>
+            </dxe:TextEdit>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Наименование"
+                         TabIndex="99"
+                         LabelPosition="Top">
+            <dxe:TextEdit IsReadOnly="True"
+                          EditValue="{Binding SelectedNozzle.Name}"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Тип топлива"
+                         TabIndex="99"
+                         LabelPosition="Top">
+            <dxe:TextEdit IsReadOnly="True"
+                          EditValue="{Binding SelectedNozzle.Tank.Fuel.Name}"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Количество"
+                         TabIndex="99"
+                         LabelPosition="Top">
+            <dxe:TextEdit EditValue="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" 
+                          MaskUseAsDisplayFormat="True" 
+                          MaskType="Numeric"
+                          Mask="n2">
+                <dxmvvm:Interaction.Behaviors>
+                    <dxmvvm:KeyToCommand KeyGesture="Enter"
+                                         Command="{Binding SaleCommand}"/>
+                </dxmvvm:Interaction.Behaviors>
+            </dxe:TextEdit>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="На сумму"
+                         TabIndex="1"
+                         LabelPosition="Top">
+            <dxe:TextEdit EditValue="{Binding Sum, UpdateSourceTrigger=PropertyChanged}" 
+                          MaskUseAsDisplayFormat="True"
+                          MaskType="Numeric"
+                          Mask="n">
+                <dxmvvm:Interaction.Behaviors>
+                    <dxmvvm:EventToCommand EventName="Loaded"
+                                           Command="{Binding SumTextEditLoadedCommand}"
+                                           PassEventArgsToCommand="True"/>
+                    <dxmvvm:KeyToCommand KeyGesture="Enter"
+                                         Command="{Binding SaleCommand}"/>
+                </dxmvvm:Interaction.Behaviors>
+            </dxe:TextEdit>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Вид оплаты"
+                         TabIndex="2"
+                         LabelPosition="Top">
+            <dxe:ComboBoxEdit ItemsSource="{Binding PaymentTypes}"
+                              DisplayMember="Value"
+                              ShowError="False"
+                              ShowErrorToolTip="False"
+                              ValueMember="Key"
+                              EditValue="{Binding CreateFuelSale.PaymentType, UpdateSourceTrigger=PropertyChanged}"/>
+        </dxlc:LayoutItem>
+
+        <Separator VerticalAlignment="Top" />
+
+        <dxlc:LayoutGroup VerticalAlignment="Top"
+                          Orientation="Vertical">
+
+            <Button Content="Оплатить" 
+                    Command="{Binding SaleCommand}"/>
+            <Button Content="Отменить"/>
+
+        </dxlc:LayoutGroup>
+
+
+
+    </dxlc:LayoutControl>
+
+</local:BaseView>

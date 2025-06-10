@@ -1,0 +1,34 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:FuelEase.Hardware.Views"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    x:Class="FuelEase.Hardware.Views.ControllerView"
+    Width="350">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+        <dxlc:LayoutItem Label="Тип">
+            <dxe:ComboBoxEdit ItemsSource="{Binding DeviceTypes}"
+                  DisplayMember="Value"
+                  ValueMember="Key"
+                  EditValue="{Binding CreatedDevice.Type}"/>
+        </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Имя">
+            <dxe:TextEdit EditValue="{Binding CreatedDevice.Name, UpdateSourceTrigger=PropertyChanged}"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutGroup HorizontalAlignment="Right">
+
+            <Button Content="Создать"
+                    IsDefault="True"
+                    Command="{Binding SaveCommand}"/>
+            <Button Content="Отменить"
+                    Command="{Binding CloseCommand}"/>
+
+        </dxlc:LayoutGroup>
+
+    </dxlc:LayoutControl>
+
+</local:BaseView>

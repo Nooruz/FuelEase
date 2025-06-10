@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="ru-Ru" 
+				 Language="1049" 
+				 xmlns="http://schemas.microsoft.com/wix/2006/localization">
+
+	<!-- Заголовок окна и общая информация -->
+	<String Id="Caption">Установщик КИТ-АЗС</String>
+	<String Id="Title">Установщик КИТ-АЗС</String>
+
+	<!-- Страница помощи -->
+	<String Id="HelpHeader">Помощь</String>
+	<String Id="HelpText">Здесь представлена справочная информация по установке.</String>
+	<String Id="HelpCloseButton">Закрыть</String>
+
+	<!-- Страница установки -->
+	<String Id="InstallHeader">Установка программы</String>
+	<String Id="InstallMessage">Программа готова к установке. Нажмите "Установить" для начала установки.</String>
+	<String Id="InstallLicenseLinkText">Прочитайте лицензионное соглашение</String>
+	<String Id="InstallVersion">Версия: 1.0.0.0</String>
+	<String Id="InstallAcceptCheckbox">Я принимаю условия лицензионного соглашения</String>
+	<String Id="InstallOptionsButton">Параметры</String>
+	<String Id="InstallInstallButton">Установить</String>
+	<String Id="InstallCloseButton">Отмена</String>
+
+	<!-- Страница параметров -->
+	<String Id="OptionsHeader">Параметры установки</String>
+	<String Id="OptionsLocationLabel">Выберите папку установки:</String>
+	<String Id="OptionsBrowseButton">Обзор...</String>
+	<String Id="OptionsOkButton">OK</String>
+	<String Id="OptionsCancelButton">Отмена</String>
+
+	<!-- Страница используемых файлов -->
+	<String Id="FilesInUseHeader">Файлы используются</String>
+	<String Id="FilesInUseLabel">Некоторые файлы используются системой. Закройте соответствующие приложения.</String>
+	<String Id="FilesInUseCloseRadioButton">Закрыть приложения</String>
+	<String Id="FilesInUseDontCloseRadioButton">Не закрывать</String>
+	<String Id="FilesInUseOkButton">OK</String>
+	<String Id="FilesInUseCancelButton">Отмена</String>
+
+	<!-- Страница прогресса -->
+	<String Id="ProgressHeader">Ход установки</String>
+	<String Id="ProgressLabel">Устанавливается:</String>
+	<String Id="OverallProgressPackageText">Общий прогресс</String>
+	<String Id="ProgressCancelButton">Отмена</String>
+
+	<!-- Страница модификации -->
+	<String Id="ModifyHeader">Изменить установку</String>
+	<String Id="ModifyRepairButton">Восстановить</String>
+	<String Id="ModifyUninstallButton">Удалить</String>
+	<String Id="ModifyCloseButton">Отмена</String>
+
+	<!-- Страница успеха установки/модификации -->
+	<String Id="SuccessHeader">Успешно завершено</String>
+	<String Id="SuccessInstallHeader">Установка завершена успешно</String>
+	<String Id="SuccessRepairHeader">Восстановление завершено успешно</String>
+	<String Id="SuccessUninstallHeader">Удаление завершено успешно</String>
+	<String Id="SuccessLaunchButton">Запустить программу</String>
+	<String Id="SuccessRestartText">Для применения изменений требуется перезагрузка.</String>
+	<String Id="SuccessRestartButton">Перезагрузить</String>
+	<String Id="SuccessCloseButton">Закрыть</String>
+
+	<!-- Страница ошибки -->
+	<String Id="FailureHeader">Ошибка</String>
+	<String Id="FailureInstallHeader">Ошибка установки</String>
+	<String Id="FailureUninstallHeader">Ошибка удаления</String>
+	<String Id="FailureRepairHeader">Ошибка восстановления</String>
+	<String Id="FailureHyperlinkLogText">Посмотреть лог установки</String>
+	<String Id="FailureRestartText">Попробуйте перезагрузить компьютер.</String>
+	<String Id="FailureRestartButton">Перезагрузить</String>
+	<String Id="FailureCloseButton">Закрыть</String>
+
+	<String Id="ConfirmCancelMessage">Вы уверены, что хотите отменить установку?</String>
+	
+</WixLocalization>

@@ -1,0 +1,22 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+                    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors">
+
+    <Style TargetType="{x:Type dxg:GridColumn}">
+        <Setter Property="HorizontalHeaderContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style TargetType="{x:Type dxg:GridControlBand}">
+        <Setter Property="HorizontalHeaderContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style TargetType="{x:Type dxg:GridColumn}" x:Key="DecimelGridColumn">
+        <Setter Property="EditSettings">
+            <Setter.Value>
+                <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+</ResourceDictionary>

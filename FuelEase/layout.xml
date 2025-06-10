@@ -1,0 +1,194 @@
+﻿<XtraSerializer version="1.0" application="DockLayoutManager">
+  <property name="#LayoutVersion" isnull="true" />
+  <property name="$DockLayoutManager" iskey="true" value="DockLayoutManager">
+    <property name="Items" iskey="true" value="13">
+      <property name="Item1" isnull="true" iskey="true">
+        <property name="SerializableSelectedTabPageIndex">-1</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true">
+          <property name="IsUserDefined">true</property>
+        </property>
+        <property name="TypeName">LayoutGroup</property>
+        <property name="ParentName" isnull="true" />
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="Name">dockItem1</property>
+      </property>
+      <property name="Item2" isnull="true" iskey="true">
+        <property name="Orientation">Vertical</property>
+        <property name="SerializableSelectedTabPageIndex">-1</property>
+        <property name="ItemWidth">0.9960500329163924*</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true">
+          <property name="IsUserDefined">true</property>
+        </property>
+        <property name="TypeName">LayoutGroup</property>
+        <property name="ParentName">dockItem1</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="Name">dockItem2</property>
+      </property>
+      <property name="Item3" isnull="true" iskey="true">
+        <property name="SerializableFloatingBounds">0,0,0,0</property>
+        <property name="SerializableFloatingOffset">0,0</property>
+        <property name="AllowClose">false</property>
+        <property name="AllowMaximize">true</property>
+        <property name="Background">#FFF0F8FF</property>
+        <property name="ItemHeight">1.0237022991230151*</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true" />
+        <property name="TypeName">DocumentPanel</property>
+        <property name="ParentName">dockItem2</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="Name">Current</property>
+        <property name="SerializableMDIBounds">0,0,NaN,NaN</property>
+      </property>
+      <property name="Item4" isnull="true" iskey="true">
+        <property name="AllowSplitters">true</property>
+        <property name="Orientation">Horizontal</property>
+        <property name="SerializableSelectedTabPageIndex">-1</property>
+        <property name="ItemHeight">241</property>
+        <property name="ItemWidth">*</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true">
+          <property name="IsUserDefined">false</property>
+        </property>
+        <property name="TypeName">LayoutGroup</property>
+        <property name="ParentName">dockItem2</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="Name">dockItem3</property>
+      </property>
+      <property name="Item5" isnull="true" iskey="true">
+        <property name="SerializableFloatingBounds">0,0,0,0</property>
+        <property name="SerializableFloatingOffset">0,0</property>
+        <property name="FloatSize">1519,78</property>
+        <property name="IsActive">false</property>
+        <property name="ItemWidth">0.8679867986798662*</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true" />
+        <property name="TypeName">LayoutPanel</property>
+        <property name="ParentName">dockItem3</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="DocumentGroup.Pinned" OwnerType="DevExpress.Xpf.Docking.DocumentGroup" DependencyPropertyType="System.Boolean">false</property>
+        <property name="AutoHideGroup.AutoHideType" OwnerType="DevExpress.Xpf.Docking.AutoHideGroup" DependencyPropertyType="DevExpress.Xpf.Docking.AutoHideType">Bottom</property>
+        <property name="Name">Event</property>
+        <property name="Caption" type="System.String">Панель событий</property>
+      </property>
+      <property name="Item6" isnull="true" iskey="true">
+        <property name="SerializableFloatingBounds">0,0,0,0</property>
+        <property name="SerializableFloatingOffset">0,0</property>
+        <property name="IsActive">true</property>
+        <property name="ItemHeight">Auto</property>
+        <property name="ItemWidth">1.1320132013201338*</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true" />
+        <property name="TypeName">LayoutPanel</property>
+        <property name="ParentName">dockItem3</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="AutoHideGroup.AutoHideType" OwnerType="DevExpress.Xpf.Docking.AutoHideGroup" DependencyPropertyType="DevExpress.Xpf.Docking.AutoHideType">Bottom</property>
+        <property name="Name">Reservoir</property>
+        <property name="Caption" type="System.String">Панель резервуаров</property>
+      </property>
+      <property name="Item7" isnull="true" iskey="true">
+        <property name="AllowSplitters">true</property>
+        <property name="Orientation">Vertical</property>
+        <property name="SerializableSelectedTabPageIndex">-1</property>
+        <property name="ItemHeight">*</property>
+        <property name="ItemWidth">358</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true">
+          <property name="IsUserDefined">false</property>
+        </property>
+        <property name="TypeName">LayoutGroup</property>
+        <property name="ParentName">dockItem1</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="Name">dockItem4</property>
+      </property>
+      <property name="Item8" isnull="true" iskey="true">
+        <property name="SerializableFloatingBounds">0,0,0,0</property>
+        <property name="SerializableFloatingOffset">0,0</property>
+        <property name="ItemWidth">Auto</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true" />
+        <property name="TypeName">LayoutPanel</property>
+        <property name="ParentName">dockItem4</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="AutoHideGroup.AutoHideType" OwnerType="DevExpress.Xpf.Docking.AutoHideGroup" DependencyPropertyType="DevExpress.Xpf.Docking.AutoHideType">Right</property>
+        <property name="Name">FuelSale</property>
+        <property name="Caption" type="System.String">Панель заявок</property>
+      </property>
+      <property name="Item9" isnull="true" iskey="true">
+        <property name="SerializableFloatingBounds">0,0,0,0</property>
+        <property name="SerializableFloatingOffset">0,0</property>
+        <property name="FloatSize">352,967.04</property>
+        <property name="IsActive">false</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true" />
+        <property name="TypeName">LayoutPanel</property>
+        <property name="ParentName">dockItem4</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="DocumentGroup.Pinned" OwnerType="DevExpress.Xpf.Docking.DocumentGroup" DependencyPropertyType="System.Boolean">false</property>
+        <property name="AutoHideGroup.AutoHideType" OwnerType="DevExpress.Xpf.Docking.AutoHideGroup" DependencyPropertyType="DevExpress.Xpf.Docking.AutoHideType">Right</property>
+        <property name="Name">Cash</property>
+        <property name="Caption" type="System.String">Панель кассы</property>
+      </property>
+      <property name="Item10" isnull="true" iskey="true">
+        <property name="DockType">Right</property>
+        <property name="SerializableSelectedTabPageIndex">-1</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true">
+          <property name="IsUserDefined">false</property>
+        </property>
+        <property name="TypeName">AutoHideGroup</property>
+        <property name="ParentName" isnull="true" />
+        <property name="ParentCollectionName">$AutoHideGroups</property>
+        <property name="Name">dockItem5</property>
+      </property>
+      <property name="Item11" isnull="true" iskey="true">
+        <property name="SerializableFloatingBounds">0,0,0,0</property>
+        <property name="SerializableFloatingOffset">0,0</property>
+        <property name="IsActive">false</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true" />
+        <property name="TypeName">LayoutPanel</property>
+        <property name="ParentName">dockItem5</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="DocumentGroup.Pinned" OwnerType="DevExpress.Xpf.Docking.DocumentGroup" DependencyPropertyType="System.Boolean">false</property>
+        <property name="AutoHideGroup.AutoHideType" OwnerType="DevExpress.Xpf.Docking.AutoHideGroup" DependencyPropertyType="DevExpress.Xpf.Docking.AutoHideType">Right</property>
+        <property name="Name">TRKCounters</property>
+        <property name="Caption" type="System.String">Панель счётчиков ТРК</property>
+      </property>
+      <property name="Item12" isnull="true" iskey="true">
+        <property name="DockType">Bottom</property>
+        <property name="SerializableSelectedTabPageIndex">-1</property>
+        <property name="SerializableDockSituation" iskey="true" value="0" />
+        <property name="SerializationInfo" isnull="true" iskey="true">
+          <property name="IsUserDefined">false</property>
+        </property>
+        <property name="TypeName">AutoHideGroup</property>
+        <property name="ParentName" isnull="true" />
+        <property name="ParentCollectionName">$AutoHideGroups</property>
+        <property name="Name">dockItem6</property>
+      </property>
+      <property name="Item13" isnull="true" iskey="true">
+        <property name="SerializableFloatingBounds">0,0,0,0</property>
+        <property name="SerializableFloatingOffset">0,0</property>
+        <property name="ItemHeight">Auto</property>
+        <property name="SerializableDockSituation" iskey="true" value="1">
+          <property name="Item1" isnull="true" iskey="true">
+            <property name="DockState">Docked</property>
+            <property name="ParentName">dockItem2</property>
+            <property name="OwnerName">UnregisteredSale</property>
+            <property name="Index">2</property>
+          </property>
+        </property>
+        <property name="SerializationInfo" isnull="true" iskey="true" />
+        <property name="TypeName">LayoutPanel</property>
+        <property name="ParentName">dockItem6</property>
+        <property name="ParentCollectionName" isnull="true" />
+        <property name="AutoHideGroup.AutoHideType" OwnerType="DevExpress.Xpf.Docking.AutoHideGroup" DependencyPropertyType="DevExpress.Xpf.Docking.AutoHideType">Bottom</property>
+        <property name="Name">UnregisteredSale</property>
+        <property name="Caption" type="System.String">Панель незарегистрированного отпуска толива</property>
+      </property>
+    </property>
+    <property name="ManualClosedPanelsBarVisibility">false</property>
+  </property>
+</XtraSerializer>

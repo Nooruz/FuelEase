@@ -1,0 +1,88 @@
+﻿<UserControl
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dxdo="http://schemas.devexpress.com/winfx/2008/xaml/docking"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:helpers="clr-namespace:FuelEase.Helpers"
+    x:Class="FuelEase.Controls.NozzleControl"
+    mc:Ignorable="d"
+    FontSize="24">
+
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Border Padding="2 0" 
+                Background="Transparent">
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="{Binding Tank.Fuel.Price, FallbackValue=168.59}"
+                           HorizontalAlignment="Center"
+                           helpers:ContrastHelper.AutoContrastForeground="True" 
+                           TextAlignment="Center"/>
+
+                <Grid Grid.Row="1">
+
+                    <Border BorderThickness="2"
+                            CornerRadius="40"
+                            Width="40"
+                            Background="{StaticResource WhiteColorBrush}"
+                            BorderBrush="Black"
+                            Height="40"/>
+
+                    <Border BorderThickness="2"
+                            CornerRadius="40"
+                            Width="40"
+                            Background="{Binding Tank.Fuel.ColorBrush, Converter={StaticResource DrawingColorToBrushConverter}}"
+                            BorderBrush="Transparent"
+                            Height="40"/>
+
+                    <Border Margin="0 5"
+                            Style="{StaticResource NozzleBorder}">
+                        <!-- Используем Grid для центрирования содержимого -->
+                        <Grid>
+                            <TextBlock Text="{Binding Tube, FallbackValue=1}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+            </Grid>
+            
+        </Border>
+
+        
+
+        <Border Background="{Binding Tank.Fuel.ColorBrush, Converter={StaticResource DrawingColorToBrushConverter}}"
+                MinHeight="120"
+                Grid.Row="1">
+
+            <TextBlock Text="{Binding Tank.Fuel.Name, FallbackValue=АИ-100}"
+                       Foreground="{StaticResource WhiteColorBrush}"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center">
+                <TextBlock.LayoutTransform>
+                    <RotateTransform Angle="90" CenterX="0.5" CenterY="0.5"/>
+                </TextBlock.LayoutTransform>
+            </TextBlock>
+
+        </Border>
+
+
+    </Grid>
+
+</UserControl>

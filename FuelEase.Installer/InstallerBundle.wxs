@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+	 xmlns:bal="http://schemas.microsoft.com/wix/BalExtension"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+	<!-- Идентификатор обновления -->
+	<?define UpgradeCode = "{4D8D07EC-B23F-4231-BD92-DD96ABAC59CB}" ?>
+
+	<Bundle Name="$(loc.BundleName)" 
+            Version="$(var.BuildVersion)"
+            Manufacturer="$(loc.Manufacturer)"
+            UpgradeCode="$(var.UpgradeCode)">
+
+		<!-- Установка языка интерфейса на русский (LCID 1049) -->
+		<WixVariable Id="WixStdBALanguageId" Value="1049" />
+
+		<BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.RtfLicense">
+			<bal:WixStandardBootstrapperApplication
+				LicenseFile="Assets\license.rtf"
+				SuppressOptionsUI="yes" 
+				ThemeFile="Assets\HyperlinkLargeTheme.xml"
+				LocalizationFile="ru-RU.wxl"/>
+		</BootstrapperApplicationRef>
+
+		<Chain>
+			<!-- Установка Windows Desktop Runtime -->
+			<ExePackage Id="WindowsDesktopRuntime"
+						DisplayName="$(loc.WindowsDesktopRuntimeName)"
+						SourceFile="Assets\windowsdesktop-runtime-6.0.36-win-$(var.Platform).exe"
+						InstallCommand="/install /quiet /norestart"
+						DetectCondition="WindowsDesktopRuntimeInstalled"
+					    InstallCondition="NOT (WindowsDesktopRuntimeInstalled = &quot;6.0.36&quot;)"
+						Compressed="yes"
+						Vital="yes"/>
+
+			<!-- Установка вашей программы -->
+			<MsiPackage Id="FuelEaseInstaller"
+						SourceFile="D:\Installer\FuelEase-$(var.BuildVersion)-$(var.Configuration)-$(var.Platform).msi"
+						DisplayName="$(loc.AppName)"
+						Vital="yes"
+						Compressed="yes" 
+						DisplayInternalUI="yes" />
+		</Chain>
+
+		<!-- Приводим путь к файлу лицензии к единому значению -->
+		<WixVariable Id="WixUILicenseRtf" Value="Assets\license.rtf" />
+	</Bundle>
+	
+		
+	<Fragment>
+
+		<util:RegistrySearch Id="WindowsDesktopRuntimeInstalled"
+							 Root="HKLM"
+							 Key="SOFTWARE\dotnet\Setup\InstalledVersions\$(var.Platform)\sharedhost"
+							 Value="Version"
+							 Variable="WindowsDesktopRuntimeInstalled"
+							 Result="value" />
+
+	</Fragment>
+</Wix>

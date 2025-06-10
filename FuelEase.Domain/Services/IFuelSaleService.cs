@@ -1,0 +1,39 @@
+﻿using FuelEase.Domain.Models;
+
+namespace FuelEase.Domain.Services
+{
+    public interface IFuelSaleService : IDataService<FuelSale>, IDisposable
+    {
+        event Action<Nozzle> OnContinueFilling;
+
+        Task<FuelSale> GetFuelSaleWithPaymentType(int id);
+        Task<decimal> GetReceivedQuantityAsync(int nozzleId, int shiftId);
+        Task<FuelSale?> GetLastFuelSale(int nozzleId, int shiftId);
+        Task<IEnumerable<FuelSale>> GetAllAsync(int shiftId);
+
+        /// <summary>
+        /// Получить незавершенные продажи
+        /// </summary>
+        /// <returns></returns>
+        Task<IEnumerable<FuelSale>> GetUncompletedFuelSaleAsync(int shiftId);
+
+        /// <summary>
+        /// Получить завершенные продажи
+        /// </summary>
+        /// <returns></returns>
+        Task<IEnumerable<FuelSale>> GetCompletedFuelSaleAsync(int shiftId);
+
+        Task<FuelSale> GetForCompletionInfo(int id);
+
+        Task<bool> DeleteAsync(IEnumerable<FuelSale> fuelSales);
+
+        void ContinueFilling(Nozzle nozzle);
+
+        /// <summary>
+        /// Ставим запись в очередь, не дожидаясь завершения
+        /// </summary>
+        /// <param name="sale"></param>
+        /// <returns></returns>
+        ValueTask EnqueueUpdateAsync(FuelSale sale);
+    }
+}

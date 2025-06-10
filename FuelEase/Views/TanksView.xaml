@@ -1,0 +1,239 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:FuelEase.Views.Base"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    x:Class="FuelEase.Views.TanksView">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <dxlc:LayoutGroup Orientation="Vertical">
+
+            <dxb:ToolBarControl AllowCustomizationMenu="False"
+                                AllowQuickCustomization="False" >
+                <dxb:BarButtonItem Content="Создать" 
+                                   Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_AddCircled.svg}" 
+                                   BarItemDisplayMode="ContentAndGlyph"
+                                   Command="{Binding CreateFuelCommand}"/>
+                <dxb:BarButtonItem Content="Редактировать" 
+                                   Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_Edit.svg}" 
+                                   BarItemDisplayMode="ContentAndGlyph"
+                                   Command="{Binding EditFuelCommand}"/>
+                <dxb:BarButtonItem Content="Удалить" 
+                                   Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_DeleteCircled.svg}" 
+                                   BarItemDisplayMode="ContentAndGlyph"
+                                   Command="{Binding DeleteFuelCommand}"/>
+            </dxb:ToolBarControl>
+
+            <dxg:GridControl ItemsSource="{Binding Fuels}"
+                             SelectedItem="{Binding SelectedFuel}">
+                <dxg:GridControl.View>
+                    <dxg:TableView ShowGroupPanel="False"
+                                   AllowEditing="False">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand EventName="RowDoubleClick"
+                                                   Command="{Binding EditFuelCommand}"/>
+                        </dxmvvm:Interaction.Behaviors>
+                    </dxg:TableView>
+                </dxg:GridControl.View>
+                <dxg:GridControl.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Создать"
+                                  Command="{Binding CreateFuelCommand}"/>
+                        <MenuItem Header="Редактировать"
+                                  Command="{Binding EditFuelCommand}"/>
+                        <MenuItem Header="Удалить"
+                                  Command="{Binding DeleteFuelCommand}"/>
+                    </ContextMenu>
+                </dxg:GridControl.ContextMenu>
+                <dxg:GridColumn Header="Топливо" 
+                                FieldName="Name">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Name="PART_Editor" 
+                                           Text="{Binding RowData.Row.Name, UpdateSourceTrigger=PropertyChanged}"
+                                           Padding="4 0"/>
+
+                                <Border Background="{Binding RowData.Row.ColorHex, UpdateSourceTrigger=PropertyChanged}"
+                                        Grid.Column="1"
+                                        Width="20"/>
+
+                            </Grid>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Цена"
+                                FieldName="Price">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Налог НДС"
+                                FieldName="ValueAddedTax"/>
+                <dxg:GridColumn Header="НсП"
+                                FieldName="SalesTax">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="p0"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="ТНВЭД"
+                                FieldName="TNVED"/>
+            </dxg:GridControl>
+
+        </dxlc:LayoutGroup>
+
+        <dx:DXTabControl>
+            <dx:DXTabItem Header="Резервуары">
+
+                <dxlc:LayoutGroup Padding="0"
+                                  Orientation="Vertical">
+
+                    <dxb:ToolBarControl AllowCustomizationMenu="False"
+                                        AllowQuickCustomization="False" >
+                        <dxb:BarButtonItem Content="Создать" 
+                                           Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_AddCircled.svg}" 
+                                           BarItemDisplayMode="ContentAndGlyph"
+                                           Command="{Binding CreateTankCommand}"/>
+                        <dxb:BarButtonItem Content="Редактировать" 
+                                           Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_Edit.svg}" 
+                                           BarItemDisplayMode="ContentAndGlyph"
+                                           Command="{Binding EditTankCommand}"/>
+                        <dxb:BarButtonItem Content="Удалить" 
+                                           Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_DeleteCircled.svg}" 
+                                           BarItemDisplayMode="ContentAndGlyph"
+                                           Command="{Binding DeleteTankCommand}"/>
+                    </dxb:ToolBarControl>
+
+                    <dxg:GridControl ItemsSource="{Binding Tanks}"
+                                 SelectedItem="{Binding SelectedTank}">
+                        <dxg:GridControl.View>
+                            <dxg:TableView ShowGroupPanel="False"
+                                           AllowEditing="False">
+                                <dxmvvm:Interaction.Behaviors>
+                                    <dxmvvm:EventToCommand EventName="RowDoubleClick"
+                                                           Command="{Binding EditTankCommand}"/>
+                                </dxmvvm:Interaction.Behaviors>
+                            </dxg:TableView>
+                        </dxg:GridControl.View>
+                        <dxg:GridControl.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Создать"
+                                      Command="{Binding CreateTankCommand}"/>
+                                <MenuItem Header="Редактировать"
+                                      Command="{Binding EditTankCommand}"/>
+                                <MenuItem Header="Удалить"
+                                      Command="{Binding DeleteTankCommand}"/>
+                            </ContextMenu>
+                        </dxg:GridControl.ContextMenu>
+                        <dxg:GridColumn Header="Имя"
+                                        FieldName="Name"/>
+                        <dxg:GridColumn Header="Код"
+                                        FieldName="Number"/>
+                        <dxg:GridColumn Header="Топливо"
+                                        FieldName="Fuel"/>
+                        <dxg:GridColumn Header="Емкость"
+                                        FieldName="Size">
+                            <dxg:GridColumn.EditSettings>
+                                <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n"/>
+                            </dxg:GridColumn.EditSettings>
+                        </dxg:GridColumn>
+                        <dxg:GridColumn Header="Занято"
+                                        FieldName="CurrentFuelQuantity">
+                            <dxg:GridColumn.EditSettings>
+                                <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n"/>
+                            </dxg:GridColumn.EditSettings>
+                        </dxg:GridColumn>
+                        <dxg:GridColumn Header="Метровой остаток"
+                                        FieldName="MinimumSize">
+                            <dxg:GridColumn.EditSettings>
+                                <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n"/>
+                            </dxg:GridColumn.EditSettings>
+                        </dxg:GridColumn>
+                    </dxg:GridControl>
+
+                </dxlc:LayoutGroup>
+
+            </dx:DXTabItem>
+            <dx:DXTabItem Header="ТРК">
+
+                <dxlc:LayoutGroup Orientation="Vertical"
+                                  Padding="0">
+
+                    <dxb:ToolBarControl AllowCustomizationMenu="False"
+                                        AllowQuickCustomization="False" >
+                        <dxb:BarButtonItem Content="Создать" 
+                                           Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_AddCircled.svg}" 
+                                           BarItemDisplayMode="ContentAndGlyph"
+                                           Command="{Binding CreateNozzleCommand}"/>
+                        <dxb:BarButtonItem Content="Редактировать" 
+                                           Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_Edit.svg}" 
+                                           BarItemDisplayMode="ContentAndGlyph"
+                                           Command="{Binding EditNozzleCommand}"/>
+                        <dxb:BarButtonItem Content="Удалить" 
+                                           Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_DeleteCircled.svg}" 
+                                           BarItemDisplayMode="ContentAndGlyph"
+                                           Command="{Binding DeleteNozzleCommand}"/>
+                    </dxb:ToolBarControl>
+
+                    <dxg:GridControl ItemsSource="{Binding Nozzles}"
+                                     SelectedItem="{Binding SelectedNozzle}" 
+                                     SelectionMode="Row">
+                        <dxg:GridControl.View>
+                            <dxg:TableView ShowGroupPanel="False" 
+                                           AllowEditing="False">
+                                <dxmvvm:Interaction.Behaviors>
+                                    <dxmvvm:EventToCommand EventName="RowDoubleClick"
+                                                           Command="{Binding EditNozzleCommand}"/>
+                                </dxmvvm:Interaction.Behaviors>
+                            </dxg:TableView>
+                        </dxg:GridControl.View>
+                        <dxg:GridControl.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Создать"
+                                          Command="{Binding CreateNozzleCommand}"/>
+                                <MenuItem Header="Редактировать"
+                                          Command="{Binding EditNozzleCommand}"/>
+                                <MenuItem Header="Удалить"
+                                          Command="{Binding DeleteNozzleCommand}"/>
+                            </ContextMenu>
+                        </dxg:GridControl.ContextMenu>
+                        <dxg:GridColumn Header="Имя"
+                                        FieldName="Name"/>
+                        <dxg:GridColumn Header="Сторона"
+                                        FieldName="Side"/>
+                        <dxg:GridColumn Header="Шланг"
+                                        FieldName="Tube"/>
+                        <dxg:GridColumn Header="Топлива"
+                                        FieldName="Tank.Fuel.Name"/>
+                        <dxg:GridColumn Header="Резервуар"
+                                        FieldName="Tank.Name"/>
+                        <dxg:GridColumn Header="Устройство"
+                                        FieldName="ColumnId">
+                            <dxg:GridColumn.EditSettings>
+                                <dxe:ComboBoxEditSettings ItemsSource="{Binding Columns}"
+                                                          DisplayMember="DisplayName"
+                                                          ValueMember="Id"/>
+                            </dxg:GridColumn.EditSettings>
+                        </dxg:GridColumn>
+                    </dxg:GridControl>
+
+                </dxlc:LayoutGroup>
+
+            </dx:DXTabItem>
+        </dx:DXTabControl>
+
+    </dxlc:LayoutControl>
+
+</local:BaseView>

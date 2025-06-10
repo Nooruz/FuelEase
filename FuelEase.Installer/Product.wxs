@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	
+	<!-- Присвойение продукту уникальный идентификатор для каждой платформы -->
+	<?if $(var.Platform)=x64 ?>
+	<?define ProductCode = "{A7933B49-3DFE-4F03-86F1-74B4871B2C51}" ?>
+	<?else?>
+	<?define ProductCode = "{B3EBBE50-7CAE-41D1-8825-40FD3593C29F}" ?>
+	<?endif?>
+
+	<!-- Идентификатор обновления -->
+	<?define UpgradeCode = "{F73AF832-6C0E-4DD9-8513-A5848CE3A034}" ?>
+	
+	<Product Id="$(var.ProductCode)" 
+			 Name="!(loc.ProductName_$(var.Platform))" 
+			 Language="!(loc.Language)" 
+			 Version="$(var.BuildVersion)"
+			 Manufacturer="!(loc.Company)" 
+			 UpgradeCode="$(var.UpgradeCode)"
+			 Codepage="65001">
+		
+		<Package InstallerVersion="500" 
+				 Compressed="yes" 
+				 InstallScope="perMachine" 
+				 Platform="$(var.Platform)"
+				 Manufacturer="!(loc.Company)"
+				 Description="!(loc.Description)"
+				 Keywords="!(loc.Keywords)"
+				 Comments="!(loc.Comments)"
+				 SummaryCodepage="1251"
+				 Languages="!(loc.Language)" />
+
+		<MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeErrorMessage)" />
+		
+		<MediaTemplate
+			EmbedCab="yes"/>
+
+		<Icon Id="icon.ico" SourceFile="$(var.FuelEase.ProjectDir)\logo.ico"/>
+
+		<Property Id="ARPPRODUCTICON">icon.ico</Property>
+		<Property Id="ARPURLINFOABOUT">https://www.kit.kg</Property>
+
+		<!-- Минимальный пользовательский интерфейс с лицензионным соглашением -->
+		<UIRef Id="WixUI_Minimal" />
+		<WixVariable Id="WixUILicenseRtf" Value="$(var.ProjectDir)\Assets\License.rtf"/>
+
+		<!-- Подключение внешнего фрагмента для установки -->
+		<Feature Id="ProductFeature" 
+				 Title="FuelEase" 
+				 Level="1">
+
+			<!-- Компонент установки .NET SDK -->
+			<!--<ComponentRef Id="DotNetSdkInstaller" />-->
+
+			<!-- Компоненты основного продукта -->
+			<ComponentGroupRef Id="ProductComponents" />
+			<ComponentGroupRef Id="PublishedComponents" />
+
+		</Feature>
+		
+	</Product>
+
+</Wix>

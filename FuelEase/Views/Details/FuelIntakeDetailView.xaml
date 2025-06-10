@@ -1,0 +1,83 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:FuelEase.Views.Base"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    x:Class="FuelEase.Views.Details.FuelIntakeDetailView"
+    Height="150"
+    Width="700">
+
+    <dx:LoadingDecorator>
+
+        <dxlc:LayoutControl Orientation="Vertical">
+
+            <dxlc:LayoutGroup>
+
+                <dxlc:LayoutGroup Orientation="Vertical">
+
+                    <dxlc:LayoutItem Label="Дата">
+                        <dxe:DateEdit EditValue="{Binding FuelIntake.CreateDate, UpdateSourceTrigger=PropertyChanged}"/>
+                    </dxlc:LayoutItem>
+
+                    <dxlc:LayoutItem Label="Номер">
+                        <dxe:TextEdit EditValue="{Binding FuelIntake.Number, UpdateSourceTrigger=PropertyChanged}"/>
+                    </dxlc:LayoutItem>
+
+                    <dxlc:LayoutItem Label="Резервуар">
+                        <dxe:ComboBoxEdit ItemsSource="{Binding Tanks}"
+                                  DisplayMember="Name"
+                                  ValueMember="Id"
+                                  SelectedItem="{Binding SelectedTank}"
+                                  ShowError="False"
+                                  ShowErrorToolTip="False"/>
+                    </dxlc:LayoutItem>
+
+                </dxlc:LayoutGroup>
+
+                <dxlc:LayoutGroup Header="LayoutGroup"
+                          Orientation="Vertical">
+
+                    <dxlc:LayoutItem Label="Поставщик">
+                        <dxe:ComboBoxEdit/>
+                    </dxlc:LayoutItem>
+
+                    <dxlc:LayoutItem Label="Перевозшик">
+                        <dxe:ComboBoxEdit/>
+                    </dxlc:LayoutItem>
+
+                    <dxlc:LayoutItem Label="Транспорт">
+                        <dxe:ComboBoxEdit/>
+                    </dxlc:LayoutItem>
+
+                </dxlc:LayoutGroup>
+
+            </dxlc:LayoutGroup>
+
+            <dxlc:LayoutGroup Orientation="Vertical">
+
+                <dxlc:LayoutItem Label="Объем, л">
+                    <dxe:TextEdit MaskUseAsDisplayFormat="True" 
+                          Mask="n"
+                          ShowError="False"
+                          ShowErrorToolTip="False"
+                          EditValue="{Binding FuelIntake.Quantity, UpdateSourceTrigger=PropertyChanged}"/>
+                </dxlc:LayoutItem>
+
+            </dxlc:LayoutGroup>
+
+            <dxlc:LayoutGroup HorizontalAlignment="Right"
+                              VerticalAlignment="Bottom">
+
+                <Button Style="{StaticResource SaveBtton}"/>
+
+                <Button Style="{StaticResource CancelButton}"/>
+
+            </dxlc:LayoutGroup>
+
+        </dxlc:LayoutControl>
+
+    </dx:LoadingDecorator>
+
+</local:BaseView>

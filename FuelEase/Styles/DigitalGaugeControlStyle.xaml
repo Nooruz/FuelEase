@@ -1,0 +1,36 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:dxga="http://schemas.devexpress.com/winfx/2008/xaml/gauges">
+
+    <Style TargetType="{x:Type dxga:DigitalGaugeControl}" x:Key="BaseDigitalScreenStyle">
+
+        <Setter Property="SymbolCount" Value="7"/>
+        <Setter Property="TextDirection" Value="RightToLeft"/>
+        <Setter Property="Model">
+            <Setter.Value>
+                <dxga:DigitalCleanWhiteModel InnerPadding="0"/>
+            </Setter.Value>
+        </Setter>
+
+    </Style>
+
+    <Style TargetType="{x:Type dxga:DigitalGaugeControl}" x:Key="DefaultDigitalScreenStyle"
+           BasedOn="{StaticResource BaseDigitalScreenStyle}">
+
+        <Setter Property="SymbolView">
+            <Setter.Value>
+                <dxga:SevenSegmentsView>
+                    <dxga:SevenSegmentsView.Presentation>
+                        <dxga:DefaultSevenSegmentsPresentation FillActive="#FF3131">
+                            <dxga:DefaultSevenSegmentsPresentation.FillInactive>
+                                <SolidColorBrush Color="#FF3131" Opacity="0.1"/>
+                            </dxga:DefaultSevenSegmentsPresentation.FillInactive>
+                        </dxga:DefaultSevenSegmentsPresentation>
+                    </dxga:SevenSegmentsView.Presentation>
+                </dxga:SevenSegmentsView>
+            </Setter.Value>
+        </Setter>
+
+    </Style>
+
+</ResourceDictionary>

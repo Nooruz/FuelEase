@@ -1,0 +1,192 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+	<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	<Deterministic>false</Deterministic>
+	<PlatformTarget>AnyCPU</PlatformTarget>
+	<ApplicationIcon>logo.ico</ApplicationIcon>
+	<Platforms>AnyCPU;x64</Platforms>
+	<Authors>ОсОО "КИТ", Ашимжан уулу Ноорузбек</Authors>
+	<Company>ОсОО "КИТ"</Company>
+	<Product>КИТ-АЗС</Product>
+	<Copyright>© 2024 ОсОО "КИТ" Все права защищены.</Copyright>
+	<PackageIcon>logo.png</PackageIcon>
+	<PackageLicenseFile>License.rtf</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Fonts\fa-brands-400.ttf" />
+    <None Remove="Fonts\fa-regular-400.ttf" />
+    <None Remove="Fonts\fa-solid-900.ttf" />
+    <None Remove="Images\Analytics.svg" />
+    <None Remove="Images\BandedReports.svg" />
+    <None Remove="Images\borderblacklogo.png" />
+    <None Remove="Images\Buy.svg" />
+    <None Remove="Images\GettingStarted.svg" />
+    <None Remove="Images\GridContacts.svg" />
+    <None Remove="Images\GridTasks.svg" />
+    <None Remove="Images\NormalView.svg" />
+    <None Remove="Images\PDFViewer.svg" />
+    <None Remove="Images\Pivot.svg" />
+    <None Remove="Images\Print.svg" />
+    <None Remove="Images\ReadingView.svg" />
+    <None Remove="Images\Scheduler.svg" />
+    <None Remove="Images\Spreadsheet.svg" />
+    <None Remove="Images\Support.svg" />
+    <None Remove="Images\WeatherMap.svg" />
+    <None Remove="Images\whiteborderlogo.png" />
+    <None Remove="Images\whitelogo.png" />
+    <None Remove="Images\WordProcessing.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="logo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\FuelEase.Installer\Assets\License.rtf">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.DataAccess.UI.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Images.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Printing.Core.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Reporting.Core.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Accordion.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Controls.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Core.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Dashboard.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Docking.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Grid.Core.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.LayoutControl.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Printing.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.PropertyGrid.ru" Version="21.2.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.20">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.20" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SerialPortStreamCore" Version="2.1.0" />
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.1.0" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FuelEase.Common\FuelEase.Common.csproj" />
+    <ProjectReference Include="..\FuelEase.Domain\FuelEase.Domain.csproj" />
+    <ProjectReference Include="..\FuelEase.EntityFramework\FuelEase.EntityFramework.csproj" />
+    <ProjectReference Include="..\FuelEase.FuelDispenser\FuelEase.FuelDispenser.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Fonts\fa-brands-400.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Fonts\fa-regular-400.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Fonts\fa-solid-900.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Analytics.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\BandedReports.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\borderblacklogo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Buy.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\GettingStarted.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\GridContacts.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\GridTasks.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\logo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\NormalView.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\PDFViewer.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Pivot.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Print.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\ReadingView.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Scheduler.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Spreadsheet.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Support.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\WeatherMap.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\whiteborderlogo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\whitelogo.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\WordProcessing.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Update="Views\ControllerListView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="layout.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+</Project>

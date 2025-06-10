@@ -1,0 +1,48 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:FuelEase.Views.Base"
+    x:Class="FuelEase.Views.WorkplaceSettingsView"
+    Width="600"
+    Height="400">
+
+    <dx:LoadingDecorator>
+        <dxlc:LayoutControl Orientation="Vertical">
+
+            <dx:DXTabControl>
+
+                <dx:DXTabItem Header="Учет продаж">
+
+                    <dxlc:LayoutControl Orientation="Vertical">
+
+                        <dxlc:LayoutItem Label="ККМ (по умолчанию)">
+                            <dxe:ComboBoxEdit ItemsSource="{Binding CashRegisters}"
+                                              DisplayMember="Name"
+                                              SelectedItem="{Binding SelectedCashRegister}"/>
+                        </dxlc:LayoutItem>
+
+                    </dxlc:LayoutControl>
+
+                </dx:DXTabItem>
+
+            </dx:DXTabControl>
+
+            <dxlc:LayoutGroup VerticalAlignment="Bottom"
+                      HorizontalAlignment="Right">
+
+                <Button Content="Ок"
+                        Width="80"
+                        Command="{Binding SaveCommand}"/>
+                <Button Content="Отмена"
+                        Width="80"
+                        Command="{Binding CloseCommand}"/>
+
+            </dxlc:LayoutGroup>
+
+        </dxlc:LayoutControl>
+    </dx:LoadingDecorator>
+
+</local:BaseView>
