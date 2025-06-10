@@ -7,7 +7,8 @@ using FuelEase.HardwareConfigurations.Services;
 using Serilog;
 using System;
 using System.ComponentModel;
-using System.Net;
+using System.IO;
+using System.Threading;
 using System.Reflection;
 
 namespace FuelEase.PKElectronics
@@ -28,9 +29,6 @@ namespace FuelEase.PKElectronics
         private readonly SemaphoreSlim _statusLoopSemaphore = new(1, 1);
         private CancellationTokenSource? _statusLoopCts;
         private Task? _statusLoopTask;
-
-        private CancellationTokenSource _statusCts;
-        private Task _statusTask;
 
         #endregion
 
@@ -74,7 +72,7 @@ namespace FuelEase.PKElectronics
 
         public async Task StartStatusPolling(int intervalMs = 200)
         {
-            if (_statusCts != null)
+            if (_statusLoopCts != null)
                 throw new InvalidOperationException("Пуллинг уже запущен");
 
             if (_nozzles is { Count: > 0 })
@@ -117,8 +115,7 @@ namespace FuelEase.PKElectronics
 
             await InitializeAsync(nozzle.Side);
 
-            _statusCts = new CancellationTokenSource();
-            _statusTask = Task.Run(() => StatusLoopAsync(intervalMs, _statusCts.Token));
+            StatusLoopAsync(intervalMs);
         }
 
         public async Task Connect(string comPort, int baudRate)
@@ -138,17 +135,15 @@ namespace FuelEase.PKElectronics
             var request = _parser.BuildRequest(Command.Status, column.Address, column.Nozzle);
 
 #if DEBUG
-
-            string sdsd = BitConverter.ToString(request, 0, request.Length);
-
+            // Логируем запрос в отладке
+            string requestHex = BitConverter.ToString(request, 0, request.Length);
 #endif
             var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 5)
                                                       .ConfigureAwait(false);
 
 #if DEBUG
-
-            string asdsd = BitConverter.ToString(raw, 0, raw.Length);
-
+            // Логируем ответ в отладке
+            string responseHex = BitConverter.ToString(raw, 0, raw.Length);
 #endif
 
             var response = _parser.ParseResponse(raw, Command.Status);
@@ -168,9 +163,8 @@ namespace FuelEase.PKElectronics
                 _logger.Information($"[Tx] {BitConverter.ToString(request)}");
 
 #if DEBUG
-
-                string sdsd = BitConverter.ToString(request, 0, request.Length);
-
+                // Отладочный вывод запроса
+                string debugRequest = BitConverter.ToString(request, 0, request.Length);
 #endif
 
                 var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 4)
@@ -179,14 +173,14 @@ namespace FuelEase.PKElectronics
                 _logger.Information($"[Rx] {BitConverter.ToString(raw)}");
 
 #if DEBUG
-
-                string asdsd = BitConverter.ToString(raw, 0, raw.Length);
-
+                // Логируем ответ в отладке
+                string rawHex = BitConverter.ToString(raw, 0, raw.Length);
 #endif
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                // Логируем ошибку и пробрасываем выше
+                _logger.Error(ex, "Ошибка при изменении цены");
                 throw;
             }
             finally
@@ -208,9 +202,8 @@ namespace FuelEase.PKElectronics
                 _logger.Information($"[Tx] {BitConverter.ToString(request)}");
 
 #if DEBUG
-
-                string sdsd = BitConverter.ToString(request, 0, request.Length);
-
+                // Отладочный вывод запроса
+                string debugRequest = BitConverter.ToString(request, 0, request.Length);
 #endif
 
                 var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 4)
@@ -219,9 +212,8 @@ namespace FuelEase.PKElectronics
                 _logger.Information($"[Rx] {BitConverter.ToString(raw)}");
 
 #if DEBUG
-
-                string asdsd = BitConverter.ToString(raw, 0, raw.Length);
-
+                // Логируем ответ в отладке
+                string rawHex = BitConverter.ToString(raw, 0, raw.Length);
 #endif
 
             }
@@ -240,7 +232,7 @@ namespace FuelEase.PKElectronics
 
         #region Private Voids
 
-        private void StatusLoopAsync(int intervalMs, CancellationToken token)
+        private void StatusLoopAsync(int intervalMs)
         {
             // Если уже запущен, повторно не запускаем
             if (_statusLoopCts != null)
@@ -278,9 +270,8 @@ namespace FuelEase.PKElectronics
                             _logger.Information($"[Tx] {BitConverter.ToString(request)}");
 
 #if DEBUG
-
-                            string asd = BitConverter.ToString(request);
-
+                            // Отладочный вывод запроса
+                            string debugRequest = BitConverter.ToString(request);
 #endif
                             var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 5,
                                 writeTimeout: 20).ConfigureAwait(false);
@@ -318,7 +309,7 @@ namespace FuelEase.PKElectronics
                             }
                         }
 
-                        await Task.Delay(intervalMs, token).ConfigureAwait(false);
+                        await Task.Delay(intervalMs, _statusLoopCts.Token).ConfigureAwait(false);
                     }
 
                     if (isStartedRefueling)
@@ -327,7 +318,7 @@ namespace FuelEase.PKElectronics
                     }
                 }
 
-            }, token);
+            }, _statusLoopCts.Token);
         }
 
         private async Task InitializeAsync(int side)
@@ -363,9 +354,8 @@ namespace FuelEase.PKElectronics
                     _logger.Information($"[Tx] {BitConverter.ToString(request)}");
 
 #if DEBUG
-
-                    string asd = BitConverter.ToString(request);
-
+                    // Отладочный вывод запроса
+                    string debugRequest = BitConverter.ToString(request);
 #endif
                     var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 5,
                         writeTimeout: 20).ConfigureAwait(false);
@@ -404,9 +394,8 @@ namespace FuelEase.PKElectronics
                 _logger.Information($"[Tx] {BitConverter.ToString(request)}");
 
 #if DEBUG
-
-                string asd = BitConverter.ToString(request);
-
+                // Отладочный вывод запроса
+                string debugRequest = BitConverter.ToString(request);
 #endif
                 var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 5,
                     writeTimeout: 20).ConfigureAwait(false);
@@ -430,9 +419,8 @@ namespace FuelEase.PKElectronics
             _logger.Information($"[Tx] {BitConverter.ToString(request)}");
 
 #if DEBUG
-
-            string asd = BitConverter.ToString(request);
-
+            // Отладочный вывод запроса
+            string debugRequest = BitConverter.ToString(request);
 #endif
             var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 5,
                 writeTimeout: 20).ConfigureAwait(false);
@@ -496,8 +484,31 @@ namespace FuelEase.PKElectronics
 #endif
         }
 
-        #endregion
+        /// <summary>
+        /// Останавливает фоновый цикл опроса статуса.
+        /// </summary>
+        private void StopStatusLoop()
+        {
+            if (_statusLoopCts == null)
+                return;
 
+            _statusLoopCts.Cancel();
+
+            try
+            {
+                _statusLoopTask?.Wait();
+            }
+            catch
+            {
+                // Игнорируем ошибки при завершении
+            }
+
+            _statusLoopCts.Dispose();
+            _statusLoopCts = null;
+            _statusLoopTask = null;
+        }
+
+        #endregion
         #region Logs
 
         /// <summary>
@@ -540,7 +551,10 @@ namespace FuelEase.PKElectronics
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            // Останавливаем цикл статусов и освобождаем ресурсы
+            StopStatusLoop();
+            _statusLoopSemaphore.Dispose();
+            _portService?.Dispose();
         }
 
         #endregion
