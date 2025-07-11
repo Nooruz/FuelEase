@@ -1,0 +1,18 @@
+﻿using System.ComponentModel;
+
+namespace KIT.GasStation.Domain.Views
+{
+    public class ViewObject : INotifyPropertyChanged
+    {
+        #region PropertyChanged
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
+    }
+}

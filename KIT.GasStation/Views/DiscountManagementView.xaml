@@ -1,0 +1,46 @@
+﻿<local:BaseView   x:Class="KIT.GasStation.Views.DiscountManagementView"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
+                  xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+                  mc:Ignorable="d" 
+                  xmlns:customs="clr-namespace:KIT.GasStation.Customs"
+                  xmlns:dxwui="http://schemas.devexpress.com/winfx/2008/xaml/windowsui"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <Style TargetType="{x:Type dxwui:HamburgerMenuNavigationButton}"
+               BasedOn="{StaticResource DefaultHamburgerMenuNavigationButton}"/>
+    </UserControl.Resources>
+
+    <dx:LoadingDecorator>
+
+        <customs:CustomHamburgerMenu Header="Управления скидками"
+                             OpenPaneWidth="280"
+                             AllowBuiltInNavigation="True"
+                             Style="{StaticResource CustomHamburgerMenu}">
+
+            <dxwui:HamburgerMenuNavigationButton Content="Скидки"
+                                         Tag="{StaticResource faPercent}"
+                                         CommandParameter="DiscountView"/>
+
+            <dxwui:HamburgerMenuNavigationButton Content="Топливные карты"
+                                         Tag="{StaticResource faCreditCard}"
+                                         CommandParameter="TanksView"/>
+
+            <dxwui:HamburgerMenuNavigationButton Content="Бонусная система"
+                                         Tag="{StaticResource faStar}"
+                                         Command="{Binding SettingsCommand}"/>
+
+            <dxwui:HamburgerMenuNavigationButton Content="Талоны"
+                                         Tag="{StaticResource faMoneyCheck}"
+                                         Command="{Binding SettingsCommand}"/>
+
+        </customs:CustomHamburgerMenu>
+
+    </dx:LoadingDecorator>
+
+</local:BaseView>

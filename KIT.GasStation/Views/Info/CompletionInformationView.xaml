@@ -1,0 +1,61 @@
+﻿<base:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:base="clr-namespace:KIT.GasStation.Views.Base"
+    x:Class="KIT.GasStation.Views.Info.CompletionInformationView" 
+    Width="500">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <Label VerticalAlignment="Top"
+               FontSize="24"
+               HorizontalAlignment="Center"
+               Content="{Binding CompletedFuelSale.PaymentType.Name}"/>
+
+        <dxlc:LayoutItem Label="Сумма клиента:">
+            <dxe:TextEdit Text="{Binding CompletedFuelSale.Sum}"
+                          FontSize="18" 
+                          MaskUseAsDisplayFormat="True"
+                          MaskType="Numeric"
+                          Mask="n2"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Сумма продажи:">
+            <dxe:TextEdit Text="{Binding CompletedFuelSale.ReceivedSum}"
+                          FontSize="18"
+                          MaskUseAsDisplayFormat="True"
+                          MaskType="Numeric"
+                          Mask="n2"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Возврат:">
+            <dxe:TextEdit Text="{Binding Return}"
+                          FontSize="18"
+                          MaskUseAsDisplayFormat="True"
+                          MaskType="Numeric"
+                          Mask="n2"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Подробно:"
+                         LabelVerticalAlignment="Top">
+            <dxe:TextEdit Height="150"
+                          FontSize="18"
+                          VerticalContentAlignment="Top"
+                          Text="{Binding Info}"
+                          TextWrapping="Wrap"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutGroup VerticalAlignment="Bottom"
+                          HorizontalAlignment="Right">
+
+            <Button Content="Ок"
+                    Width="80"
+                    Command="{Binding CloseCommand}"/>
+
+        </dxlc:LayoutGroup>
+
+    </dxlc:LayoutControl>
+
+</base:BaseView>

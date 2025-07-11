@@ -1,0 +1,69 @@
+﻿<base:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:base="clr-namespace:KIT.GasStation.Views.Base"
+    x:Class="KIT.GasStation.Views.CompletedSalesView"
+    Width="800"
+    Height="600">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <dxg:GridControl ItemsSource="{Binding FuelSales}"
+                         SelectedItem="{Binding SelectedFuelSale}">
+            <dxg:GridControl.View>
+                <dxg:TableView ShowGroupPanel="False"
+                               AllowEditing="False"/>
+            </dxg:GridControl.View>
+
+            <dxg:GridColumn Header="Дата и время"
+                            FieldName="CreateDate">
+                <dxg:GridColumn.EditSettings>
+                    <dxe:DateEditSettings MaskUseAsDisplayFormat="True" 
+                                          Mask="G"/>
+                </dxg:GridColumn.EditSettings>
+            </dxg:GridColumn>
+            <dxg:GridColumn Header="Пользователь"
+                            FieldName="Shift.User.FullName"/>
+            <dxg:GridColumn Header="Тип оплаты"
+                            Binding="{Binding PaymentType, Converter={StaticResource EnumToStringConvertert}}"/>
+            <dxg:GridColumn Header="Отпуск"
+                            FieldName="Nozzle.Name"/>
+            <dxg:GridColumn Header="Чек"
+                            FieldName="FiscalData.FiscalDocument"/>
+
+        </dxg:GridControl>
+
+        <dxg:GridControl Height="100" ItemsSource="{Binding SelectedFuelSales}">
+            <dxg:GridControl.View>
+                <dxg:TableView ShowGroupPanel="False"
+                               AllowEditing="False"/>
+            </dxg:GridControl.View>
+
+            <dxg:GridColumn Header="Товар"
+                            FieldName="Tank.Fuel.Name"/>
+            <dxg:GridColumn Header="Цена"
+                            FieldName="Tank.Fuel.Price"/>
+            <dxg:GridColumn Header="Кол-во"
+                            FieldName="ReceivedQuantity"/>
+            <dxg:GridColumn Header="Итого"
+                            FieldName="ReceivedSum"/>
+
+        </dxg:GridControl>
+
+        <dxlc:LayoutGroup VerticalAlignment="Bottom">
+
+            <Button Content="Возврат товара ККМ"
+                    HorizontalAlignment="Right"
+                    Command="{Binding ReturnCommand}"/>
+            <Button Content="Закрыть"
+                    Command="{Binding CloseCommand}"
+                    HorizontalAlignment="Right"/>
+
+        </dxlc:LayoutGroup>
+
+    </dxlc:LayoutControl>
+
+</base:BaseView>

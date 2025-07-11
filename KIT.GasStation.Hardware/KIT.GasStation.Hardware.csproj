@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <Company>ОсОО "КИТ"</Company>
+    <Product>Конфигуратор оборудования "КИТ-АЗС"</Product>
+	<Platforms>AnyCPU;x64</Platforms>
+	<PlatformTarget>AnyCPU</PlatformTarget>
+    <SignAssembly>False</SignAssembly>
+    <ErrorReport>prompt</ErrorReport>
+    <BaseOutputPath></BaseOutputPath>
+    <AssemblyName>HardwareConfiguration</AssemblyName>
+    <ApplicationIcon>computer.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Images\Logo\computer.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="computer.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Images" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Docking.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Grid.Core.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.LayoutControl.ru" Version="21.2.3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KIT.GasStation.Common\KIT.GasStation.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Fonts\fa-brands-400.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Fonts\fa-regular-400.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Fonts\fa-solid-900.ttf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Logo\computer.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+</Project>

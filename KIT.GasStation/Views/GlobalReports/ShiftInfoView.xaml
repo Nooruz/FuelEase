@@ -1,0 +1,307 @@
+﻿<UserControl
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:dxr="http://schemas.devexpress.com/winfx/2008/xaml/ribbon"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    x:Class="KIT.GasStation.Views.GlobalReports.ShiftInfoView"
+               mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="800">
+
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <dxr:RibbonControl RibbonStyle="Office2019">
+            <dxr:RibbonPageCategory>
+                <dxr:RibbonPage Caption="Главная">
+                    <dxr:RibbonPageGroup Caption="Отчеты">
+                        <dxb:BarButtonItem Content="Обновить"
+                                           LargeGlyph="{dx:DXImage SvgImages/Dashboards/UpdateDataExtract.svg}"/>
+                        <dxb:BarButtonItem Content="Отчет на ККМ"
+                                           LargeGlyph="{dx:DXImage SvgImages/Icon Builder/Shopping_CashVoucher.svg}"/>
+                        <dxb:BarButtonItem Content="Отчет на принтер"
+                                           LargeGlyph="{dx:DXImage SvgImages/Icon Builder/Actions_Print.svg}"/>
+                        <!--<dxb:BarEditItem Content="Последняя транзакция" 
+                                         EditWidth="100"
+                                         LargeGlyph="{dx:DXImage SvgImages/Spreadsheet/ADateOccuring.svg}" RibbonStyle="Default">
+                            <dxb:BarEditItem.EditSettings>
+                                <dxe:DateEditSettings/>
+                            </dxb:BarEditItem.EditSettings>
+                        </dxb:BarEditItem>-->
+                    </dxr:RibbonPageGroup>
+                </dxr:RibbonPage>
+            </dxr:RibbonPageCategory>
+        </dxr:RibbonControl>
+
+        <dxlc:LayoutControl Grid.Row="1" 
+                            Padding="0"
+                            Orientation="Vertical">
+
+            <dxlc:LayoutGroup>
+
+                <dxlc:LayoutGroup View="GroupBox"
+                                  Header="Информация по смене">
+
+                    <dxg:GridControl ItemsSource="{Binding Shifts}"
+                                     SelectedItem="{Binding SelectedShift}">
+                        <dxg:GridControl.View>
+                            <dxg:TableView AllowEditing="False"/>
+                        </dxg:GridControl.View>
+
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand EventName="SelectedItemChanged"
+                                                   Command="{Binding ShiftSelectedItemChangedCommand}"/>
+                        </dxmvvm:Interaction.Behaviors>
+
+                        <dxg:GridColumn Header="Номер"
+                                        FieldName="Id"/>
+                        <dxg:GridColumn Header="Дата начала"
+                                        FieldName="OpeningDate">
+                            <dxg:GridColumn.EditSettings>
+                                <dxe:DateEditSettings MaskUseAsDisplayFormat="True" 
+                                                      Mask="G"/>
+                            </dxg:GridColumn.EditSettings>
+                        </dxg:GridColumn>
+                        <dxg:GridColumn Header="Дата окончания"
+                                        FieldName="ClosedDate">
+                            <dxg:GridColumn.EditSettings>
+                                <dxe:DateEditSettings MaskUseAsDisplayFormat="True" 
+                                                      Mask="G"/>
+                            </dxg:GridColumn.EditSettings>
+                        </dxg:GridColumn>
+                        <dxg:GridColumn Header="Состояние"
+                                        Binding="{Binding ShiftState, Converter={StaticResource EnumToStringConvertert}}"/>
+                        <dxg:GridColumn Header="Сумма"
+                                        FieldName="Sum">
+                            <dxg:GridColumn.EditSettings>
+                                <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n"/>
+                            </dxg:GridColumn.EditSettings>
+                        </dxg:GridColumn>
+                        <dxg:GridColumn Header="Кассир"
+                                        FieldName="User.FullName"/>
+                    </dxg:GridControl>
+
+                </dxlc:LayoutGroup>
+
+            </dxlc:LayoutGroup>
+
+            <dx:DXTabControl >
+
+                <dx:DXTabItem Header="Сводная информация">
+
+                    <dxlc:LayoutControl Orientation="Vertical"
+                                        Padding="0">
+
+                        <!--<dxlc:LayoutItem Label="Касса"
+                                         VerticalAlignment="Top">
+                            <dxe:ComboBoxEdit/>
+                        </dxlc:LayoutItem>-->
+
+                        <dxlc:LayoutGroup>
+
+                            <ListView ItemsSource="{Binding CashTurnovers}">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Width="250" 
+                                                        DisplayMemberBinding="{Binding Title}" 
+                                                        Header="Сменный отчет"/>
+                                        <GridViewColumn Width="150" 
+                                                        DisplayMemberBinding="{Binding Sum}" 
+                                                        Header="Сом"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+
+                        </dxlc:LayoutGroup>
+
+                    </dxlc:LayoutControl>
+
+                </dx:DXTabItem>
+
+                <dx:DXTabItem Header="Колонки">
+
+                    <dxlc:LayoutControl Padding="0">
+
+                        <dxg:GridControl ItemsSource="{Binding NozzleCashTurnovers}">
+                            <dxg:GridControl.View>
+                                <dxg:TableView ShowTotalSummary="True"
+                                               AllowEditing="False"
+                                               BandSeparatorWidth="1"/>
+                            </dxg:GridControl.View>
+
+                            <dxg:GridControl.Bands>
+                                <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                    <dxg:GridColumn Header="Номер"
+                                                    FieldName="Side"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                    <dxg:GridColumn Header="Вид топлива"
+                                                    FieldName="FuelName"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                    <dxg:GridColumn Header="Счетчик на начало"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="BeginCount"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand Header="Наличные">
+                                    <dxg:GridColumn Header="Литры"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="CashQuantity"/>
+                                    <dxg:GridColumn Header="Сумма"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="Cash"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand Header="Безналичные">
+                                    <dxg:GridColumn Header="Литры"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="CashlessQuantity"/>
+                                    <dxg:GridColumn Header="Сумма"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="Cashless"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand Header="Ведомость">
+                                    <dxg:GridColumn Header="Литры"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="StatementQuantity"/>
+                                    <dxg:GridColumn Header="Сумма"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="Statement"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand Header="Талон">
+                                    <dxg:GridColumn Header="Литры"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="TicketQuantity"/>
+                                    <dxg:GridColumn Header="Сумма" 
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="Ticket"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand Header="Итого">
+                                    <dxg:GridColumn Header="Литры"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="TotalQuantity"/>
+                                    <dxg:GridColumn Header="Сумма"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="Total"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                    <dxg:GridColumn Header="{Binding EndCounterTitle}"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="EndCount"/>
+                                </dxg:GridControlBand>
+                                <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                    <dxg:GridColumn Header="Баланс (*)"
+                                                    Style="{StaticResource DecimelGridColumn}"
+                                                    FieldName="Balance"/>
+                                </dxg:GridControlBand>
+                            </dxg:GridControl.Bands>
+
+                            <dxg:GridControl.TotalSummary>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="Cash"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="CashQuantity"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="Cashless"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="CashlessQuantity"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="Ticket"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="TicketQuantity"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="Statement"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="StatementQuantity"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="Total"/>
+                                <dxg:GridSummaryItem SummaryType="Sum" FieldName="TotalQuantity"/>
+                            </dxg:GridControl.TotalSummary>
+                            
+                        </dxg:GridControl>
+
+                    </dxlc:LayoutControl>
+
+                </dx:DXTabItem>
+
+                <dx:DXTabItem Header="Резервуары">
+
+                    <dxg:GridControl ItemsSource="{Binding TankTurnovers}">
+                        <dxg:GridControl.View>
+                            <dxg:TableView ShowTotalSummary="True"
+                                           AllowEditing="False"
+                                           BandSeparatorWidth="1"/>
+                        </dxg:GridControl.View>
+
+                        <dxg:GridControl.Bands>
+                            <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                <dxg:GridColumn Header="Номер" FieldName="Number"/>
+                            </dxg:GridControlBand>
+                            <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                <dxg:GridColumn Header="Вид топлива"
+                                                FieldName="FuelName"/>
+                            </dxg:GridControlBand>
+                            <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                <dxg:GridColumn Header="На начало смены"
+                                                Style="{StaticResource DecimelGridColumn}"
+                                                FieldName="BeginShiftQuantity"/>
+                            </dxg:GridControlBand>
+                            <dxg:GridControlBand Header="Отпушено">
+                                <dxg:GridColumn Header="Литры"
+                                                Style="{StaticResource DecimelGridColumn}"
+                                                FieldName="SaleQauntity"/>
+                                <dxg:GridColumn Header="Сумма"
+                                                Style="{StaticResource DecimelGridColumn}"
+                                                FieldName="Sale"/>
+                            </dxg:GridControlBand>
+                            <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                <dxg:GridColumn Header="Принято"
+                                                Style="{StaticResource DecimelGridColumn}"
+                                                FieldName="IntakeQuantity"/>
+                            </dxg:GridControlBand>
+                            <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                <dxg:GridColumn Header="Возвращено"
+                                                Style="{StaticResource DecimelGridColumn}"
+                                                FieldName="RefundQuantity"/>
+                            </dxg:GridControlBand>
+                            <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                <dxg:GridColumn Header="Поверки"
+                                                Style="{StaticResource DecimelGridColumn}"
+                                                FieldName="CheckingQuantity"/>
+                            </dxg:GridControlBand>
+                            <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                <dxg:GridColumn Header="{Binding EndShiftTitle}"
+                                                Style="{StaticResource DecimelGridColumn}"
+                                                FieldName="EndShiftQuantity"/>
+                            </dxg:GridControlBand>
+                            <dxg:GridControlBand OverlayHeaderByChildren="True">
+                                <dxg:GridColumn Header="Баланс (*)"
+                                                Style="{StaticResource DecimelGridColumn}"
+                                                FieldName="Balance"/>
+                            </dxg:GridControlBand>
+                        </dxg:GridControl.Bands>
+
+                        <dxg:GridControl.TotalSummary>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="Cash"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="CashQuantity"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="Cashless"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="CashlessQuantity"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="Ticket"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="TicketQuantity"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="Statement"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="StatementQuantity"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="Total"/>
+                            <dxg:GridSummaryItem SummaryType="Sum" FieldName="TotalQuantity"/>
+                        </dxg:GridControl.TotalSummary>
+
+                    </dxg:GridControl>
+
+                </dx:DXTabItem>
+
+            </dx:DXTabControl>
+
+        </dxlc:LayoutControl>
+
+    </Grid>
+
+</UserControl>

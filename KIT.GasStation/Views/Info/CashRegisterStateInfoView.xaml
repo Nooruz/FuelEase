@@ -1,0 +1,28 @@
+﻿<local:BaseView     x:Class="KIT.GasStation.Views.Info.CashRegisterStateInfoView"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+                 xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
+                 Width="400"
+                 Height="500">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+        
+        <dxe:TextEdit TextWrapping="Wrap"
+                      EditValue="{Binding ShiftState}"/>
+
+        <dxlc:LayoutGroup HorizontalAlignment="Right"
+                          VerticalAlignment="Top">
+
+            <Button Content="Ок"
+                    Command="{Binding CloseCommand}"
+                    Width="100"/>
+
+        </dxlc:LayoutGroup>
+        
+    </dxlc:LayoutControl>
+    
+</local:BaseView>

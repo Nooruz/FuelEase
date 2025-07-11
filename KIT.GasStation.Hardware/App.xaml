@@ -1,0 +1,41 @@
+﻿<Application x:Class="KIT.GasStation.Hardware.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:KIT.GasStation.Hardware"
+             xmlns:converters="clr-namespace:KIT.GasStation.Hardware.Converters"
+             xmlns:views="clr-namespace:KIT.GasStation.Hardware.Views"
+             xmlns:viewModels="clr-namespace:KIT.GasStation.Hardware.ViewModels">
+    
+    <Application.Resources>
+
+        <ResourceDictionary>
+
+            <converters:ColumnConnectionStatusConverter x:Key="ColumnConnectionStatusConverter"/>
+            <converters:ColumnConnectionStatusForegroundConverter x:Key="ColumnConnectionStatusForegroundConverter"/>
+            <converters:EnumToStringConvertert x:Key="EnumToStringConvertert"/>
+
+            <DataTemplate DataType="{x:Type viewModels:LanfengViewModel}">
+                <views:LanfengView/>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type viewModels:PKElectronicsViewModel}">
+                <views:PKElectronicsView/>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type viewModels:EKassaViewModel}">
+                <views:EKassaView/>
+            </DataTemplate>
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/Fonts.xaml"/>
+                <ResourceDictionary Source="Styles/TextBlockStyle.xaml"/>
+                <ResourceDictionary Source="Styles/TreeViewStyle.xaml"/>
+                <ResourceDictionary Source="Styles/ToolBarControlStyle.xaml"/>
+                <ResourceDictionary Source="Styles/DialogServiceStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
+
+    </Application.Resources>
+    
+</Application>

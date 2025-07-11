@@ -1,0 +1,94 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
+    xmlns:converters="clr-namespace:KIT.GasStation.Converters"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    x:Class="KIT.GasStation.Views.ConnectionStringView"
+    Width="400">
+
+    <local:BaseView.Resources>
+        <!-- Регистрируем конвертер -->
+        <converters:AuthenticationConverter x:Key="AuthenticationConverter"/>
+    </local:BaseView.Resources>
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <dxlc:LayoutItem Label="Имя сервера:">
+            <dxe:TextEdit EditValue="{Binding ServerName}"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Проверка подлинности:">
+            <dxe:ComboBoxEdit ItemsSource="{Binding AvailableAuthentications}"
+                              DisplayMember="Value"
+                              ShowError="False"
+                              ShowErrorToolTip="False"
+                              ValueMember="Key"
+                              EditValue="{Binding AuthenticationType}"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutGroup Orientation="Vertical" 
+                          Header="Параметры подключения"
+                          View="GroupBox">
+
+            <dxlc:LayoutItem Label="Имя пользователя:">
+                <dxe:TextEdit EditValue="{Binding UserName}"/>
+            </dxlc:LayoutItem>
+
+            <dxlc:LayoutItem Label="Пароль:">
+                <dxe:PasswordBoxEdit EditValue="{Binding Password}"/>
+            </dxlc:LayoutItem>
+
+        </dxlc:LayoutGroup>
+
+        <dxlc:LayoutGroup Orientation="Vertical" 
+                          Header="Свойства соединения"
+                          View="GroupBox">
+
+            <dxlc:LayoutItem>
+                <dxe:CheckEdit Content="Шифровать соединение"
+                               HorizontalAlignment="Left"
+                               EditValue="{Binding Encryp}"/>
+            </dxlc:LayoutItem>
+
+            <dxlc:LayoutItem>
+                <dxe:CheckEdit Content="Доверять сертификату сервера"
+                               HorizontalAlignment="Left"
+                               EditValue="{Binding TrustServerCertificate}"/>
+            </dxlc:LayoutItem>
+
+        </dxlc:LayoutGroup>
+
+        <dxlc:LayoutItem Label="База данных:">
+            <dxe:ComboBoxEdit ItemsSource="{Binding AvailableDataBases}"
+                              ShowError="False"
+                              ShowErrorToolTip="False"
+                              EditValue="{Binding SelectedDataBase}">
+                <dxmvvm:Interaction.Behaviors>
+                    <dxmvvm:EventToCommand EventName="PopupOpening"
+                                           Command="{Binding AvailableDataBasesPopupOpeningCommand}"
+                                           PassEventArgsToCommand="True"/>
+                </dxmvvm:Interaction.Behaviors>
+            </dxe:ComboBoxEdit>
+        </dxlc:LayoutItem>
+
+        <Separator/>
+
+        <dxlc:LayoutGroup HorizontalAlignment="Right">
+
+            <Button Content="Проверить"
+                    Width="90"
+                    Command="{Binding CheckConnectionCommand}"/>
+            <Button Content="Сохранить"
+                    Width="90"
+                    Command="{Binding SaveCommand}"/>
+            <Button Content="Закрыть"
+                    Width="90"/>
+
+        </dxlc:LayoutGroup>
+
+    </dxlc:LayoutControl>
+
+</local:BaseView>

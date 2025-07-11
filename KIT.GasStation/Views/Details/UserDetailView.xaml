@@ -1,0 +1,43 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
+    x:Class="KIT.GasStation.Views.Details.UserDetailView"
+    Width="400">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+        <dxlc:LayoutItem Label="ФИО"
+                         LabelPosition="Top">
+            <dxe:TextEdit EditValue="{Binding CreatedUser.FullName}"/>
+        </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Роль"
+                         LabelPosition="Top">
+            <dxe:ComboBoxEdit ItemsSource="{Binding UserRoles}"
+                              DisplayMember="Name"
+                              ValueMember="Id"
+                              EditValue="{Binding CreatedUser.UserRoleId}"
+                              ShowError="False"
+                              ShowErrorToolTip="False"/>
+        </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Новый пароль"
+                         LabelPosition="Top">
+            <dxe:PasswordBoxEdit EditValue="{Binding CreatedUser.Password}"/>
+        </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Повторите новый пароль"
+                         LabelPosition="Top">
+            <dxe:PasswordBoxEdit EditValue="{Binding ConfirmedPassword}"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutGroup HorizontalAlignment="Right">
+
+            <Button Style="{StaticResource SaveBtton}"/>
+            
+            <Button Style="{StaticResource CancelButton}"/>
+
+        </dxlc:LayoutGroup>
+        
+    </dxlc:LayoutControl>
+
+</local:BaseView>

@@ -1,0 +1,45 @@
+﻿<UserControl xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars" 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    x:Class="KIT.GasStation.Views.CashView"
+    Width="350">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <Label Content="{Binding ShiftStatus}"
+               VerticalAlignment="Top"/>
+
+        <dxlc:LayoutItem Label="Наличные">
+            <dxe:TextEdit IsReadOnly="True"
+                          EditValue="{Binding Cash, Mode=OneWay}" 
+                          MaskUseAsDisplayFormat="True" 
+                          MaskType="Numeric" 
+                          Mask="n"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Безналичные">
+            <dxe:TextEdit IsReadOnly="True"
+                          EditValue="{Binding Cashless, Mode=OneWay}"
+                          MaskUseAsDisplayFormat="True" 
+                          MaskType="Numeric" 
+                          Mask="n"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Произвольные">
+            <dxe:TextEdit IsReadOnly="True"
+                          EditValue="{Binding Arbitrary, Mode=OneWay}" 
+                          MaskUseAsDisplayFormat="True" 
+                          MaskType="Numeric" 
+                          Mask="n"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Возвращено">
+            <dxe:TextEdit IsReadOnly="True"/>
+        </dxlc:LayoutItem>
+
+    </dxlc:LayoutControl>
+
+</UserControl>

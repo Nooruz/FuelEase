@@ -1,0 +1,58 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+    xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Class="KIT.GasStation.Views.NozzleCounterPanelView"
+                 mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <dxg:GridControl ItemsSource="{Binding Nozzles}"
+                         ShowLoadingPanel="{Binding ShowLoadingPanel}">
+            <dxg:GridControl.View>
+                <dxg:TableView AutoWidth="True"
+                               AllowEditing="False"/>
+            </dxg:GridControl.View>
+            <dxg:GridColumn Header="Название ТРК"
+                            FieldName="Name"/>
+            <dxg:GridColumn Header="Пистолет"
+                            FieldName="Tube"/>
+            <dxg:GridColumn Header="Счетчик СУ" 
+                            FieldName="SalesSum">
+                <dxg:GridColumn.EditSettings>
+                    <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n2"/>
+                </dxg:GridColumn.EditSettings>
+            </dxg:GridColumn>
+            <dxg:GridColumn Header="Счетчик ТРК" 
+                            FieldName="LastCounter">
+                <dxg:GridColumn.EditSettings>
+                    <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n2"/>
+                </dxg:GridColumn.EditSettings>
+            </dxg:GridColumn>
+            <!--<dxg:GridColumn Header="Баланс" 
+                            FieldName="Balance">
+                <dxg:GridColumn.EditSettings>
+                    <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n2"/>
+                </dxg:GridColumn.EditSettings>
+            </dxg:GridColumn>-->
+        </dxg:GridControl>
+
+        <dxlc:LayoutGroup VerticalAlignment="Bottom">
+
+            <Button Content="Сохранить файл"/>
+            <Button Content="Запросить счетчик ТРК"
+                    Command="{Binding RequestCounterCommand}"
+                    IsEnabled="{Binding ShowLoadingPanel, Converter={StaticResource BooleanConverter}}"/>
+
+        </dxlc:LayoutGroup>
+
+
+    </dxlc:LayoutControl>
+
+</local:BaseView>

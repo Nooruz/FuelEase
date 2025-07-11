@@ -1,0 +1,47 @@
+﻿<local:BaseView   x:Class="KIT.GasStation.Views.UnregisteredSalePanelView"
+               xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+               xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+               xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
+               MaxHeight="1600">
+
+    <dxg:GridControl ItemsSource="{Binding UnregisteredSales}"
+                     SelectionMode="Row"
+                     SelectedItem="{Binding SelectedUnregisteredSale}"
+                     ShowLoadingPanel="{Binding ShowLoadingPanel}">
+        <dxg:GridControl.View>
+            <dxg:TableView ShowGroupPanel="False"
+               AllowEditing="False">
+                <dxg:TableView.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Зарегистрировать продажу"
+                      Command="{Binding RegisterCommand}"/>
+                        <MenuItem Header="Зарегистрировать как обратку"
+                      Command="{Binding ReturnCommand}"/>
+                        <MenuItem Header="Обновить список"
+                      Command="{Binding UpdateCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="Установить текущую цену"
+                      Command="{Binding SetCurrentPriceCommand}"/>
+                        <MenuItem Header="Удалить без регистрации"
+                      Command="{Binding DeleteCommand}"/>
+                    </ContextMenu>
+                </dxg:TableView.ContextMenu>
+            </dxg:TableView>
+        </dxg:GridControl.View>
+        <dxg:GridColumn Header="Время"
+            FieldName="CreateDate"/>
+        <dxg:GridColumn Header="ТРК"
+            FieldName="Nozzle.Name"/>
+        <dxg:GridColumn Header="Топливо"
+            FieldName="Nozzle.Tank.Fuel.Name"/>
+        <dxg:GridColumn Header="Доза"
+            FieldName="Quantity"/>
+        <dxg:GridColumn Header="Сумма"
+            FieldName="Sum"/>
+        <dxg:GridColumn Header="Статус"
+            Binding="{Binding State, Converter={StaticResource EnumToStringConvertert}}"/>
+    </dxg:GridControl>
+
+</local:BaseView>

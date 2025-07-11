@@ -1,0 +1,58 @@
+﻿using KIT.GasStation.Common.Factories;
+using KIT.GasStation.Hardware.State.Navigators;
+using KIT.GasStation.Hardware.ViewModels;
+using KIT.GasStation.Hardware.ViewModels.Factories;
+using KIT.GasStation.HardwareConfigurations.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using System;
+
+namespace KIT.GasStation.Hardware.HostBuilders
+{
+    public static class AddViewModelsHostBuilderExtensions
+    {
+        public static IHostBuilder AddViewModels(this IHostBuilder host)
+        {
+            return host.ConfigureServices(services =>
+            {
+                services.AddSingleton(s => new MainWindow());
+
+                services.AddTransient(CreateMainWindowViewModel);
+                services.AddTransient(CreateLanfengViewModel);
+                services.AddTransient(CreatePKElectronicsViewModel);
+                services.AddTransient(CreateEKassaViewModel);
+
+                services.AddSingleton<CreateViewModel<MainWindowViewModel>>(servicesProvider => () => CreateMainWindowViewModel(servicesProvider));
+                services.AddSingleton<CreateViewModel<LanfengViewModel>>(servicesProvider => () => CreateLanfengViewModel(servicesProvider));
+                services.AddSingleton<CreateViewModel<PKElectronicsViewModel>>(servicesProvider => () => CreatePKElectronicsViewModel(servicesProvider));
+                services.AddSingleton<CreateViewModel<EKassaViewModel>>(servicesProvider => () => CreateEKassaViewModel(servicesProvider));
+
+                services.AddSingleton<IViewModelFactory, ViewModelFactory>();
+            });
+        }
+
+        private static EKassaViewModel CreateEKassaViewModel(IServiceProvider services)
+        {
+            return new EKassaViewModel(services.GetRequiredService<IHardwareConfigurationService>(),
+                services.GetRequiredService<ICashRegisterFactory>());
+        }
+
+        private static MainWindowViewModel CreateMainWindowViewModel(IServiceProvider services)
+        {
+            return new MainWindowViewModel(services.GetRequiredService<INavigator>(),
+                services.GetRequiredService<IHardwareConfigurationService>());
+        }
+
+        private static LanfengViewModel CreateLanfengViewModel(IServiceProvider services)
+        {
+            return new LanfengViewModel(services.GetRequiredService<IHardwareConfigurationService>(),
+                services.GetRequiredService<IFuelDispenserFactory>());
+        }
+
+        private static PKElectronicsViewModel CreatePKElectronicsViewModel(IServiceProvider services)
+        {
+            return new PKElectronicsViewModel(services.GetRequiredService<IHardwareConfigurationService>(),
+                services.GetRequiredService<IFuelDispenserFactory>());
+        }
+    }
+}

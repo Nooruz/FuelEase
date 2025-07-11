@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>KIT.GasStationLanfeng</AssemblyName>
+    <Authors>Ашимжан уулу Ноорузбек</Authors>
+    <Company>ОсОО "КИТ"</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.HardwareConfiguration\KIT.GasStation.HardwareConfigurations.csproj" />
+  </ItemGroup>
+
+</Project>

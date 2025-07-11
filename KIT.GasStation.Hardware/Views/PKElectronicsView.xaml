@@ -1,0 +1,159 @@
+﻿<local:BaseView x:Class="KIT.GasStation.Hardware.Views.PKElectronicsView"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+                 xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+                 xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+                 xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+                 xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+                 xmlns:local="clr-namespace:KIT.GasStation.Hardware.Views"
+                 mc:Ignorable="d" 
+                 d:DesignHeight="450" d:DesignWidth="1500">
+
+    <dx:LoadingDecorator FadeInDuration="0" FadeOutDuration="0:0:0:1">
+
+        <dxlc:LayoutControl Orientation="Vertical">
+
+            <dxlc:LayoutGroup VerticalAlignment="Top">
+
+                <dxlc:LayoutGroup Orientation="Vertical">
+
+                    <dxlc:LayoutItem Label="Порт">
+                        <dxe:ComboBoxEdit ItemsSource="{Binding AvailablePorts}"
+                                          IsTextEditable="False"
+                                          EditValue="{Binding SelectedController.ComPort}"/>
+                    </dxlc:LayoutItem>
+
+                    <dxlc:LayoutItem Label="Скорость">
+                        <dxe:ComboBoxEdit ItemsSource="{Binding BaudRates}"
+                                          IsTextEditable="False"
+                                          EditValue="{Binding SelectedController.BaudRate}"/>
+                    </dxlc:LayoutItem>
+
+                </dxlc:LayoutGroup>
+
+                <dxlc:LayoutGroup Orientation="Vertical">
+                    
+                    <dxlc:LayoutItem Label="Метод опроса">
+                        <dxe:ComboBoxEdit ItemsSource="{Binding PollingModes}"
+                                          DisplayMember="Value"
+                                          ValueMember="Key"
+                                          EditValue="{Binding SelectedController.Settings.PollingMode}"/>
+                    </dxlc:LayoutItem>
+
+                    <dxlc:LayoutItem Label="Количество пистолетов на стороне">
+                        <dxe:ComboBoxEdit ItemsSource="{Binding NozzlesPerSides}"
+                                          DisplayMember="Value"
+                                          ValueMember="Key"
+                                          EditValue="{Binding SelectedController.Settings.NozzlesPerSide}"/>
+                    </dxlc:LayoutItem>
+
+                </dxlc:LayoutGroup>
+
+            </dxlc:LayoutGroup>
+
+            <dxg:GridControl ItemsSource="{Binding SelectedController.Columns}"
+                             SelectedItem="{Binding SelectedColumn}">
+                <dxg:GridControl.View>
+                    <dxg:TableView ShowGroupPanel="False" 
+                                   AutoWidth="True">
+                        <dxg:TableView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Добавить"
+                                          Command="{Binding AddColumnCommand}"/>
+                                <MenuItem Header="Удалить"
+                                          Command="{Binding DeleteColumnCommand}"/>
+                            </ContextMenu>
+                        </dxg:TableView.ContextMenu>
+                    </dxg:TableView>
+                </dxg:GridControl.View>
+                <dxg:GridColumn Header="Связь"
+                                FieldName="ConnectionStatus">
+                    <dxg:GridColumn.CellTemplate>
+                        <DataTemplate>
+                            <dxlc:LayoutControl Padding="0 0 5 0" ItemSpace="5">
+                                <Button Content="Проверка"
+                                        Command="{Binding DataContext.CheckStatusCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           Text="{Binding RowData.Row.ConnectionStatus, Converter={StaticResource ColumnConnectionStatusConverter}}"
+                                           Foreground="{Binding RowData.Row.ConnectionStatus, Converter={StaticResource ColumnConnectionStatusForegroundConverter}}"
+                                           VerticalAlignment="Center"
+                                           Style="{StaticResource ConnectionStatus}"/>
+                            </dxlc:LayoutControl>
+                        </DataTemplate>
+                    </dxg:GridColumn.CellTemplate>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Адрес ТРК"
+                                FieldName="Address">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:SpinEditSettings AllowSpin="False"
+                                              AllowDefaultButton="False"
+                                              MinValue="0"
+                                              MaxValue="255"
+                                              SelectAllOnMouseUp="True"
+                                              MaskUseAsDisplayFormat="True" 
+                                              Mask="n0"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Шланг"
+                                FieldName="Nozzle">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:SpinEditSettings MinValue="0"
+                                              MaxValue="3"
+                                              AllowSpin="False"
+                                              SelectAllOnMouseUp="True"
+                                              MaskUseAsDisplayFormat="True" 
+                                              Mask="n0"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Имя"
+                                FieldName="Name"/>
+                <dxg:GridColumn Header="Блокирована"
+                                FieldName="Settings.IsDisabled"/>
+                <dxg:GridColumn Header="Датчик пистолета"
+                                FieldName="Settings.ColumnSensorType">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:ComboBoxEditSettings ItemsSource="{Binding ColumnSensorTypes}"
+                                                  DisplayMember="Value"
+                                                  ValueMember="Key"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Время разгона насоса (мс)"
+                                FieldName="Settings.PumpAccelerationTime">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:SpinEditSettings MinValue="0" 
+                                              AllowDefaultButton="False"
+                                              MaxValue="16320" 
+                                              SelectAllOnMouseUp="True"
+                                              MaskUseAsDisplayFormat="True" 
+                                              Mask="n0"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Константа снижения расхода"
+                                FieldName="Settings.ReduceCosts">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:SpinEditSettings MinValue="0" 
+                                              AllowDefaultButton="False"
+                                              MaxValue="255"
+                                              SelectAllOnMouseUp="True"
+                                              MaskUseAsDisplayFormat="True" 
+                                              Mask="n0"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Константа перелива"
+                                FieldName="Settings.Transfuse"/>
+                <dxg:GridColumn Header="Блокировка работы канала"
+                                FieldName="Settings.BlockingChannelOperation"/>
+            </dxg:GridControl>
+
+            <Button HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Content="Сохранить настройки"
+                    Command="{Binding SaveCommand}"/>
+
+        </dxlc:LayoutControl>
+
+    </dx:LoadingDecorator>
+
+</local:BaseView>

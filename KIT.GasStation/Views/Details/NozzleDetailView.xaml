@@ -1,0 +1,54 @@
+﻿<local:BaseView
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    x:Class="KIT.GasStation.Views.Details.NozzleDetailView"
+    Width="400">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <dxlc:LayoutItem Label="Наименование">
+            <dxe:TextEdit EditValue="{Binding CreatedNozzle.Name}"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Код стороны">
+            <dxe:TextEdit EditValue="{Binding CreatedNozzle.Side}" MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n0"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Код шланга">
+            <dxe:TextEdit EditValue="{Binding CreatedNozzle.Tube}" MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n0"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Резервуар">
+            <dxe:ComboBoxEdit ItemsSource="{Binding Tanks}"
+                              DisplayMember="Name"
+                              ValueMember="Id"
+                              EditValue="{Binding CreatedNozzle.TankId}"
+                              ShowError="False"
+                              ShowErrorToolTip="False"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutItem Label="Канал контроллера">
+            <dxe:ComboBoxEdit ItemsSource="{Binding Columns}"
+                              ValueMember="Id"
+                              DisplayMember="DisplayName"
+                              EditValue="{Binding CreatedNozzle.ColumnId}"
+                              ShowError="False"
+                              ShowErrorToolTip="False"/>
+        </dxlc:LayoutItem>
+
+        <dxlc:LayoutGroup HorizontalAlignment="Right">
+
+            <Button Content="Сохранить"
+                    Command="{Binding SaveCommand}"/>
+
+            <Button Style="{StaticResource CancelButton}"/>
+
+        </dxlc:LayoutGroup>
+
+    </dxlc:LayoutControl>
+
+</local:BaseView>

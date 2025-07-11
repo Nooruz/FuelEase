@@ -1,0 +1,100 @@
+﻿using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Services;
+using KIT.GasStation.EntityFramework.Services.Common;
+using Microsoft.EntityFrameworkCore;
+
+namespace KIT.GasStation.EntityFramework.Services
+{
+    public class FiscalDataService : IFiscalDataService
+    {
+        #region Private Members
+
+        private GasStationDbContextFactory _contextFactory;
+        private readonly NonQueryDataService<FiscalData> _nonQueryDataService;
+
+        public event Action<FiscalData> OnCreated;
+        public event Action<FiscalData> OnUpdated;
+        public event Action<int> OnDeleted;
+
+        #endregion
+
+        #region Constructor
+
+        public FiscalDataService(GasStationDbContextFactory contextFactory)
+        {
+            _contextFactory = contextFactory;
+            _nonQueryDataService = new NonQueryDataService<FiscalData>(_contextFactory);
+        }
+
+        #endregion
+
+        public async Task<FiscalData> CreateAsync(FiscalData entity)
+        {
+            var result = await _nonQueryDataService.Create(entity);
+            if (result != null)
+                OnCreated?.Invoke(result);
+            return result;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var result = await _nonQueryDataService.Delete(id);
+            if (result)
+                OnDeleted?.Invoke(id);
+            return result;
+        }
+
+        public async Task<IEnumerable<FiscalData>> GetAllAsync(int shiftId)
+        {
+            try
+            {
+                await using GasStationDbContext context = _contextFactory.CreateDbContext();
+                return await context.FiscalDatas
+                    .ToListAsync();
+            }
+            catch (Exception)
+            {
+                //ignore
+            }
+            return null;
+        }
+
+        public async Task<IEnumerable<FiscalData>> GetAllAsync()
+        {
+            try
+            {
+                await using GasStationDbContext context = _contextFactory.CreateDbContext();
+                return await context.FiscalDatas
+                    .ToListAsync();
+            }
+            catch (Exception)
+            {
+                //ignore
+            }
+            return null;
+        }
+
+        public async Task<FiscalData> GetAsync(int id)
+        {
+            try
+            {
+                await using GasStationDbContext context = _contextFactory.CreateDbContext();
+                return await context.FiscalDatas
+                    .FirstOrDefaultAsync((e) => e.Id == id);
+            }
+            catch (Exception)
+            {
+                //ignore
+            }
+            return null;
+        }
+
+        public async Task<FiscalData> UpdateAsync(int id, FiscalData entity)
+        {
+            var result = await _nonQueryDataService.Update(id, entity);
+            if (result != null)
+                OnUpdated?.Invoke(result);
+            return result;
+        }
+    }
+}
