@@ -4,7 +4,6 @@ using DevExpress.Xpf.Editors;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
-using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
@@ -348,34 +347,34 @@ namespace KIT.GasStation.ViewModels
             }
 
             // Проверяем, настроено ли ККМ в Конфигураторе оборудования
-            if (_cashRegisterStore.CashRegister == null)
-            {
-                MessageBoxService.ShowMessage(
-                        "Ошибка конфигурации!",
-                        "ККМ не настроено. Проверьте настройки в Конфигураторе оборудования.",
-                        MessageButton.OK,
-                        MessageIcon.Error
-                    );
-                return false;
-            }
+            //if (_cashRegisterStore.CashRegister == null)
+            //{
+            //    MessageBoxService.ShowMessage(
+            //            "Ошибка конфигурации!",
+            //            "ККМ не настроено. Проверьте настройки в Конфигураторе оборудования.",
+            //            MessageButton.OK,
+            //            MessageIcon.Error
+            //        );
+            //    return false;
+            //}
 
             // Определяем сообщение в зависимости от текущего статуса ККМ
-            string? message = _cashRegisterStore.CashRegister.Status switch
-            {
-                CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
-                CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
-                CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
-                CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
-                CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
-                _ => null
-            };
+            //string? message = _cashRegisterStore.CashRegister.Status switch
+            //{
+            //    CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
+            //    CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
+            //    CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
+            //    CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
+            //    CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
+            //    _ => null
+            //};
 
             // Если сообщение определено, выводим его пользователю
-            if (message != null)
-            {
-                _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
-                return false;
-            }
+            //if (message != null)
+            //{
+            //    _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
+            //    return false;
+            //}
             return true;
         }
 

@@ -3,9 +3,6 @@ using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
-using KIT.GasStation.EntityFramework.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
-using KIT.GasStation.HardwareConfigurations.Services;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Details;
 using KIT.GasStation.ViewModels.Factories;
@@ -27,7 +24,7 @@ namespace KIT.GasStation.ViewModels
         private readonly ITankService _tankService;
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
         private readonly IUnitOfMeasurementService _unitOfMeasurementService;
-        private readonly IHardwareConfigurationService _hardwareConfigurationService;
+        //private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private readonly ILogger<TanksViewModel> _logger;
         private Fuel _selectedFuel;
         private Nozzle _selectedNozzle;
@@ -36,7 +33,7 @@ namespace KIT.GasStation.ViewModels
         private ObservableCollection<TankFuelQuantityView> _tanks = new();
         private ObservableCollection<UnitOfMeasurement> _unitOfMeasurements = new();
         private ObservableCollection<Nozzle> _nozzles = new();
-        private ObservableCollection<Column> _columns = new();
+        //private ObservableCollection<Column> _columns = new();
 
         #endregion
 
@@ -105,15 +102,15 @@ namespace KIT.GasStation.ViewModels
                 OnPropertyChanged(nameof(Nozzles));
             }
         }
-        public ObservableCollection<Column> Columns
-        {
-            get => _columns;
-            set
-            {
-                _columns = value;
-                OnPropertyChanged(nameof(Columns));
-            }
-        }
+        //public ObservableCollection<Column> Columns
+        //{
+        //    get => _columns;
+        //    set
+        //    {
+        //        _columns = value;
+        //        OnPropertyChanged(nameof(Columns));
+        //    }
+        //}
 
         #endregion
 
@@ -123,7 +120,6 @@ namespace KIT.GasStation.ViewModels
             INozzleService nozzleService,
             IUnitOfMeasurementService unitOfMeasurementService,
             ITankService tankService,
-            IHardwareConfigurationService hardwareConfigurationService,
             IViewService<TankFuelQuantityView> tankFuelQuantityView,
             ILogger<TanksViewModel> logger)
         {
@@ -133,7 +129,7 @@ namespace KIT.GasStation.ViewModels
             _tankService = tankService;
             _logger = logger;
             _tankFuelQuantityView = tankFuelQuantityView;
-            _hardwareConfigurationService = hardwareConfigurationService;
+            //_hardwareConfigurationService = hardwareConfigurationService;
 
             Title = "Топлива и резервуары";
 
@@ -252,29 +248,29 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public async Task CreateNozzle()
         {
-            var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hardwareConfigurationService);
+            //var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hardwareConfigurationService);
 
-            await viewModel.StartAsync();
+            //await viewModel.StartAsync();
 
-            WindowService.Title = "Создание ТРК";
-            WindowService.Show(nameof(NozzleDetailView), viewModel);
+            //WindowService.Title = "Создание ТРК";
+            //WindowService.Show(nameof(NozzleDetailView), viewModel);
         }
 
         [Command]
         public async Task EditNozzle()
         {
-            if (SelectedNozzle != null)
-            {
-                var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hardwareConfigurationService)
-                {
-                    CreatedNozzle = new Nozzle(SelectedNozzle)
-                };
+            //if (SelectedNozzle != null)
+            //{
+            //    var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hardwareConfigurationService)
+            //    {
+            //        CreatedNozzle = new Nozzle(SelectedNozzle)
+            //    };
 
-                await viewModel.StartAsync();
+            //    await viewModel.StartAsync();
 
-                WindowService.Title = $"({SelectedNozzle.Name}) Редактирование";
-                WindowService.Show(nameof(NozzleDetailView), viewModel);
-            }
+            //    WindowService.Title = $"({SelectedNozzle.Name}) Редактирование";
+            //    WindowService.Show(nameof(NozzleDetailView), viewModel);
+            //}
         }
 
         [Command]
@@ -300,7 +296,7 @@ namespace KIT.GasStation.ViewModels
             Fuels = new(await _fuelService.GetAllAsync());
             Tanks = new(await _tankFuelQuantityView.GetAllAsync());
             Nozzles = new(await _nozzleService.GetAllAsync());
-            Columns = await _hardwareConfigurationService.GetColumnsAsync();
+            //Columns = await _hardwareConfigurationService.GetColumnsAsync();
         }
 
         #endregion

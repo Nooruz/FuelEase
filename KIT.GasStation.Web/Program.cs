@@ -1,33 +1,42 @@
-п»їusing KIT.GasStation.Web.Hubs;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
+Directory.CreateDirectory(logDirectory);
 
-// Add services to the container.
-builder.Services.AddRazorPages();
-builder.Services.AddSignalR();
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.File(
+        path: Path.Combine(logDirectory, "log-.txt"),
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7 // Храним только последние 7 дней
+    )
+    .CreateLogger();
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+try
 {
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    Log.Information("Starting up");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog();
+    builder.Services.AddSignalR();
+
+    var app = builder.Build();
+
+    //app.MapHub<DeviceHub>("/deviceHub");
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application start-up failed"); // Добавлено логирование ошибки  
+}
+finally
+{
+    Log.CloseAndFlush(); // Закрытие логгера  
 }
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
 
-app.UseRouting();
 
-app.UseAuthorization();
 
-app.MapRazorPages();
-
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapHub<EventPanelHub>("/eventpanel");
-});
-
-app.Run();

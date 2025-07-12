@@ -1,9 +1,5 @@
-﻿using KIT.GasStation.CashRegisters.Services;
-using KIT.GasStation.Common.Factories;
-using KIT.GasStation.Domain.Models;
+﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Exceptions;
-using KIT.GasStation.HardwareConfigurations.Models;
-using KIT.GasStation.HardwareConfigurations.Services;
 using KIT.GasStation.Properties;
 using System;
 using System.Collections.ObjectModel;
@@ -18,11 +14,11 @@ namespace KIT.GasStation.State.CashRegisters
     {
         #region Private Members
 
-        private readonly IHardwareConfigurationService _hardwareConfigurationService;
-        private readonly ICashRegisterFactory _cashRegisterFactory;
-        private ICashRegisterService _cashRegisterService;
-        private CashRegister _cashRegister;
-        private ObservableCollection<CashRegister> _cashRegisters = new();
+        //private readonly IHardwareConfigurationService _hardwareConfigurationService;
+        //private readonly ICashRegisterFactory _cashRegisterFactory;
+        //private ICashRegisterService _cashRegisterService;
+        //private CashRegister _cashRegister;
+        //private ObservableCollection<CashRegister> _cashRegisters = new();
 
         #endregion
 
@@ -33,40 +29,39 @@ namespace KIT.GasStation.State.CashRegisters
         public event Action OnShiftClosed;
         public event Action<FuelSale> OnReturning;
         public event Action<string> OnUnknownError;
-        public event Action<CashRegisterStatus> OnStatusChanged;
+        //public event Action<CashRegisterStatus> OnStatusChanged;
 
         #endregion
 
         #region Public Properties
 
-        public CashRegister CashRegister
-        {
-            get => _cashRegister;
-            set
-            {
-                _cashRegister = value;
-                OnPropertyChanged(nameof(CashRegister));
-            }
-        }
-        public ObservableCollection<CashRegister> CashRegisters
-        {
-            get => _cashRegisters;
-            set
-            {
-                _cashRegisters = value;
-                OnPropertyChanged(nameof(CashRegisters));
-            }
-        }
+        //public CashRegister CashRegister
+        //{
+        //    get => _cashRegister;
+        //    set
+        //    {
+        //        _cashRegister = value;
+        //        OnPropertyChanged(nameof(CashRegister));
+        //    }
+        //}
+        //public ObservableCollection<CashRegister> CashRegisters
+        //{
+        //    get => _cashRegisters;
+        //    set
+        //    {
+        //        _cashRegisters = value;
+        //        OnPropertyChanged(nameof(CashRegisters));
+        //    }
+        //}
 
         #endregion
 
         #region Constructors
 
-        public CashRegisterStore(IHardwareConfigurationService hardwareConfigurationService,
-            ICashRegisterFactory cashRegisterFactory)
+        public CashRegisterStore()
         {
-            _hardwareConfigurationService = hardwareConfigurationService;
-            _cashRegisterFactory = cashRegisterFactory;
+            //_hardwareConfigurationService = hardwareConfigurationService;
+            //_cashRegisterFactory = cashRegisterFactory;
         }
 
         #endregion
@@ -81,72 +76,73 @@ namespace KIT.GasStation.State.CashRegisters
 
         public async Task OpenShiftAsync()
         {
-            if (_cashRegisterService == null)
-            {
-                return;
-            }
+            //if (_cashRegisterService == null)
+            //{
+            //    return;
+            //}
 
-            await _cashRegisterService.OpenShiftAsync();
+            //await _cashRegisterService.OpenShiftAsync();
         }
 
         public async Task CloseShiftAsync()
         {
-            if (_cashRegisterService == null)
-            {
-                return;
-            }
+            //if (_cashRegisterService == null)
+            //{
+            //    return;
+            //}
 
-            await _cashRegisterService.CloseShiftAsync();
+            //await _cashRegisterService.CloseShiftAsync();
         }
 
         public async Task XReportAsync()
         {
-            if (_cashRegisterService == null)
-            {
-                return;
-            }
+            //if (_cashRegisterService == null)
+            //{
+            //    return;
+            //}
 
-            await _cashRegisterService.XReportAsync();
+            //await _cashRegisterService.XReportAsync();
         }
 
         public async Task<string?> GetShiftStateAsync()
         {
-            if (_cashRegisterService == null)
-            {
-                return string.Empty;
-            }
+            //if (_cashRegisterService == null)
+            //{
+            //    return string.Empty;
+            //}
 
-            return await _cashRegisterService.GetShiftStateAsync();
+            //return await _cashRegisterService.GetShiftStateAsync();
+            return null;
         }
 
         public async Task SaleAsync(FuelSale fuelSale, Fuel fuel)
         {
-            if (_cashRegisterService == null)
-            {
-                return;
-            }
+            //if (_cashRegisterService == null)
+            //{
+            //    return;
+            //}
 
-            await _cashRegisterService.SaleAsync(fuelSale, fuel);
+            //await _cashRegisterService.SaleAsync(fuelSale, fuel);
         }
 
         public async Task ReturnAsync(FuelSale fuelSale, Fuel fuel)
         {
-            if (_cashRegisterService == null)
-            {
-                return;
-            }
+            //if (_cashRegisterService == null)
+            //{
+            //    return;
+            //}
 
-            await _cashRegisterService.ReturnAsync(fuelSale, fuel);
+            //await _cashRegisterService.ReturnAsync(fuelSale, fuel);
         }
 
         public async Task ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel)
         {
-            if (_cashRegisterService == null)
-            {
-                return;
-            }
+            //if (_cashRegisterService == null)
+            //{
+            //    return;
+            //}
 
-            await _cashRegisterService.ReturnAndReceivedSaleAsync(fuelSale, fuel);
+            //await _cashRegisterService.ReturnAndReceivedSaleAsync(fuelSale, fuel);
         }
 
         #endregion
@@ -164,19 +160,19 @@ namespace KIT.GasStation.State.CashRegisters
                 Guid defaultCashRegisterId = Settings.Default.DefaultCashRegisterId;
 
                 // Получаем кассу по идентификатору
-                CashRegister? cashRegister = CashRegisters.FirstOrDefault(c => c.Id == defaultCashRegisterId);
+                //CashRegister? cashRegister = CashRegisters.FirstOrDefault(c => c.Id == defaultCashRegisterId);
 
                 // Если касса не найдена, то получаем первую кассу из списка
-                cashRegister ??= CashRegisters.FirstOrDefault();
+                //cashRegister ??= CashRegisters.FirstOrDefault();
 
-                if (cashRegister == null)
-                {
-                    throw new CashRegisterStoreException("Не найдено ни одной кассы");
-                }
+                //if (cashRegister == null)
+                //{
+                //    throw new CashRegisterStoreException("Не найдено ни одной кассы");
+                //}
 
-                CashRegister = cashRegister;
-                Settings.Default.DefaultCashRegisterId = cashRegister.Id;
-                Settings.Default.Save();
+                //CashRegister = cashRegister;
+                //Settings.Default.DefaultCashRegisterId = cashRegister.Id;
+                //Settings.Default.Save();
             }
             catch (Exception)
             {
@@ -191,7 +187,7 @@ namespace KIT.GasStation.State.CashRegisters
         {
             try
             {
-                CashRegisters = await _hardwareConfigurationService.GetCashRegistersAsync();
+                //CashRegisters = await _hardwareConfigurationService.GetCashRegistersAsync();
             }
             catch (Exception)
             {
@@ -202,12 +198,6 @@ namespace KIT.GasStation.State.CashRegisters
         private void CashRegisterService_OnReceiptPrinting()
         {
             OnReceiptPrinting?.Invoke();
-        }
-
-        private void CashRegisterService_OnStatusChanged(CashRegisterStatus status)
-        {
-            CashRegister.Status = status;
-            OnStatusChanged?.Invoke(status);
         }
 
         private void CashRegisterService_OnShiftClosed()
@@ -245,23 +235,23 @@ namespace KIT.GasStation.State.CashRegisters
             // Получаем кассу по умолчанию
             GetDefaultCashRegister();
 
-            if (CashRegister != null)
-            {
-                _cashRegisterService = await _cashRegisterFactory.CreateAsync(CashRegister.Id);
+            //if (CashRegister != null)
+            //{
+            //    _cashRegisterService = await _cashRegisterFactory.CreateAsync(CashRegister.Id);
 
-                _cashRegisterService.OnReceiptPrinting += CashRegisterService_OnReceiptPrinting;
-                _cashRegisterService.OnStatusChanged += CashRegisterService_OnStatusChanged;
-                _cashRegisterService.OnShiftOpened += CashRegisterService_OnShiftOpened;
-                _cashRegisterService.OnReturning += CashRegisterService_OnReturning;
-                _cashRegisterService.OnShiftClosed += CashRegisterService_OnShiftClosed;
-                _cashRegisterService.OnUnknownError += CashRegisterService_OnUnknownError;
+            //    _cashRegisterService.OnReceiptPrinting += CashRegisterService_OnReceiptPrinting;
+            //    _cashRegisterService.OnStatusChanged += CashRegisterService_OnStatusChanged;
+            //    _cashRegisterService.OnShiftOpened += CashRegisterService_OnShiftOpened;
+            //    _cashRegisterService.OnReturning += CashRegisterService_OnReturning;
+            //    _cashRegisterService.OnShiftClosed += CashRegisterService_OnShiftClosed;
+            //    _cashRegisterService.OnUnknownError += CashRegisterService_OnUnknownError;
 
-                await _cashRegisterService.InitializationAsync(CashRegister.Id);
+            //    await _cashRegisterService.InitializationAsync(CashRegister.Id);
 
-                await _cashRegisterService.XReportAsync(false);
+            //    await _cashRegisterService.XReportAsync(false);
 
-                return;
-            }
+            //    return;
+            //}
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)

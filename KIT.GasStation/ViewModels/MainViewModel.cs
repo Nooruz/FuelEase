@@ -1,10 +1,8 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Docking;
-using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Authenticators;
 using KIT.GasStation.State.CashRegisters;
@@ -182,7 +180,7 @@ namespace KIT.GasStation.ViewModels
             _notificationStore.OnShowing += NotificationStore_OnShowing;
             _cashRegisterStore.OnShiftOpened += CashRegisterStore_OnShiftOpened;
             _cashRegisterStore.OnShiftClosed += CashRegisterStore_OnShiftClosed;
-            _cashRegisterStore.OnStatusChanged += CashRegisterStore_OnStatusChanged;
+            //_cashRegisterStore.OnStatusChanged += CashRegisterStore_OnStatusChanged;
             _cashRegisterStore.OnUnknownError += CashRegisterStore_OnUnknownError;
         }
 
@@ -434,10 +432,10 @@ namespace KIT.GasStation.ViewModels
                 _splashScreenService.Show("Закрытие смены ККМ...");
                 await _cashRegisterStore.CloseShiftAsync();
             }
-            catch (CashRegisterException e)
-            {
-                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            }
+            //catch (CashRegisterException e)
+            //{
+            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            //}
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -463,10 +461,10 @@ namespace KIT.GasStation.ViewModels
                 _splashScreenService.Show("Открытие смены ККМ...");
                 await _cashRegisterStore.OpenShiftAsync();
             }
-            catch (CashRegisterException e)
-            {
-                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            }
+            //catch (CashRegisterException e)
+            //{
+            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            //}
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -489,10 +487,10 @@ namespace KIT.GasStation.ViewModels
                 _splashScreenService.Show("X-отчет ККМ...");
                 await _cashRegisterStore.XReportAsync();
             }
-            catch (CashRegisterException e)
-            {
-                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            }
+            //catch (CashRegisterException e)
+            //{
+            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            //}
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -525,10 +523,10 @@ namespace KIT.GasStation.ViewModels
                 WindowService.Title = "Состояние ККМ";
                 WindowService.Show(nameof(CashRegisterStateInfoView), viewModel);
             }
-            catch (CashRegisterException e)
-            {
-                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            }
+            //catch (CashRegisterException e)
+            //{
+            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            //}
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -557,10 +555,10 @@ namespace KIT.GasStation.ViewModels
                     WindowService.Show(nameof(CustomReceiptView), await _navigator.GetViewModelAsync(ViewType.CustomReceiptView));
                 }
             }
-            catch (CashRegisterException e)
-            {
-                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            }
+            //catch (CashRegisterException e)
+            //{
+            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            //}
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -840,23 +838,23 @@ namespace KIT.GasStation.ViewModels
                 MessageIcon.Information);
         }
 
-        private void CashRegisterStore_OnStatusChanged(CashRegisterStatus status)
-        {
-            //string? message = status switch
-            //{
-            //    CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
-            //    CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
-            //    CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
-            //    CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
-            //    CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
-            //    _ => null
-            //};
+        //private void CashRegisterStore_OnStatusChanged(CashRegisterStatus status)
+        //{
+        //    //string? message = status switch
+        //    //{
+        //    //    CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
+        //    //    CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
+        //    //    CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
+        //    //    CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
+        //    //    CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
+        //    //    _ => null
+        //    //};
 
-            //if (message != null)
-            //{
-            //    _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
-            //}
-        }
+        //    //if (message != null)
+        //    //{
+        //    //    _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
+        //    //}
+        //}
 
         private void CashRegisterStore_OnUnknownError(string errorMessage)
         {

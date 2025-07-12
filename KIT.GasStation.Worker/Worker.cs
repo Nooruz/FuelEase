@@ -1,4 +1,4 @@
-namespace KIT.GasStation.Server.Com
+namespace KIT.GasStation.Worker
 {
     public class Worker : BackgroundService
     {

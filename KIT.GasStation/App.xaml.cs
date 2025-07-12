@@ -1,7 +1,6 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Core;
-using KIT.GasStation.Common.HostBuilders;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.EntityFramework;
 using KIT.GasStation.HostBuilders;
@@ -131,11 +130,7 @@ namespace KIT.GasStation
         private IHostBuilder CreateHostBuilder(string[] args = null)
         {
             var host = Host.CreateDefaultBuilder(args);
-            _splashScreenViewModel.Status = "Регистрация основных сервисов...";
-            host.AddHardwareConfigurationsServices();
-            host.AddCashRegisters();
-            host.AddFuelDispensers();
-
+            
             _splashScreenViewModel.Status = "Загрузка конфигурации...";
             host.AddConfiguration();
 

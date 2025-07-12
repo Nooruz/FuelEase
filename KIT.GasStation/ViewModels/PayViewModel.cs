@@ -3,7 +3,6 @@ using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Editors;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Discounts;
 using KIT.GasStation.ViewModels.Base;
@@ -113,7 +112,7 @@ namespace KIT.GasStation.ViewModels
             _disсountStore = disсountStore;
             _cashRegisterStore = cashRegisterStore;
 
-            _cashRegisterStore.OnStatusChanged += CashRegisterStore_OnStatusChanged;
+            //_cashRegisterStore.OnStatusChanged += CashRegisterStore_OnStatusChanged;
             _cashRegisterStore.OnReceiptPrinting += CashRegisterStore_OnReceiptPrinting;
         }
 
@@ -171,23 +170,23 @@ namespace KIT.GasStation.ViewModels
 
         #region Private Voids
 
-        private void CashRegisterStore_OnStatusChanged(CashRegisterStatus status)
-        {
-            string? message = status switch
-            {
-                CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
-                CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
-                CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
-                CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
-                CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
-                _ => null
-            };
+        //private void CashRegisterStore_OnStatusChanged(CashRegisterStatus status)
+        //{
+        //    string? message = status switch
+        //    {
+        //        CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
+        //        CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
+        //        CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
+        //        CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
+        //        CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
+        //        _ => null
+        //    };
 
-            if (message != null)
-            {
-                _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
-            }
-        }
+        //    if (message != null)
+        //    {
+        //        _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
+        //    }
+        //}
 
         private void CashRegisterStore_OnReceiptPrinting()
         {
@@ -202,7 +201,7 @@ namespace KIT.GasStation.ViewModels
         {
             if (disposing)
             {
-                _cashRegisterStore.OnStatusChanged -= CashRegisterStore_OnStatusChanged;
+                //_cashRegisterStore.OnStatusChanged -= CashRegisterStore_OnStatusChanged;
                 _cashRegisterStore.OnReceiptPrinting -= CashRegisterStore_OnReceiptPrinting;
             }
 

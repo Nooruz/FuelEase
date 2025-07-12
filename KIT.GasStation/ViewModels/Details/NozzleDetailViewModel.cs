@@ -2,8 +2,6 @@
 using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
-using KIT.GasStation.HardwareConfigurations.Services;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
 using System.Collections.ObjectModel;
@@ -17,10 +15,10 @@ namespace KIT.GasStation.ViewModels.Details
 
         private readonly INozzleService _nozzleService;
         private readonly ITankService _tankService;
-        private readonly IHardwareConfigurationService _hardwareConfigurationService;
+        //private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private Nozzle _createdNozzle = new();
         private ObservableCollection<Tank> _tanks = new();
-        private ObservableCollection<Column> _columns = new();
+        //private ObservableCollection<Column> _columns = new();
 
         #endregion
 
@@ -45,27 +43,26 @@ namespace KIT.GasStation.ViewModels.Details
                 OnPropertyChanged(nameof(Tanks));
             }
         }
-        public ObservableCollection<Column> Columns
-        {
-            get => _columns;
-            set
-            {
-                _columns = value;
-                OnPropertyChanged(nameof(Columns));
-            }
-        }
+        //public ObservableCollection<Column> Columns
+        //{
+        //    get => _columns;
+        //    set
+        //    {
+        //        _columns = value;
+        //        OnPropertyChanged(nameof(Columns));
+        //    }
+        //}
 
         #endregion
 
         #region Constructors
 
         public NozzleDetailViewModel(INozzleService nozzleService,
-            ITankService tankService,
-            IHardwareConfigurationService hardwareConfigurationService)
+            ITankService tankService)
         {
             _nozzleService = nozzleService;
             _tankService = tankService;
-            _hardwareConfigurationService = hardwareConfigurationService;
+            //_hardwareConfigurationService = hardwareConfigurationService;
         }
 
         #endregion
@@ -131,7 +128,7 @@ namespace KIT.GasStation.ViewModels.Details
         private async Task LoeadData()
         {
             Tanks = new(await _tankService.GetAllAsync());
-            Columns = await _hardwareConfigurationService.GetColumnsAsync();
+            //Columns = await _hardwareConfigurationService.GetColumnsAsync();
         }
 
         #endregion

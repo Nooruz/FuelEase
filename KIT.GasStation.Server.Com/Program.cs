@@ -1,7 +1,0 @@
-using KIT.GasStation.Server.Com;
-
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
-
-var host = builder.Build();
-host.Run();

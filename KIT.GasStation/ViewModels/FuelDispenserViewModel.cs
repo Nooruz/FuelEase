@@ -1,9 +1,6 @@
 ﻿using DevExpress.Mvvm.DataAnnotations;
-using KIT.GasStation.Common.Factories;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
-using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Nozzles;
 using KIT.GasStation.State.Shifts;
@@ -29,13 +26,11 @@ namespace KIT.GasStation.ViewModels
         private readonly INozzleStore _nozzleStore;
         private readonly IFuelSaleService _fuelSaleService;
         private readonly IFuelService _fuelService;
-        private readonly IFuelDispenserFactory _fuelDispenserFactory;
         private readonly ICashRegisterStore _cashRegisterStore;
         private readonly IShiftStore _shiftStore;
         private readonly IShiftCounterService _shiftCounterService;
         private readonly IUnregisteredSaleService _unregisteredSaleService;
         private readonly IUserStore _userStore;
-        private IFuelDispenserService _fuelDispenserService;
         private bool _canSelectedNozzle = true;
         private int _side;
         private NozzleStatus _status;
@@ -122,8 +117,7 @@ namespace KIT.GasStation.ViewModels
 
         #region Constructors
 
-        public FuelDispenserViewModel(IFuelDispenserFactory fuelDispenserFactory,
-            INozzleStore nozzleStore,
+        public FuelDispenserViewModel(INozzleStore nozzleStore,
             IFuelSaleService fuelSaleService,
             ICashRegisterStore cashRegisterStore,
             IShiftStore shiftStore,
@@ -132,7 +126,6 @@ namespace KIT.GasStation.ViewModels
             IFuelService fuelService,
             IUserStore userStore)
         {
-            _fuelDispenserFactory = fuelDispenserFactory;
             _nozzleStore = nozzleStore;
             _fuelSaleService = fuelSaleService;
             _cashRegisterStore = cashRegisterStore;
@@ -239,12 +232,12 @@ namespace KIT.GasStation.ViewModels
             {
                 if (Nozzles.Count == 0) return;
 
-                _fuelDispenserService = await _fuelDispenserFactory.CreateAsync(Nozzles);
+                //_fuelDispenserService = await _fuelDispenserFactory.CreateAsync(Nozzles);
 
-                if (_fuelDispenserService == null) return;
+                //if (_fuelDispenserService == null) return;
 
-                // Получаем информацию о последних продажах по пистолетам
-                await GetNozzleLastFuelSale();
+                //// Получаем информацию о последних продажах по пистолетам
+                //await GetNozzleLastFuelSale();
 
                 //_fuelDispenserService.OnStatusChanged += OnStatusChanged;
                 //_fuelDispenserService.OnCounterReceived += OnCounterReceived;
@@ -270,7 +263,7 @@ namespace KIT.GasStation.ViewModels
                 }
 
                 // Запускаем цикл опроса статуса
-                await _fuelDispenserService.StartStatusPolling(0);
+                //await _fuelDispenserService.StartStatusPolling(0);
             }
             catch (OperationCanceledException)
             {
@@ -293,8 +286,8 @@ namespace KIT.GasStation.ViewModels
                     await _startTask; // Ждём завершения StartAsync
                 }
 
-                _fuelDispenserService?.Dispose();
-                _fuelDispenserService = null;
+                //_fuelDispenserService?.Dispose();
+                //_fuelDispenserService = null;
             }
             catch (Exception e)
             {
@@ -593,15 +586,15 @@ namespace KIT.GasStation.ViewModels
                 }
                 else
                 {
-                    await _fuelDispenserService.SetPriceAsync(nozzle);
-                    if (fuelSale.IsForSum)
-                    {
-                        await _fuelDispenserService.StartRefuelingSumAsync(nozzle);
-                    }
-                    else
-                    {
-                        //await _fuelDispenserService.StartRefuelingQuantityAsync(nozzle);
-                    }
+                    //await _fuelDispenserService.SetPriceAsync(nozzle);
+                    //if (fuelSale.IsForSum)
+                    //{
+                    //    await _fuelDispenserService.StartRefuelingSumAsync(nozzle);
+                    //}
+                    //else
+                    //{
+                    //    //await _fuelDispenserService.StartRefuelingQuantityAsync(nozzle);
+                    //}
                 }
             });
 

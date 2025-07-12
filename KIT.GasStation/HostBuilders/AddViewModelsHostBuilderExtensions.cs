@@ -1,8 +1,6 @@
-﻿using KIT.GasStation.Common.Factories;
-using KIT.GasStation.Domain.Models;
+﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
-using KIT.GasStation.HardwareConfigurations.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Authenticators;
 using KIT.GasStation.State.CashRegisters;
@@ -103,8 +101,7 @@ namespace KIT.GasStation.HostBuilders
 
         private static FuelDispenserViewModel CreateFuelDispenserViewModel(IServiceProvider services)
         {
-            return new FuelDispenserViewModel(services.GetRequiredService<IFuelDispenserFactory>(),
-                services.GetRequiredService<INozzleStore>(),
+            return new FuelDispenserViewModel(services.GetRequiredService<INozzleStore>(),
                 services.GetRequiredService<IFuelSaleService>(),
                 services.GetRequiredService<ICashRegisterStore>(),
                 services.GetRequiredService<IShiftStore>(),
@@ -243,7 +240,6 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<INozzleService>(),
                 services.GetRequiredService<IUnitOfMeasurementService>(),
                 services.GetRequiredService<ITankService>(),
-                services.GetRequiredService<IHardwareConfigurationService>(),
                 services.GetRequiredService<IViewService<TankFuelQuantityView>>(),
                 services.GetRequiredService<ILogger<TanksViewModel>>());
         }

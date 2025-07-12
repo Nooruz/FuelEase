@@ -1,5 +1,4 @@
 ﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.ViewModels;
 using System;
 using System.Globalization;
