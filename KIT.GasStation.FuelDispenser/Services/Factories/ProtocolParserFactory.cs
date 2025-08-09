@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.HardwareConfigurations.Models;
+﻿using KIT.GasStation.HardwareConfigurations.Models;
 
 namespace KIT.GasStation.FuelDispenser.Services.Factories
 {
@@ -20,15 +19,14 @@ namespace KIT.GasStation.FuelDispenser.Services.Factories
 
         #endregion
 
-        public IProtocolParser CreateIProtocolParser(ControllerType controllerType,
-            List<Nozzle> nozzles)
+        public IProtocolParser CreateIProtocolParser(ControllerType controllerType)
         {
             return controllerType switch
             {
                 ControllerType.Lanfeng =>
                     new LanfengProtocolParser(_commandEncoderFactory.Create(ControllerType.Lanfeng)),
                 ControllerType.PKElectronics => 
-                    new PKElectronicsProtocolParser(_commandEncoderFactory.Create(ControllerType.PKElectronics), nozzles),
+                    new PKElectronicsProtocolParser(_commandEncoderFactory.Create(ControllerType.PKElectronics)),
                 _ => throw new ArgumentException("Unknown controller type"),
             };
         }

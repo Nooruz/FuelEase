@@ -12,7 +12,7 @@
 	<PlatformTarget>AnyCPU</PlatformTarget>
     <SignAssembly>False</SignAssembly>
     <ErrorReport>prompt</ErrorReport>
-    <BaseOutputPath></BaseOutputPath>
+	<OutputPath>C:\Users\nooru\source\Nooruz\FuelEase\KIT.GasStation.Hardware\bin</OutputPath>
     <AssemblyName>HardwareConfiguration</AssemblyName>
     <ApplicationIcon>computer.ico</ApplicationIcon>
   </PropertyGroup>

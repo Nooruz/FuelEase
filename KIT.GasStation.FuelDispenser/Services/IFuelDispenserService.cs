@@ -1,13 +1,11 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.HardwareConfigurations.Models;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace KIT.GasStation.FuelDispenser.Services
 {
     /// <summary>
     /// Интерфейс для управления топливораздаточными устройствами.
     /// </summary>
-    public delegate TFuelDispenser CreateFuelDispenser<TFuelDispenser>(IEnumerable<Nozzle>? nozzles) where TFuelDispenser : IFuelDispenserService;
+    public delegate TFuelDispenser CreateFuelDispenser<TFuelDispenser>() where TFuelDispenser : IFuelDispenserService;
     public interface IFuelDispenserService : INotifyPropertyChanged, IDisposable
     {
         #region Actions
@@ -83,11 +81,11 @@ namespace KIT.GasStation.FuelDispenser.Services
 
         Task Connect(string comPort, int baudRate);
 
-        Task<NozzleStatus> CheckStatusAsync(Column column);
+        //Task<NozzleStatus> CheckStatusAsync(Column column);
 
-        Task SetPriceAsync(Nozzle nozzle, decimal? price = null);
+        //Task SetPriceAsync(Nozzle nozzle, decimal? price = null);
 
-        Task StartRefuelingSumAsync(Nozzle nozzle, decimal? sum = null);
+        //Task StartRefuelingSumAsync(Nozzle nozzle, decimal? sum = null);
 
         #endregion
 

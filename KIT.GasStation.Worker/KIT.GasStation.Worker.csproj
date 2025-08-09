@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-KIT.GasStation.Worker-ef426ca9-6c92-480c-991c-9a2b8fe1e747</UserSecretsId>
+	<OutputPath>C:\Users\nooru\source\Nooruz\FuelEase\KIT.GasStation.Hardware\bin</OutputPath>
+	<Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,5 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\KIT.GasStation.Common\KIT.GasStation.Common.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.HardwareConfiguration\KIT.GasStation.HardwareConfigurations.csproj" />
   </ItemGroup>
 </Project>

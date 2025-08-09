@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Commands;
+﻿using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
@@ -23,7 +22,6 @@ namespace KIT.GasStation.Lanfeng
         private readonly IProtocolParser _parser;
         private ISharedSerialPortService _portService;
         private int _controllerAddress;
-        private readonly List<Nozzle> _nozzles;
         private ILogger _logger;
         private LanfengControllerType _lanfengControllerType;
 
@@ -81,13 +79,11 @@ namespace KIT.GasStation.Lanfeng
 
         public LanfengFuelDispenser(IPortManager portManager,
             IHardwareConfigurationService hardwareConfigurationService,
-            IProtocolParserFactory protocolParserFactory,
-            IEnumerable<Nozzle>? nozzles)
+            IProtocolParserFactory protocolParserFactory)
         {
             _portManager = portManager;
             _hardwareConfigurationService = hardwareConfigurationService;
-            _nozzles = nozzles?.ToList() ?? new List<Nozzle>();
-            _parser = protocolParserFactory.CreateIProtocolParser(ControllerType.Lanfeng, _nozzles);
+            _parser = protocolParserFactory.CreateIProtocolParser(ControllerType.Lanfeng);
         }
 
         #endregion
@@ -97,51 +93,51 @@ namespace KIT.GasStation.Lanfeng
         /// <inheritdoc/>
         public async Task StartStatusPolling(int intervalMs = 200)
         {
-            if (_statusCts != null)
-                throw new InvalidOperationException("Пуллинг уже запущен");
+            //if (_statusCts != null)
+            //    throw new InvalidOperationException("Пуллинг уже запущен");
 
-            if (_nozzles is { Count: > 0 })
-            {
-                foreach (var item in _nozzles)
-                {
-                    Column? col = await _hardwareConfigurationService.GetColumnByIdAsync(item.ColumnId);
+            //if (_nozzles is { Count: > 0 })
+            //{
+            //    foreach (var item in _nozzles)
+            //    {
+            //        Column? col = await _hardwareConfigurationService.GetColumnByIdAsync(item.ColumnId);
 
-                    if (col != null)
-                    {
-                        item.Number = col.Nozzle;
-                    }
-                }
-            }
-            else
-            {
-                return;
-            }
+            //        if (col != null)
+            //        {
+            //            item.Number = col.Nozzle;
+            //        }
+            //    }
+            //}
+            //else
+            //{
+            //    return;
+            //}
 
-            Nozzle nozzle = _nozzles[0];
+            //Nozzle nozzle = _nozzles[0];
 
-            Column? column = await _hardwareConfigurationService.GetColumnByIdAsync(nozzle.ColumnId);
+            //Column? column = await _hardwareConfigurationService.GetColumnByIdAsync(nozzle.ColumnId);
 
-            if (column == null)
-            {
-                _logger.Error($"Колонка с идентификатором {nozzle.ColumnId} не найдена.");
-                return;
-            }
+            //if (column == null)
+            //{
+            //    _logger.Error($"Колонка с идентификатором {nozzle.ColumnId} не найдена.");
+            //    return;
+            //}
 
-            // Устанавливаем адрес
-            _controllerAddress = column.Address;
+            //// Устанавливаем адрес
+            //_controllerAddress = column.Address;
 
-            if (column.Controller == null)
-            {
-                _logger.Error($"Колонка с идентификатором {nozzle.ColumnId} не содержит информации о контроллере.");
-                return;
-            }
+            //if (column.Controller == null)
+            //{
+            //    _logger.Error($"Колонка с идентификатором {nozzle.ColumnId} не содержит информации о контроллере.");
+            //    return;
+            //}
 
-            _portService = await _portManager.GetPortServiceAsync(column.Controller.ComPort, column.Controller.BaudRate);
+            //_portService = await _portManager.GetPortServiceAsync(column.Controller.ComPort, column.Controller.BaudRate);
 
-            await InitializeAsync(nozzle.Side);
+            //await InitializeAsync(nozzle.Side);
 
-            _statusCts = new CancellationTokenSource();
-            _statusTask = Task.Run(() => StatusLoopAsync(intervalMs, _statusCts.Token));
+            //_statusCts = new CancellationTokenSource();
+            //_statusTask = Task.Run(() => StatusLoopAsync(intervalMs, _statusCts.Token));
         }
 
         public async Task Connect(string comPort, int baudRate)
@@ -156,61 +152,46 @@ namespace KIT.GasStation.Lanfeng
             }
         }
 
-        public async Task<NozzleStatus> CheckStatusAsync(Column column)
-        {
-            return NozzleStatus.Unknown;
-        }
-
-        public async Task SetPriceAsync(Nozzle nozzle, decimal? price = null)
-        {
-
-        }
-
-        public async Task StartRefuelingSumAsync(Nozzle nozzle, decimal? sum = null)
-        {
-
-        }
-
         #endregion
 
         #region Private Voids
 
         private async Task StatusLoopAsync(int intervalMs, CancellationToken token)
         {
-            try
-            {
-                while (!token.IsCancellationRequested)
-                {
-                    foreach (var nozzle in _nozzles)
-                    {
-                        var request = _parser.BuildRequest(Command.Status, _controllerAddress, 0);
+//            try
+//            {
+//                while (!token.IsCancellationRequested)
+//                {
+//                    foreach (var nozzle in _nozzles)
+//                    {
+//                        var request = _parser.BuildRequest(Command.Status, _controllerAddress, 0);
 
-#if DEBUG
+//#if DEBUG
 
-                        string asd = BitConverter.ToString(request);
+//                        string asd = BitConverter.ToString(request);
 
-#endif
-                        var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 14)
-                                                      .ConfigureAwait(false);
-                        var response = _parser.ParseResponse(raw, Command.Status);
+//#endif
+//                        var raw = await _portService.WriteReadAsync(request, expectedResponseLength: 14)
+//                                                      .ConfigureAwait(false);
+//                        var response = _parser.ParseResponse(raw, Command.Status);
                         
-                        nozzle.Status  = response.Status;
-                        nozzle.ReceivedQuantity = response.Quantity;
-                        nozzle.ReceivedSum = response.Sum;
+//                        nozzle.Status  = response.Status;
+//                        nozzle.ReceivedQuantity = response.Quantity;
+//                        nozzle.ReceivedSum = response.Sum;
                         
-                        //OnDataReceived?.Invoke(nozzle, response);
-                    }
-                    await Task.Delay(intervalMs, token).ConfigureAwait(false);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Ожидаемо при остановке
-            }
-            catch (Exception ex)
-            {
-                //OnConnectionLost?.Invoke(ex);
-            }
+//                        //OnDataReceived?.Invoke(nozzle, response);
+//                    }
+//                    await Task.Delay(intervalMs, token).ConfigureAwait(false);
+//                }
+//            }
+//            catch (OperationCanceledException)
+//            {
+//                // Ожидаемо при остановке
+//            }
+//            catch (Exception ex)
+//            {
+//                //OnConnectionLost?.Invoke(ex);
+//            }
         }
 
         private async Task InitializeAsync(int side)
@@ -284,10 +265,10 @@ namespace KIT.GasStation.Lanfeng
 
         private async Task InitializeByNozzlesAsync()
         {
-            foreach (var nozzle in _nozzles)
-            {
+            //foreach (var nozzle in _nozzles)
+            //{
 
-            }
+            //}
         }
 
         #endregion

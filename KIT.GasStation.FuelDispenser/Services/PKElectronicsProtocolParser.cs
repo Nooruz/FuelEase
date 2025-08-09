@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Commands;
+﻿using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Models;
 
 namespace KIT.GasStation.FuelDispenser.Services
@@ -9,17 +8,14 @@ namespace KIT.GasStation.FuelDispenser.Services
         #region Private Members
 
         private readonly ICommandEncoder _commandEncoder;
-        private List<Nozzle> _nozzles = new();
 
         #endregion
 
         #region Constructors
 
-        public PKElectronicsProtocolParser(ICommandEncoder commandEncoder,
-            List<Nozzle> nozzles)
+        public PKElectronicsProtocolParser(ICommandEncoder commandEncoder)
         {
             _commandEncoder = commandEncoder;
-            _nozzles = nozzles;
         }
 
         #endregion
@@ -97,7 +93,7 @@ namespace KIT.GasStation.FuelDispenser.Services
             if (cmd != receivedcmd)
                 return new DeviceResponse { IsValid = false };
 
-            var status = ConvertByteToNozzleStatus(rawResponse[2]);
+            //var status = ConvertByteToNozzleStatus(rawResponse[2]);
 
             var lifted = rawResponse[2];
 
@@ -110,7 +106,7 @@ namespace KIT.GasStation.FuelDispenser.Services
             {
                 IsValid = true,
                 Command = receivedcmd,
-                Status = status,
+                //Status = status,
                 Address = columnAddress,
                 IsLifted = lifted is 0x93 or 0x83
             };
@@ -165,18 +161,18 @@ namespace KIT.GasStation.FuelDispenser.Services
             return checksum;
         }
 
-        private NozzleStatus ConvertByteToNozzleStatus(byte statusByte)
-        {
-            return statusByte switch
-            {
-                0x91 or 0x81 => NozzleStatus.Ready,
-                0x93 or 0x83 => NozzleStatus.Ready,
-                0x96 or 0x86 => NozzleStatus.WaitingStop,
-                0xA6 or 0xB6 => NozzleStatus.PumpWorking,
-                0x9B or 0x8B or 0x9E or 0x8E => NozzleStatus.Blocking,
-                _ => NozzleStatus.Unknown
-            };
-        }
+        //private NozzleStatus ConvertByteToNozzleStatus(byte statusByte)
+        //{
+        //    return statusByte switch
+        //    {
+        //        0x91 or 0x81 => NozzleStatus.Ready,
+        //        0x93 or 0x83 => NozzleStatus.Ready,
+        //        0x96 or 0x86 => NozzleStatus.WaitingStop,
+        //        0xA6 or 0xB6 => NozzleStatus.PumpWorking,
+        //        0x9B or 0x8B or 0x9E or 0x8E => NozzleStatus.Blocking,
+        //        _ => NozzleStatus.Unknown
+        //    };
+        //}
 
         private byte[] ConvertDecimalToBytes(decimal decValue)
         {

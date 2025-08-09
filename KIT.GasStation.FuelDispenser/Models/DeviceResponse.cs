@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Commands;
+﻿using KIT.GasStation.FuelDispenser.Commands;
 
 namespace KIT.GasStation.FuelDispenser.Models
 {
@@ -16,10 +15,5 @@ namespace KIT.GasStation.FuelDispenser.Models
         public decimal Quantity { get; set; }
         public decimal Sum { get; set; }
         public bool IsLifted { get; set; }
-
-        /// <summary>
-        /// Статус колонки, извлечённый из 12-го байта ответа.
-        /// </summary>
-        public NozzleStatus Status { get; set; }
     }
 }

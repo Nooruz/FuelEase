@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Commands;
+﻿using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Models;
 using System.Buffers;
 
@@ -89,7 +88,7 @@ namespace KIT.GasStation.FuelDispenser.Services
 
             // Извлекаем статус колонки из 12-го байта (индекс 11)
             byte statusByte = rawResponse[11];
-            var (statusAddress, status) = ParseStatusAndAddress(statusByte);
+            //var (statusAddress, status) = ParseStatusAndAddress(statusByte);
 
             decimal sumValue = 0m;
             decimal quantityValue = 0m;
@@ -106,10 +105,10 @@ namespace KIT.GasStation.FuelDispenser.Services
                 Command = cmd,
                 Data = rawResponse,
                 IsValid = true,
-                Status = status,
+                //Status = status,
                 Sum = sumValue,
                 Quantity = quantityValue,
-                StatusAddress = statusAddress,
+                //StatusAddress = statusAddress,
             };
         }
 
@@ -184,26 +183,26 @@ namespace KIT.GasStation.FuelDispenser.Services
         ///   - младшие 4 бита — код статуса (1 = Ready, 2 = PumpWorking, …).
         /// Возвращает сразу и адрес, и статус.
         /// </summary>
-        private static (byte nozzleAddress, NozzleStatus status) ParseStatusAndAddress(byte statusByte)
-        {
-            // Адрес пистолета — в старших 4 битах
-            byte nozzleAddress = (byte)((statusByte >> 4) & 0x0F);
+        //private static (byte nozzleAddress, NozzleStatus status) ParseStatusAndAddress(byte statusByte)
+        //{
+        //    // Адрес пистолета — в старших 4 битах
+        //    byte nozzleAddress = (byte)((statusByte >> 4) & 0x0F);
 
-            // Код статуса — в младших 4 битах
-            byte statusCode = (byte)(statusByte & 0x0F);
+        //    // Код статуса — в младших 4 битах
+        //    byte statusCode = (byte)(statusByte & 0x0F);
 
-            NozzleStatus status = statusCode switch
-            {
-                1 => NozzleStatus.Ready,
-                2 => NozzleStatus.PumpWorking,
-                3 => NozzleStatus.WaitingStop,
-                4 => NozzleStatus.PumpStop,
-                5 => NozzleStatus.WaitingRemoved,
-                _ => NozzleStatus.Unknown
-            };
+        //    NozzleStatus status = statusCode switch
+        //    {
+        //        1 => NozzleStatus.Ready,
+        //        2 => NozzleStatus.PumpWorking,
+        //        3 => NozzleStatus.WaitingStop,
+        //        4 => NozzleStatus.PumpStop,
+        //        5 => NozzleStatus.WaitingRemoved,
+        //        _ => NozzleStatus.Unknown
+        //    };
 
-            return (nozzleAddress, status);
-        }
+        //    return (nozzleAddress, status);
+        //}
 
         #endregion
     }

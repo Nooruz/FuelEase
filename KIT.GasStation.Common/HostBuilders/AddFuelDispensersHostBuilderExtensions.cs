@@ -1,5 +1,4 @@
 ﻿using KIT.GasStation.Common.Factories;
-using KIT.GasStation.Domain.Models;
 using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.FuelDispenserEmulator;
@@ -31,8 +30,8 @@ namespace KIT.GasStation.Common.HostBuilders
                 services.AddTransient(CreateTechnoProjektFuelDispenser);
                 services.AddTransient(CreateEmulatorFuelDispenser);
 
-                services.AddSingleton<CreateFuelDispenser<LanfengFuelDispenser>>(servicesProvider => (nozzles) => CreateLanfengFuelDispenser(servicesProvider, nozzles));
-                services.AddSingleton<CreateFuelDispenser<PKElectronicsFuelDispenser>>(servicesProvider => (nozzles) => CreatePKElectronicsFuelDispenser(servicesProvider, nozzles));
+                services.AddSingleton<CreateFuelDispenser<LanfengFuelDispenser>>(servicesProvider => () => CreateLanfengFuelDispenser(servicesProvider));
+                services.AddSingleton<CreateFuelDispenser<PKElectronicsFuelDispenser>>(servicesProvider => () => CreatePKElectronicsFuelDispenser(servicesProvider));
                 //services.AddSingleton<CreateFuelDispenser<TechnoProjektFuelDispenser>>(servicesProvider => () => CreateTechnoProjektFuelDispenser(servicesProvider));
                 //services.AddSingleton<CreateFuelDispenser<EmulatorFuelDispenser>>(servicesProvider => () => CreateEmulatorFuelDispenser(servicesProvider));
 
@@ -45,13 +44,11 @@ namespace KIT.GasStation.Common.HostBuilders
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        public static LanfengFuelDispenser CreateLanfengFuelDispenser(IServiceProvider services, 
-            IEnumerable<Nozzle>? nozzles)
+        public static LanfengFuelDispenser CreateLanfengFuelDispenser(IServiceProvider services)
         {
             return new LanfengFuelDispenser(services.GetRequiredService<IPortManager>(),
                 services.GetRequiredService<IHardwareConfigurationService>(),
-                services.GetRequiredService<IProtocolParserFactory>(),
-                nozzles);
+                services.GetRequiredService<IProtocolParserFactory>());
         }
 
         /// <summary>
@@ -59,13 +56,11 @@ namespace KIT.GasStation.Common.HostBuilders
         /// </summary>
         /// <param name="services"></param>
         /// <returns></returns>
-        public static PKElectronicsFuelDispenser CreatePKElectronicsFuelDispenser(IServiceProvider services,
-            IEnumerable<Nozzle>? nozzles)
+        public static PKElectronicsFuelDispenser CreatePKElectronicsFuelDispenser(IServiceProvider services)
         {
             return new PKElectronicsFuelDispenser(services.GetRequiredService<IPortManager>(),
                 services.GetRequiredService<IHardwareConfigurationService>(),
-                services.GetRequiredService<IProtocolParserFactory>(),
-                nozzles);
+                services.GetRequiredService<IProtocolParserFactory>());
         }
 
         /// <summary>
