@@ -1,6 +1,9 @@
 using KIT.GasStation.Common.Factories;
+using KIT.GasStation.FuelDispenser.Hubs;
+using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
+using Microsoft.AspNetCore.SignalR;
 
 namespace KIT.GasStation.Worker
 {
@@ -9,14 +12,20 @@ namespace KIT.GasStation.Worker
         private readonly ILogger<Worker> _logger;
         private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private readonly IFuelDispenserFactory _fuelDispenserFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IHubContext<DeviceResponseHub, IDeviceResponseClient> _hub;
 
         public Worker(ILogger<Worker> logger,
             IHardwareConfigurationService hardwareConfigurationService,
-            IFuelDispenserFactory fuelDispenserFactory)
+            IFuelDispenserFactory fuelDispenserFactory,
+            IServiceScopeFactory scopeFactory,
+            IHubContext<DeviceResponseHub, IDeviceResponseClient> hub)
         {
             _logger = logger;
             _hardwareConfigurationService = hardwareConfigurationService;
             _fuelDispenserFactory = fuelDispenserFactory;
+            _scopeFactory = scopeFactory;
+            _hub = hub;
         }
 
         
@@ -24,14 +33,28 @@ namespace KIT.GasStation.Worker
         {
             // 1) Читаем конфигурацию
             var controllers = await _hardwareConfigurationService.GetControllersAsync();
+            var tasks = new List<Task>();
 
-            // 2) Для каждого Controller запускаем отдельную задачу
-            var tasks = controllers
-                .Select(ctrl => RunControllerLoopAsync(ctrl, stoppingToken))
-                .ToList();
+            foreach (var ctrl in controllers)
+            {
+                // Берём адреса из конфигурации колонки, исключаем отключённые и дубли
+                var addresses = ctrl.Columns
+                    .Select(c => c.Address)
+                    .Distinct()
+                    .OrderBy(a => a)
+                    .ToArray();
 
-            // 3) Ждём завершения (оно произойдёт при отмене токена)
-            await Task.WhenAll(tasks);
+                foreach (var addr in addresses)
+                {
+                    var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                    var t = RunControllerLoopAsync(ctrl, addr, linkedCts.Token);
+                    tasks.Add(t);
+                }
+
+            }
+
+            try { await Task.WhenAll(tasks); }
+            catch (OperationCanceledException) { /* штатная отмена */ }
         }
 
         /// <summary>
@@ -40,11 +63,55 @@ namespace KIT.GasStation.Worker
         /// <param name="ctrl">ТРК</param>
         /// <param name="token">Токен</param>
         /// <returns></returns>
-        private async Task RunControllerLoopAsync(Controller ctrl, CancellationToken token)
+        private async Task RunControllerLoopAsync(Controller ctrl, int address, CancellationToken token)
         {
-            _logger.LogInformation("Запуск обработки ТРК {Id} на порту {Port}", ctrl.Id, ctrl.ComPort);
+            var backoff = TimeSpan.FromSeconds(1);
 
-            var fuelDispenser = _fuelDispenserFactory.Create(ctrl.Type);
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var sp = scope.ServiceProvider;
+
+            IFuelDispenserService? service = null;
+
+            try
+            {
+                _logger.LogInformation("Старт цикла для ТРК {Id} (порт {Port}, тип {Type})",
+                ctrl.Id, ctrl.ComPort, ctrl.Type);
+
+                service = _fuelDispenserFactory.Create(sp, ctrl, address, _hub);
+
+                // основной цикл сервиса (открытие порта, опрос и т.д.)
+                await service.RunAsync(token);
+
+                // Если RunAsync завершился без исключения — выходим (нормальная остановка)
+                _logger.LogInformation("ТРК {Id} завершил работу штатно", ctrl.Id);
+                return;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Сбой в цикле ТРК {Id}. Повтор через {Backoff}", ctrl.Id, backoff);
+                try
+                {
+                    await Task.Delay(backoff, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+                // экспоненциальный бэкофф до 30с
+                var next = backoff.TotalSeconds * 2;
+                backoff = TimeSpan.FromSeconds(next > 30 ? 30 : next);
+            }
+            finally
+            {
+                if (service != null)
+                    await service.DisposeAsync();
+            }
         }
     }
 }

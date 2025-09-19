@@ -1,6 +1,7 @@
 ﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
+using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Authenticators;
 using KIT.GasStation.State.CashRegisters;
@@ -16,6 +17,8 @@ using KIT.GasStation.ViewModels.Details;
 using KIT.GasStation.ViewModels.Discounts;
 using KIT.GasStation.ViewModels.Factories;
 using KIT.GasStation.ViewModels.GlobalReports;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -108,7 +111,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IShiftCounterService>(),
                 services.GetRequiredService<IUnregisteredSaleService>(),
                 services.GetRequiredService<IFuelService>(),
-                services.GetRequiredService<IUserStore>());
+                services.GetRequiredService<IUserStore>(),
+                services.GetRequiredService<IHubClient>());
         }
 
         private static DiscountViewModel CreateDiscountViewModel(IServiceProvider services)

@@ -1,5 +1,7 @@
-using KIT.GasStation.Worker;
 using KIT.GasStation.Common.HostBuilders;
+using KIT.GasStation.FuelDispenser.Hubs;
+using KIT.GasStation.Worker;
+using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
 
 var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -23,9 +25,23 @@ try
         .UseSerilog()
         .AddHardwareConfigurationsServices() // Добавление сервисов для работы с оборудованием
         .AddCashRegisters() // Добавление сервисов для работы с кассовыми аппаратами
-        .AddFuelDispensers() // Добавление сервисов для работы с топливными колонками
         .ConfigureServices((hostContext, services) =>
         {
+            var cfg = hostContext.Configuration;
+            var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5000";
+            var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+            var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+
+            // 1) Само соединение — Singleton
+            services.AddSingleton(sp =>
+                new HubConnectionBuilder()
+                    .WithUrl(hubUrl)
+                    .WithAutomaticReconnect()
+                    .Build());
+            services.AddSignalR();                 // <-- чтобы IHubContext резолвился
+            // 2) (опционально) автостарт соединения
+            services.AddSingleton<IHubClient, HubClient>();
+
             services.AddHostedService<Worker>(); // Добавление сервиса Worker в DI контейнер
         });
 

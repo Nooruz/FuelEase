@@ -13,6 +13,7 @@ namespace KIT.GasStation.Common.HostBuilders
             return host.ConfigureServices(services =>
             {
                 services.AddSingleton<IPortManager, PortManager>();
+                services.AddSingleton<ISharedSerialPortService, SharedSerialPortService>();
                 services.AddSingleton<IHardwareConfigurationService, HardwareConfigurationService>();
                 services.AddSingleton<ICommandEncoderFactory, CommandEncoderFactory>();
                 services.AddSingleton<IProtocolParserFactory, ProtocolParserFactory>();

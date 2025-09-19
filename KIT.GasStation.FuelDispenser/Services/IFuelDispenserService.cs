@@ -1,12 +1,6 @@
-﻿using System.ComponentModel;
-
-namespace KIT.GasStation.FuelDispenser.Services
+﻿namespace KIT.GasStation.FuelDispenser.Services
 {
-    /// <summary>
-    /// Интерфейс для управления топливораздаточными устройствами.
-    /// </summary>
-    public delegate TFuelDispenser CreateFuelDispenser<TFuelDispenser>() where TFuelDispenser : IFuelDispenserService;
-    public interface IFuelDispenserService : INotifyPropertyChanged, IDisposable
+    public interface IFuelDispenserService : IAsyncDisposable
     {
         #region Actions
 
@@ -65,6 +59,11 @@ namespace KIT.GasStation.FuelDispenser.Services
         string Version { get; }
 
         /// <summary>
+        /// Идентификатор контроллера (для групп SignalR)
+        /// </summary>
+        Guid ControllerId { get; }
+
+        /// <summary>
         /// Статус ТРК.
         /// </summary>
         //ColumnStatus Status { get; }
@@ -73,19 +72,7 @@ namespace KIT.GasStation.FuelDispenser.Services
 
         #region Public Voids
 
-        /// <summary>
-        /// Запустить постоянный поллинг статусов.
-        /// </summary>
-        /// <param name="intervalMs">Интервал между циклами в миллисекундах.</param>
-        Task StartStatusPolling(int intervalMs = 200);
-
-        Task Connect(string comPort, int baudRate);
-
-        //Task<NozzleStatus> CheckStatusAsync(Column column);
-
-        //Task SetPriceAsync(Nozzle nozzle, decimal? price = null);
-
-        //Task StartRefuelingSumAsync(Nozzle nozzle, decimal? sum = null);
+        Task RunAsync(CancellationToken token);
 
         #endregion
 

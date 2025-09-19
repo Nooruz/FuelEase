@@ -1,11 +1,15 @@
 ﻿using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.FuelDispenser.Hubs;
+using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Nozzles;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
@@ -16,6 +20,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using static KIT.GasStation.FuelDispenser.Hubs.DeviceResponseHub;
 
 namespace KIT.GasStation.ViewModels
 {
@@ -31,6 +36,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IShiftCounterService _shiftCounterService;
         private readonly IUnregisteredSaleService _unregisteredSaleService;
         private readonly IUserStore _userStore;
+        private readonly IHubClient _hubClient;
         private bool _canSelectedNozzle = true;
         private int _side;
         private NozzleStatus _status;
@@ -39,7 +45,7 @@ namespace KIT.GasStation.ViewModels
         private decimal _receivedQuantity;
         private decimal _receivedSum;
         private int _connectionLostHandled = 0;
-        private readonly ConcurrentDictionary<Guid, NozzleStatus> _lastStatuses = new ConcurrentDictionary<Guid, NozzleStatus>();
+        private readonly ConcurrentDictionary<Guid, NozzleStatus> _lastStatuses = new();
         private CancellationTokenSource _cts;
         private Task _startTask;
 
@@ -124,7 +130,8 @@ namespace KIT.GasStation.ViewModels
             IShiftCounterService shiftCounterService,
             IUnregisteredSaleService unregisteredSaleService,
             IFuelService fuelService,
-            IUserStore userStore)
+            IUserStore userStore,
+            IHubClient hubClient)
         {
             _nozzleStore = nozzleStore;
             _fuelSaleService = fuelSaleService;
@@ -134,6 +141,7 @@ namespace KIT.GasStation.ViewModels
             _unregisteredSaleService = unregisteredSaleService;
             _fuelService = fuelService;
             _userStore = userStore;
+            _hubClient = hubClient;
             
             _shiftStore.OnLogin += ShiftStore_OnLogin;
             _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
@@ -231,6 +239,20 @@ namespace KIT.GasStation.ViewModels
             try
             {
                 if (Nozzles.Count == 0) return;
+
+                var hub = _hubClient.Connection;
+
+                hub.On<DeviceResponse>("StatusChanged", e =>
+                {
+                    var dd = 5 + 4;
+                });
+
+                await _hubClient.EnsureStartedAsync();
+
+                await hub.InvokeAsync("JoinController", "jf", 0);
+
+                // важно: после переподключения — заново join
+                hub.Reconnected += _ => hub.InvokeAsync("JoinController", "jf", 0);
 
                 //_fuelDispenserService = await _fuelDispenserFactory.CreateAsync(Nozzles);
 

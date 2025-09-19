@@ -1,3 +1,4 @@
+using KIT.GasStation.FuelDispenser.Hubs;
 using Serilog;
 
 var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -22,9 +23,22 @@ try
     builder.Host.UseSerilog();
     builder.Services.AddSignalR();
 
+    // если клиент (RMK) будет подключаться с другого origin:
+    builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+        .SetIsOriginAllowed(_ => true))); // dev: разрешаем все origin
+
     var app = builder.Build();
 
     //app.MapHub<DeviceHub>("/deviceHub");
+
+    app.UseSerilogRequestLogging();
+    app.UseCors(); // если включал CORS выше
+
+
+    app.MapHub<DeviceResponseHub>("/deviceresponse");
 
     app.Run();
 }

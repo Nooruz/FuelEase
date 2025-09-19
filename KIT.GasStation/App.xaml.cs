@@ -3,12 +3,14 @@ using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Core;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.EntityFramework;
+using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.HostBuilders;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels;
 using KIT.GasStation.Views;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -143,8 +145,27 @@ namespace KIT.GasStation
             _splashScreenViewModel.Status = "Регистрация хранилищ...";
             host.AddStores();
 
+            _splashScreenViewModel.Status = "Настройки подключения к серверу...";
+            host.ConfigureServices((hostContext, services) =>
+            {
+                var cfg = hostContext.Configuration;
+                var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5000";
+                var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+                var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+
+                // 1) Само соединение — Singleton
+                services.AddSingleton(sp =>
+                    new HubConnectionBuilder()
+                        .WithUrl(hubUrl)
+                        .WithAutomaticReconnect()
+                        .Build());
+
+                services.AddSingleton<IHubClient, HubClient>();
+            });
+
             _splashScreenViewModel.Status = "Регистрация моделей представления...";
             host.AddViewModels();
+
             return host;
         }
 

@@ -32,7 +32,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         /// Запись данных в порт.
         /// </summary>
         /// <param name="bytes">Данные для записи.</param>
-        /// <param name="readBufferLength">Ожидаемая длина ответа.</param>
+        /// <param name="expectedResponseLength">Ожидаемая длина ответа.</param>
         /// <param name="maxRetries">Количество попыток в случае неудачи.</param>
         /// <param name="writeTimeout">Тайм-аут записи в миллисекундах.</param>
         Task<byte[]> WriteReadAsync(byte[] bytes, int expectedResponseLength, int maxRetries = 3, int writeTimeout = 200);

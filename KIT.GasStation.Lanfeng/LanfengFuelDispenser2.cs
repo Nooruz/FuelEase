@@ -1,15 +1,4 @@
-﻿using KIT.GasStation.FuelDispenser.Commands;
-using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
-using KIT.GasStation.HardwareConfigurations.Services;
-using KIT.GasStation.Lanfeng.Utilities;
-using Serilog;
-using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Reflection;
-
-namespace KIT.GasStation.Lanfeng
+﻿namespace KIT.GasStation.Lanfeng
 {
     /// <summary>
     /// Класс для управления колонкой Lanfeng.
