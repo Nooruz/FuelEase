@@ -1,11 +1,12 @@
-﻿using KIT.GasStation.FuelDispenser.Commands;
+﻿using KIT.GasStation.Domain.Models;
+using KIT.GasStation.FuelDispenser.Commands;
 
 namespace KIT.GasStation.FuelDispenser.Models
 {
     /// <summary>
     /// DTO, представляющий проанализированный ответ устройства.
     /// </summary>
-    public class DeviceResponse
+    public class ControllerResponse
     {
         public int Address { get; set; }
         public int StatusAddress { get; set; }
@@ -15,5 +16,7 @@ namespace KIT.GasStation.FuelDispenser.Models
         public decimal Quantity { get; set; }
         public decimal Sum { get; set; }
         public bool IsLifted { get; set; }
+        public string Group { get; set; }
+        public NozzleStatus Status { get; set; }
     }
 }

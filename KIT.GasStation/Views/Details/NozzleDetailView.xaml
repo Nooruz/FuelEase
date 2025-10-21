@@ -32,10 +32,8 @@
         </dxlc:LayoutItem>
 
         <dxlc:LayoutItem Label="Канал контроллера">
-            <dxe:ComboBoxEdit ItemsSource="{Binding Columns}"
-                              ValueMember="Id"
-                              DisplayMember="DisplayName"
-                              EditValue="{Binding CreatedNozzle.ColumnId}"
+            <dxe:ComboBoxEdit ItemsSource="{Binding Hubs}"
+                              EditValue="{Binding CreatedNozzle.Group}"
                               ShowError="False"
                               ShowErrorToolTip="False"/>
         </dxlc:LayoutItem>

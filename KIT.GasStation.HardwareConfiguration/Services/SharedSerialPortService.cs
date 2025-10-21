@@ -318,13 +318,12 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             try
             {
                 //_logger.Information($"Начинаем открытие порта [{portName}] (скорость: {baudRate}).");
-                Port = new SerialPort(portName, baudRate)
+                Port = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One)
                 {
-                    ReadTimeout = 1000,
-                    WriteTimeout = 1000
+                    Handshake = Handshake.None,
+                    ReadTimeout = 500,
+                    WriteTimeout = 500
                 };
-
-                Port.Open();
 
                 if (Port.IsOpen)
                 {
@@ -332,6 +331,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                 }
                 else
                 {
+                    Port.Open();
                     //_logger.Information($"Не удалось открыть порт [{portName}].");
                 }
             }

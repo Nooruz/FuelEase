@@ -62,7 +62,6 @@ namespace KIT.GasStation.Hardware
             return Host.CreateDefaultBuilder(args)
                 .AddHardwareConfigurationsServices()
                 .AddCashRegisters()
-                .AddFuelDispensers()
                 .AddStores()
                 .AddViewModels();
         }

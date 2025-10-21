@@ -1,4 +1,5 @@
-using KIT.GasStation.FuelDispenser.Hubs;
+using KIT.GasStation.Web.Hubs;
+using KIT.GasStation.Web.Services;
 using Serilog;
 
 var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -22,6 +23,7 @@ try
 
     builder.Host.UseSerilog();
     builder.Services.AddSignalR();
+    builder.Services.AddSingleton<IGroupRegistry, GroupRegistry>();
 
     // если клиент (RMK) будет подключаться с другого origin:
     builder.Services.AddCors(o => o.AddDefaultPolicy(p => p

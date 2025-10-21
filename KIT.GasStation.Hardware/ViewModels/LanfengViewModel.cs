@@ -135,7 +135,7 @@ namespace KIT.GasStation.Hardware.ViewModels
             try
             {
                 // Создаём сервис для работы с колонкой
-                IFuelDispenserService fuelDispenserService = _fuelDispenserFactory.Create(ControllerType.Lanfeng);
+                //IFuelDispenserService fuelDispenserService = _fuelDispenserFactory.Create(ControllerType.Lanfeng);
 
                 // Подключаемся к колонке
                 //await fuelDispenserService.Connect(SelectedController.ComPort, SelectedController.BaudRate);
@@ -143,8 +143,8 @@ namespace KIT.GasStation.Hardware.ViewModels
                 //await fuelDispenserService.InitializeAsync(0); 
 
                 // Получаем версию и имя
-                var version = fuelDispenserService.Version;
-                var name = fuelDispenserService.DispenserName;
+                //var version = fuelDispenserService.Version;
+                //var name = fuelDispenserService.DispenserName;
 
                 // Проверяем статус
                 //var status = await fuelDispenserService.CheckStatusAsync(SelectedColumn);

@@ -15,7 +15,7 @@ namespace KIT.GasStation.Domain.Models
         private int _tube;
         private int _side;
         private int _tankId;
-        private Guid _columnId;
+        private string _group;
         private NozzleStatus _status;
         private NozzleControlMode _controlMode;
         private decimal _lastCounter;
@@ -85,15 +85,15 @@ namespace KIT.GasStation.Domain.Models
         }
 
         /// <summary>
-        /// Код колонки
+        /// Группа хаб
         /// </summary>
-        public Guid ColumnId
+        public string Group
         {
-            get => _columnId;
+            get => _group;
             set
             {
-                _columnId = value;
-                OnPropertyChanged(nameof(ColumnId));
+                _group = value;
+                OnPropertyChanged(nameof(Group));
             }
         }
 
@@ -259,7 +259,7 @@ namespace KIT.GasStation.Domain.Models
             Tube = nozzle.Tube;
             Side = nozzle.Side;
             TankId = nozzle.TankId;
-            ColumnId = nozzle.ColumnId;
+            Group = nozzle.Group;
         }
 
         #endregion
@@ -272,7 +272,7 @@ namespace KIT.GasStation.Domain.Models
                 Tube = updatedNozzle.Tube;
                 Side = updatedNozzle.Side;
                 TankId = updatedNozzle.TankId;
-                ColumnId = updatedNozzle.ColumnId;
+                Group = updatedNozzle.Group;
             }
         }
     }

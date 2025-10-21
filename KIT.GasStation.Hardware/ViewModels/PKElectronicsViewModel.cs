@@ -124,28 +124,28 @@ namespace KIT.GasStation.Hardware.ViewModels
             try
             {
                 // Создаём сервис для работы с колонкой
-                IFuelDispenserService fuelDispenserService = 
-                    _fuelDispenserFactory.Create(ControllerType.PKElectronics);
+                //IFuelDispenserService fuelDispenserService = 
+                //    _fuelDispenserFactory.Create(ControllerType.PKElectronics);
 
-                // Подключаемся к колонке
-                await fuelDispenserService.Connect(SelectedController.ComPort, SelectedController.BaudRate);
+                //// Подключаемся к колонке
+                //await fuelDispenserService.Connect(SelectedController.ComPort, SelectedController.BaudRate);
 
-                // Получаем версию и имя
-                var version = fuelDispenserService.Version;
-                var name = fuelDispenserService.DispenserName;
+                //// Получаем версию и имя
+                //var version = fuelDispenserService.Version;
+                //var name = fuelDispenserService.DispenserName;
 
-                // Проверяем статус
-                var status = await fuelDispenserService.CheckStatusAsync(SelectedColumn);
+                //// Проверяем статус
+                //var status = await fuelDispenserService.CheckStatusAsync(SelectedColumn);
 
-                //Если статус не None, то устанавливаем статус Connected, иначе NotConnected
-                if (status != NozzleStatus.Unknown)
-                {
-                    SelectedColumn.ConnectionStatus = ConnectionStatus.Connected;
-                }
-                else
-                {
-                    SelectedColumn.ConnectionStatus = ConnectionStatus.NotConnected;
-                }
+                ////Если статус не None, то устанавливаем статус Connected, иначе NotConnected
+                //if (status != NozzleStatus.Unknown)
+                //{
+                //    SelectedColumn.ConnectionStatus = ConnectionStatus.Connected;
+                //}
+                //else
+                //{
+                //    SelectedColumn.ConnectionStatus = ConnectionStatus.NotConnected;
+                //}
             }
             catch (Exception)
             {

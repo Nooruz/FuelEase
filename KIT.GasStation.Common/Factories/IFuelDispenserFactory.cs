@@ -8,6 +8,6 @@ namespace KIT.GasStation.Common.Factories
 {
     public interface IFuelDispenserFactory
     {
-        public IFuelDispenserService Create(IServiceProvider sp, Controller controller, int address, IHubContext<DeviceResponseHub, IDeviceResponseClient> hub);
+        public IFuelDispenserService Create(IServiceProvider sp, Controller controller, int address, IHubClient hubClient);
     }
 }

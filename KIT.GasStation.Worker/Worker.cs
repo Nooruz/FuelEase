@@ -3,7 +3,6 @@ using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
-using Microsoft.AspNetCore.SignalR;
 
 namespace KIT.GasStation.Worker
 {
@@ -13,19 +12,19 @@ namespace KIT.GasStation.Worker
         private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private readonly IFuelDispenserFactory _fuelDispenserFactory;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IHubContext<DeviceResponseHub, IDeviceResponseClient> _hub;
+        private readonly IHubClient _hubClient;
 
         public Worker(ILogger<Worker> logger,
             IHardwareConfigurationService hardwareConfigurationService,
             IFuelDispenserFactory fuelDispenserFactory,
             IServiceScopeFactory scopeFactory,
-            IHubContext<DeviceResponseHub, IDeviceResponseClient> hub)
+            IHubClient hubClient)
         {
             _logger = logger;
             _hardwareConfigurationService = hardwareConfigurationService;
             _fuelDispenserFactory = fuelDispenserFactory;
             _scopeFactory = scopeFactory;
-            _hub = hub;
+            _hubClient = hubClient;
         }
 
         
@@ -77,7 +76,7 @@ namespace KIT.GasStation.Worker
                 _logger.LogInformation("Старт цикла для ТРК {Id} (порт {Port}, тип {Type})",
                 ctrl.Id, ctrl.ComPort, ctrl.Type);
 
-                service = _fuelDispenserFactory.Create(sp, ctrl, address, _hub);
+                service = _fuelDispenserFactory.Create(sp, ctrl, address, _hubClient);
 
                 // основной цикл сервиса (открытие порта, опрос и т.д.)
                 await service.RunAsync(token);

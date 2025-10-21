@@ -3,6 +3,7 @@ using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
+using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Details;
 using KIT.GasStation.ViewModels.Factories;
@@ -24,8 +25,8 @@ namespace KIT.GasStation.ViewModels
         private readonly ITankService _tankService;
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
         private readonly IUnitOfMeasurementService _unitOfMeasurementService;
-        //private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private readonly ILogger<TanksViewModel> _logger;
+        private readonly IHubClient _hubClient;
         private Fuel _selectedFuel;
         private Nozzle _selectedNozzle;
         private TankFuelQuantityView _selectedTank;
@@ -33,7 +34,6 @@ namespace KIT.GasStation.ViewModels
         private ObservableCollection<TankFuelQuantityView> _tanks = new();
         private ObservableCollection<UnitOfMeasurement> _unitOfMeasurements = new();
         private ObservableCollection<Nozzle> _nozzles = new();
-        //private ObservableCollection<Column> _columns = new();
 
         #endregion
 
@@ -121,7 +121,8 @@ namespace KIT.GasStation.ViewModels
             IUnitOfMeasurementService unitOfMeasurementService,
             ITankService tankService,
             IViewService<TankFuelQuantityView> tankFuelQuantityView,
-            ILogger<TanksViewModel> logger)
+            ILogger<TanksViewModel> logger,
+            IHubClient hubClient)
         {
             _fuelService = fuelService;
             _nozzleService = nozzleService;
@@ -129,6 +130,7 @@ namespace KIT.GasStation.ViewModels
             _tankService = tankService;
             _logger = logger;
             _tankFuelQuantityView = tankFuelQuantityView;
+            _hubClient = hubClient;
             //_hardwareConfigurationService = hardwareConfigurationService;
 
             Title = "Топлива и резервуары";
@@ -248,12 +250,12 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public async Task CreateNozzle()
         {
-            //var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hardwareConfigurationService);
+            var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hubClient);
 
-            //await viewModel.StartAsync();
+            await viewModel.StartAsync();
 
-            //WindowService.Title = "Создание ТРК";
-            //WindowService.Show(nameof(NozzleDetailView), viewModel);
+            WindowService.Title = "Создание ТРК";
+            WindowService.Show(nameof(NozzleDetailView), viewModel);
         }
 
         [Command]

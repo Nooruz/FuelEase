@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.FuelDispenser.Commands;
+﻿using KIT.GasStation.Domain.Models;
+using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Models;
 using System.Buffers;
 
@@ -65,30 +66,27 @@ namespace KIT.GasStation.FuelDispenser.Services
             }
         }
 
-        public DeviceResponse ParseResponse(byte[] rawResponse, Command cmd)
+        public ControllerResponse ParseResponse(byte[] rawResponse)
         {
             // Базовая валидация
             if (rawResponse == null || rawResponse.Length < 5)
-                return new DeviceResponse { IsValid = false };
+                return new ControllerResponse { IsValid = false };
 
             // Проверяем стартовый байт
             if (rawResponse[0] != StartRx)
-                return new DeviceResponse { IsValid = false };
+                return new ControllerResponse { IsValid = false };
 
             // Проверяем контрольную сумму
             var checksum = CalculateChecksum(rawResponse, rawResponse.Length - 1);
             if (checksum != rawResponse[^1])
-                return new DeviceResponse { IsValid = false };
+                return new ControllerResponse { IsValid = false };
 
             var receivedcmd = _commandEncoder.Decode(rawResponse[2]);
             var address = rawResponse[1] & 0x0F;
 
-            if (receivedcmd != cmd)
-                return new DeviceResponse { IsValid = false };
-
             // Извлекаем статус колонки из 12-го байта (индекс 11)
             byte statusByte = rawResponse[11];
-            //var (statusAddress, status) = ParseStatusAndAddress(statusByte);
+            var (statusAddress, status) = ParseStatusAndAddress(statusByte);
 
             decimal sumValue = 0m;
             decimal quantityValue = 0m;
@@ -99,16 +97,16 @@ namespace KIT.GasStation.FuelDispenser.Services
                 quantityValue = ParseBcdQuantity(rawResponse, offset: 7);
             }
 
-            return new DeviceResponse
+            return new ControllerResponse
             {
                 Address = address,
-                Command = cmd,
+                Command = receivedcmd,
                 Data = rawResponse,
                 IsValid = true,
-                //Status = status,
+                Status = status,
                 Sum = sumValue,
                 Quantity = quantityValue,
-                //StatusAddress = statusAddress,
+                StatusAddress = statusAddress,
             };
         }
 
@@ -183,26 +181,26 @@ namespace KIT.GasStation.FuelDispenser.Services
         ///   - младшие 4 бита — код статуса (1 = Ready, 2 = PumpWorking, …).
         /// Возвращает сразу и адрес, и статус.
         /// </summary>
-        //private static (byte nozzleAddress, NozzleStatus status) ParseStatusAndAddress(byte statusByte)
-        //{
-        //    // Адрес пистолета — в старших 4 битах
-        //    byte nozzleAddress = (byte)((statusByte >> 4) & 0x0F);
+        private static (byte nozzleAddress, NozzleStatus status) ParseStatusAndAddress(byte statusByte)
+        {
+            // Адрес пистолета — в старших 4 битах
+            byte nozzleAddress = (byte)((statusByte >> 4) & 0x0F);
 
-        //    // Код статуса — в младших 4 битах
-        //    byte statusCode = (byte)(statusByte & 0x0F);
+            // Код статуса — в младших 4 битах
+            byte statusCode = (byte)(statusByte & 0x0F);
 
-        //    NozzleStatus status = statusCode switch
-        //    {
-        //        1 => NozzleStatus.Ready,
-        //        2 => NozzleStatus.PumpWorking,
-        //        3 => NozzleStatus.WaitingStop,
-        //        4 => NozzleStatus.PumpStop,
-        //        5 => NozzleStatus.WaitingRemoved,
-        //        _ => NozzleStatus.Unknown
-        //    };
+            NozzleStatus status = statusCode switch
+            {
+                1 => NozzleStatus.Ready,
+                2 => NozzleStatus.PumpWorking,
+                3 => NozzleStatus.WaitingStop,
+                4 => NozzleStatus.PumpStop,
+                5 => NozzleStatus.WaitingRemoved,
+                _ => NozzleStatus.Unknown
+            };
 
-        //    return (nozzleAddress, status);
-        //}
+            return (nozzleAddress, status);
+        }
 
         #endregion
     }

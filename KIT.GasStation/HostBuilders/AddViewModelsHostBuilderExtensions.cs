@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.Domain.Models;
+﻿using DevExpress.Mvvm.POCO;
+using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
 using KIT.GasStation.FuelDispenser.Hubs;
@@ -245,7 +246,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IUnitOfMeasurementService>(),
                 services.GetRequiredService<ITankService>(),
                 services.GetRequiredService<IViewService<TankFuelQuantityView>>(),
-                services.GetRequiredService<ILogger<TanksViewModel>>());
+                services.GetRequiredService<ILogger<TanksViewModel>>(),
+                services.GetRequiredService<IHubClient>());
         }
 
         private static EventPanelViewModel CreateEventPanelViewModel(IServiceProvider services)

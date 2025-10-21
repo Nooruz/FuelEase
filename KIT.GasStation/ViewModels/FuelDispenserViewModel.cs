@@ -8,7 +8,6 @@ using KIT.GasStation.State.Nozzles;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.Concurrent;
@@ -20,7 +19,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using static KIT.GasStation.FuelDispenser.Hubs.DeviceResponseHub;
 
 namespace KIT.GasStation.ViewModels
 {
@@ -242,17 +240,18 @@ namespace KIT.GasStation.ViewModels
 
                 var hub = _hubClient.Connection;
 
-                hub.On<DeviceResponse>("StatusChanged", e =>
-                {
-                    var dd = 5 + 4;
-                });
+                hub.On<ControllerResponse>("StatusChanged", e => OnStatusChanged(e));
 
                 await _hubClient.EnsureStartedAsync();
 
-                await hub.InvokeAsync("JoinController", "jf", 0);
+                foreach (var item in Nozzles)
+                {
+                    await hub.InvokeAsync("JoinController", item.Group);
+                    await hub.InvokeAsync("StartPolling", item.Group);
+                }
 
-                // важно: после переподключения — заново join
-                hub.Reconnected += _ => hub.InvokeAsync("JoinController", "jf", 0);
+                //// важно: после переподключения — заново join
+                //hub.Reconnected += _ => hub.InvokeAsync("JoinController", "jf", 0);
 
                 //_fuelDispenserService = await _fuelDispenserFactory.CreateAsync(Nozzles);
 
@@ -425,23 +424,9 @@ namespace KIT.GasStation.ViewModels
         /// <summary>
         /// Обработчик события изменения статуса колонки
         /// </summary>
-        private void OnStatusChanged(Guid columnId, NozzleStatus status)
+        private async Task OnStatusChanged(ControllerResponse deviceResponse)
         {
-            // Если мы уже регистрировали этот status для этого columnId — пропускаем
-            if (_lastStatuses.TryGetValue(columnId, out var prev) && prev == status)
-                return;
-
-            // Сохраняем новый статус
-            _lastStatuses[columnId] = status;
-
-            Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.ColumnId == columnId);
-
-            if (nozzle == null)
-                return;
-
-            Status = status;
-
-            nozzle.Status = status;
+            Status = deviceResponse.Status;
 
             if (Status == NozzleStatus.Ready)
             {
@@ -450,55 +435,94 @@ namespace KIT.GasStation.ViewModels
                     item.Status = NozzleStatus.Ready;
                 }
             }
+
+            switch (deviceResponse.Command)
+            {
+                case FuelDispenser.Commands.Command.Status:
+                    break;
+                case FuelDispenser.Commands.Command.StartFillingSum:
+                    break;
+                case FuelDispenser.Commands.Command.StartFillingQuantity:
+                    break;
+                case FuelDispenser.Commands.Command.StopFilling:
+                    break;
+                case FuelDispenser.Commands.Command.CompleteFilling:
+                    break;
+                case FuelDispenser.Commands.Command.ContinueFilling:
+                    break;
+                case FuelDispenser.Commands.Command.ChangePrice:
+                    break;
+                case FuelDispenser.Commands.Command.CounterLiter:
+                    OnCounterReceived(deviceResponse);
+                    break;
+                case FuelDispenser.Commands.Command.CounterSum:
+                    break;
+                case FuelDispenser.Commands.Command.FirmwareVersion:
+                    break;
+                case FuelDispenser.Commands.Command.ProgramControlMode:
+                    break;
+                case FuelDispenser.Commands.Command.KeyboardControlMode:
+                    break;
+                case FuelDispenser.Commands.Command.Sensor:
+                    break;
+                case FuelDispenser.Commands.Command.ReduceCosts:
+                    break;
+                case FuelDispenser.Commands.Command.PumpAccelerationTime:
+                    break;
+                case FuelDispenser.Commands.Command.Screen:
+                    break;
+                default:
+                    break;
+            }
         }
 
         /// <summary>
         /// Обработчик события получения счетчика
         /// </summary>
-        private void OnCounterReceived(Guid columnId, decimal quantity)
+        private void OnCounterReceived(ControllerResponse deviceResponse)
         {
-            Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.ColumnId == columnId);
+            //Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.ColumnId == columnId);
 
-            if (nozzle == null)
-                return;
+            //if (nozzle == null)
+            //    return;
 
-            nozzle.LastCounter = quantity;
+            //nozzle.LastCounter = quantity;
 
-            var shift = _shiftStore.CurrentShift;
-            if (shift == null || _shiftStore.CurrentShiftState is not (ShiftState.Open or ShiftState.Exceeded24Hours))
-                return;
+            //var shift = _shiftStore.CurrentShift;
+            //if (shift == null || _shiftStore.CurrentShiftState is not (ShiftState.Open or ShiftState.Exceeded24Hours))
+            //    return;
 
-            Task.Run(async () =>
-            {
-                await CheckUncompletedSales();
+            //Task.Run(async () =>
+            //{
+            //    await CheckUncompletedSales();
 
-                var shiftCounter = await _shiftCounterService.GetAsync(nozzle.Id, shift.Id);
-                var totalSales = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, shift.Id);
-                var unregisteredSales = await _unregisteredSaleService.GetAllAsync(nozzle.Id, shift.Id);
+            //    var shiftCounter = await _shiftCounterService.GetAsync(nozzle.Id, shift.Id);
+            //    var totalSales = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, shift.Id);
+            //    var unregisteredSales = await _unregisteredSaleService.GetAllAsync(nozzle.Id, shift.Id);
 
-                if (shiftCounter == null)
-                    return;
+            //    if (shiftCounter == null)
+            //        return;
 
-                // Расчёт отклонения от начальных показаний
-                decimal unregisteredSalesSum = unregisteredSales != null ? unregisteredSales.Sum(u => u.Quantity) : 0;
-                decimal expectedCounter = shiftCounter.BeginSaleCounter + totalSales + unregisteredSalesSum;
-                decimal unregisteredQuantity = nozzle.LastCounter - (shiftCounter.BeginNozzleCounter + expectedCounter);
+            //    // Расчёт отклонения от начальных показаний
+            //    decimal unregisteredSalesSum = unregisteredSales != null ? unregisteredSales.Sum(u => u.Quantity) : 0;
+            //    decimal expectedCounter = shiftCounter.BeginSaleCounter + totalSales + unregisteredSalesSum;
+            //    decimal unregisteredQuantity = nozzle.LastCounter - (shiftCounter.BeginNozzleCounter + expectedCounter);
 
-                if (unregisteredQuantity != 0)
-                {
-                    var unregisteredSale = new UnregisteredSale
-                    {
-                        NozzleId = nozzle.Id,
-                        ShiftId = shift.Id,
-                        CreateDate = DateTime.Now,
-                        State = UnregisteredSaleState.Waiting,
-                        Quantity = unregisteredQuantity,
-                        Sum = unregisteredQuantity * nozzle.Price
-                    };
+            //    if (unregisteredQuantity != 0)
+            //    {
+            //        var unregisteredSale = new UnregisteredSale
+            //        {
+            //            NozzleId = nozzle.Id,
+            //            ShiftId = shift.Id,
+            //            CreateDate = DateTime.Now,
+            //            State = UnregisteredSaleState.Waiting,
+            //            Quantity = unregisteredQuantity,
+            //            Sum = unregisteredQuantity * nozzle.Price
+            //        };
 
-                    await _unregisteredSaleService.CreateAsync(unregisteredSale);
-                }
-            });
+            //        await _unregisteredSaleService.CreateAsync(unregisteredSale);
+            //    }
+            //});
 
         }
 
@@ -525,17 +549,17 @@ namespace KIT.GasStation.ViewModels
         /// </summary>
         private void OnColumnLifted(Guid columnId)
         {
-            try
-            {
-                foreach (Nozzle nozzle in Nozzles)
-                {
-                    nozzle.Lifted = nozzle.ColumnId == columnId;
-                }
-            }
-            catch (Exception)
-            {
+            //try
+            //{
+            //    foreach (Nozzle nozzle in Nozzles)
+            //    {
+            //        nozzle.Lifted = nozzle.ColumnId == columnId;
+            //    }
+            //}
+            //catch (Exception)
+            //{
 
-            }
+            //}
         }
 
         /// <summary>

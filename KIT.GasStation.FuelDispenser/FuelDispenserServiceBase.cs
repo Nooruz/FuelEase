@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.FuelDispenser.Hubs;
+﻿using KIT.GasStation.Domain.Models;
+using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
@@ -14,7 +15,9 @@ namespace KIT.GasStation.FuelDispenser
         protected readonly ILogger<FuelDispenserServiceBase> Logger;
         protected readonly IProtocolParserFactory _protocolParserFactory;
         protected readonly ISharedSerialPortService _sharedSerialPortService;
-        protected readonly IHubContext<DeviceResponseHub, IDeviceResponseClient> _hub;
+        protected readonly IHubClient _hubClient;
+        protected readonly int Address;
+        protected readonly IReadOnlyList<Column> Columns;
 
         public string DispenserName => throw new NotImplementedException();
 
@@ -22,18 +25,23 @@ namespace KIT.GasStation.FuelDispenser
 
         public Guid ControllerId => throw new NotImplementedException();
 
+        public NozzleStatus Status {  get; set; }
+        
+
         protected FuelDispenserServiceBase(Controller controller, 
             ILogger<FuelDispenserServiceBase> logger,
             int address,
             IProtocolParserFactory protocolParserFactory,
             ISharedSerialPortService sharedSerialPortService,
-            IHubContext<DeviceResponseHub, IDeviceResponseClient> hub)
+            IHubClient hubClient)
         {
             Controller = controller;
+            Columns = Controller.Columns.Where(c => c.Address == address).ToList();
+            Address = address;
             Logger = logger;
             _protocolParserFactory = protocolParserFactory;
             _sharedSerialPortService = sharedSerialPortService;
-            _hub = hub;
+            _hubClient = hubClient;
         }
 
         public async Task RunAsync(CancellationToken token)
@@ -41,20 +49,11 @@ namespace KIT.GasStation.FuelDispenser
             Logger.LogInformation("Start {Type} on {Port}", Controller.Type, Controller.ComPort);
 
             await OnOpenAsync(token);
-            try
-            {
-                while (!token.IsCancellationRequested)
-                    await OnTickAsync(token); // вся специфика протокола тут
-            }
-            finally
-            {
-                await OnCloseAsync();
-                Logger.LogInformation("Stop {Type} on {Port}", Controller.Type, Controller.ComPort);
-            }
         }
 
         protected virtual Task OnOpenAsync(CancellationToken token) => Task.CompletedTask;
         protected virtual Task OnCloseAsync() => Task.CompletedTask;
+        protected virtual Task GetStatusAsync() => Task.CompletedTask;
 
         // Обязательный шаг: тик опроса/обработки
         protected abstract Task OnTickAsync(CancellationToken token);

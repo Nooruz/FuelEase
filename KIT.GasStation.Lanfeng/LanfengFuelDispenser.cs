@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.FuelDispenser;
+﻿using KIT.GasStation.Domain.Models;
+using KIT.GasStation.FuelDispenser;
 using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
@@ -6,10 +7,8 @@ using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
-using static KIT.GasStation.FuelDispenser.Hubs.DeviceResponseHub;
 
 namespace KIT.GasStation.Lanfeng
 {
@@ -22,12 +21,10 @@ namespace KIT.GasStation.Lanfeng
         #region Private Members
 
         private readonly ILogger<LanfengFuelDispenser> _logger;
-        private readonly Controller _controller;
         private readonly IProtocolParser _protocolParser;
         private readonly ISharedSerialPortService _sharedSerialPortService;
-        private readonly int _address;
-        private readonly IReadOnlyList<Column> _columns;
-        private readonly IHubContext<DeviceResponseHub, IDeviceResponseClient> _hub;
+        private readonly IHubClient _hubClient;
+        private HubConnection _hub;
 
         #endregion
 
@@ -38,27 +35,42 @@ namespace KIT.GasStation.Lanfeng
             int address,
             IProtocolParserFactory protocolParserFactory,
             ISharedSerialPortService sharedSerialPortService,
-            IHubContext<DeviceResponseHub, IDeviceResponseClient> hub) 
-            : base(controller, logger, address, protocolParserFactory, sharedSerialPortService, hub)
+            IHubClient hubClient) 
+            : base(controller, logger, address, protocolParserFactory, sharedSerialPortService, hubClient)
         {
             _logger = logger;
-            _controller = controller;
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
             _sharedSerialPortService = sharedSerialPortService;
-            _address = address;
-            _columns = controller.Columns
-                .Where(c => c.Address == address)
-                .ToList();
-            _hub = hub;
+            _hubClient = hubClient;
         }
 
         #endregion
 
-        #region Protected
+        #region Protected Voids
 
         protected override async Task OnOpenAsync(CancellationToken token)
         {
-            await _sharedSerialPortService.OpenAsync(_controller.ComPort, _controller.BaudRate, token);
+            try
+            {
+                _hub = _hubClient.Connection;
+
+                _hub.On<StartPollingCommand>("StartPolling", async e =>
+                {   
+                    await OnTickAsync(token);
+                });
+
+                await _hubClient.EnsureStartedAsync();
+                await _sharedSerialPortService.OpenAsync(Controller.ComPort, Controller.BaudRate, token);
+
+                foreach (var item in Controller.Columns)
+                {
+                    await _hub.InvokeAsync("JoinController", $"{Controller.Name}/{item.Name}");
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+            }
         }
 
         /// <summary>
@@ -68,30 +80,44 @@ namespace KIT.GasStation.Lanfeng
         protected override async Task OnTickAsync(CancellationToken token)
         {
             // Сообщаем в лог, что сервис запущен и на каком порту работает
-            _logger.LogInformation("ТРК Lanfeng запущена, используется порт {Port}", _controller.ComPort);
+            _logger.LogInformation("ТРК Lanfeng запущена, используется порт {Port}", Controller.ComPort);
+
+            await GetStatusAsync();
+
+            if (Status != NozzleStatus.Unknown)
+            {
+                // Задаем программное управление
+                await SetProgramControlModeAsync();
+
+                // Получаем версию прошивки
+                await GetFirmwareVersionAsync();
+
+                // Инициализация по пистолетам
+                await InitializeByColumns();
+            }
 
             while (!token.IsCancellationRequested)
             {
                 try
                 {
                     // Формируем команду на получение статуса (Tx - передача)
-                    var command = _protocolParser.BuildRequest(Command.Status, _address, 0);
+                    var command = _protocolParser.BuildRequest(Command.Status, Address, 0);
                     _logger.LogInformation("[Tx] {Tx}", BitConverter.ToString(command));
 
                     // Отправляем команду и ожидаем ответ (Rx - приём)
                     var result = await _sharedSerialPortService.WriteReadAsync(command, 14);
                     _logger.LogInformation("[Rx] {Rx}", BitConverter.ToString(result));
 
-                    var status = _protocolParser.ParseResponse(result, Command.Status);
+                    var status = _protocolParser.ParseResponse(result);
 
                     if (status != null)
                     {
-                        _ = _hub.Clients.Group(Group(_controller.Name, _address)).StatusChanged(status);
+                        await _hub.InvokeAsync("PublishStatus", status, "jf/Колонка_1");
                     }
                 }
                 catch (Exception e)
                 {
-
+                    _logger.LogError(e, e.Message, e.StackTrace);
                 }
             }
         }
@@ -99,6 +125,109 @@ namespace KIT.GasStation.Lanfeng
         protected override Task OnCloseAsync()
         {
             return Task.CompletedTask;
+        }
+
+        protected override async Task GetStatusAsync()
+        {
+            try
+            {
+                // Формируем команду на получение статуса (Tx - передача)
+                var command = _protocolParser.BuildRequest(Command.Status, Address, 0);
+                _logger.LogInformation("[Tx] {Tx}", BitConverter.ToString(command));
+
+                // Отправляем команду и ожидаем ответ (Rx - приём)
+                var result = await _sharedSerialPortService.WriteReadAsync(command, 14);
+                _logger.LogInformation("[Rx] {Rx}", BitConverter.ToString(result));
+
+                var status = _protocolParser.ParseResponse(result);
+                Status = status.Status;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message, e.StackTrace);
+            }
+        }
+
+        #endregion
+
+        #region Private Voids
+
+        private async Task SetProgramControlModeAsync()
+        {
+            try
+            {
+                // Формируем команду на получение статуса (Tx - передача)
+                var command = _protocolParser.BuildRequest(Command.ProgramControlMode, Address, 0);
+                _logger.LogInformation("[Tx] {Tx}", BitConverter.ToString(command));
+
+                // Отправляем команду и ожидаем ответ (Rx - приём)
+                var result = await _sharedSerialPortService.WriteReadAsync(command, 14);
+                _logger.LogInformation("[Rx] {Rx}", BitConverter.ToString(result));
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message, e.StackTrace);
+            }
+        }
+
+        private async Task GetFirmwareVersionAsync()
+        {
+            try
+            {
+                // Формируем команду на получение статуса (Tx - передача)
+                var command = _protocolParser.BuildRequest(Command.FirmwareVersion, Address, 0);
+                _logger.LogInformation("[Tx] {Tx}", BitConverter.ToString(command));
+
+                // Отправляем команду и ожидаем ответ (Rx - приём)
+                var result = await _sharedSerialPortService.WriteReadAsync(command, 14);
+                _logger.LogInformation("[Rx] {Rx}", BitConverter.ToString(result));
+
+                var deviceResponse = _protocolParser.ParseResponse(result);
+
+                if (deviceResponse != null)
+                {
+                    await _hub.InvokeAsync("PublishStatus", deviceResponse, "jf/Колонка_1");
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message, e.StackTrace);
+            }
+        }
+
+        private async Task InitializeByColumns()
+        {
+            foreach (var column in Columns)
+            {
+                // Получает счетчик литров.
+                await GetCounterLiterAsync(column);
+                await Task.Delay(300);
+            }
+        }
+
+        private async Task GetCounterLiterAsync(Column column)
+        {
+            try
+            {
+                // Формируем команду на получение статуса (Tx - передача)
+                var command = _protocolParser.BuildRequest(Command.CounterLiter, Address, column.Address);
+                _logger.LogInformation("[Tx] {Tx}", BitConverter.ToString(command));
+
+                // Отправляем команду и ожидаем ответ (Rx - приём)
+                var result = await _sharedSerialPortService.WriteReadAsync(command, 14);
+                _logger.LogInformation("[Rx] {Rx}", BitConverter.ToString(result));
+
+                var deviceResponse = _protocolParser.ParseResponse(result);
+
+                if (deviceResponse != null)
+                {
+                    await _hub.InvokeAsync("PublishStatus", deviceResponse, $"{Controller.Name}/{column.Name}");
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message, e.StackTrace);
+            }
         }
 
         #endregion

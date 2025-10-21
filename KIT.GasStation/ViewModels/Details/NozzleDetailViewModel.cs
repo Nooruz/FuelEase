@@ -2,8 +2,11 @@
 using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
+using Microsoft.AspNetCore.SignalR.Client;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
@@ -15,10 +18,9 @@ namespace KIT.GasStation.ViewModels.Details
 
         private readonly INozzleService _nozzleService;
         private readonly ITankService _tankService;
-        //private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private Nozzle _createdNozzle = new();
         private ObservableCollection<Tank> _tanks = new();
-        //private ObservableCollection<Column> _columns = new();
+        private readonly IHubClient _hubClient;
 
         #endregion
 
@@ -43,26 +45,19 @@ namespace KIT.GasStation.ViewModels.Details
                 OnPropertyChanged(nameof(Tanks));
             }
         }
-        //public ObservableCollection<Column> Columns
-        //{
-        //    get => _columns;
-        //    set
-        //    {
-        //        _columns = value;
-        //        OnPropertyChanged(nameof(Columns));
-        //    }
-        //}
+        public string[] Hubs { get; set; }
 
         #endregion
 
         #region Constructors
 
         public NozzleDetailViewModel(INozzleService nozzleService,
-            ITankService tankService)
+            ITankService tankService,
+            IHubClient hubClient)
         {
             _nozzleService = nozzleService;
             _tankService = tankService;
-            //_hardwareConfigurationService = hardwareConfigurationService;
+            _hubClient = hubClient;
         }
 
         #endregion
@@ -89,7 +84,13 @@ namespace KIT.GasStation.ViewModels.Details
 
         public async Task StartAsync()
         {
-            await LoeadData();
+            var hub = _hubClient.Connection;
+            await _hubClient.EnsureStartedAsync();
+
+            Hubs = await hub.InvokeAsync<string[]>("GetAllGroups");
+
+
+            await LoadData();
         }
 
         #endregion
@@ -125,7 +126,7 @@ namespace KIT.GasStation.ViewModels.Details
             return true;
         }
 
-        private async Task LoeadData()
+        private async Task LoadData()
         {
             Tanks = new(await _tankService.GetAllAsync());
             //Columns = await _hardwareConfigurationService.GetColumnsAsync();

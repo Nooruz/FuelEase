@@ -80,18 +80,15 @@ namespace KIT.GasStation.FuelDispenser.Services
             return list.ToArray();
         }
 
-        public DeviceResponse ParseResponse(byte[] rawResponse, Command cmd)
+        public ControllerResponse ParseResponse(byte[] rawResponse)
         {
             // Проверяем контрольную сумму
             var checksum = CheckSum(rawResponse, rawResponse.Length - 1);
             if (checksum != rawResponse[^1])
-                return new DeviceResponse { IsValid = false };
+                return new ControllerResponse { IsValid = false };
 
             var receivedcmd = _commandEncoder.Decode(rawResponse[0]);
             var columnAddress = rawResponse[1] & 0x0F;
-
-            if (cmd != receivedcmd)
-                return new DeviceResponse { IsValid = false };
 
             //var status = ConvertByteToNozzleStatus(rawResponse[2]);
 
@@ -102,7 +99,7 @@ namespace KIT.GasStation.FuelDispenser.Services
 
             }
 
-            return new DeviceResponse
+            return new ControllerResponse
             {
                 IsValid = true,
                 Command = receivedcmd,

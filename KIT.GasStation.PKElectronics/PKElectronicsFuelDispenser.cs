@@ -14,7 +14,7 @@ namespace KIT.GasStation.PKElectronics
         #region Private Members
 
         private readonly IProtocolParser _protocolParser;
-        private readonly IHubContext<DeviceResponseHub, IDeviceResponseClient> _hub;
+        private readonly IHubClient _hubClient;
 
         #endregion
         
@@ -25,11 +25,11 @@ namespace KIT.GasStation.PKElectronics
             int address,
             IProtocolParserFactory protocolParserFactory,
             ISharedSerialPortService sharedSerialPortService,
-            IHubContext<DeviceResponseHub, IDeviceResponseClient> hub) 
-            : base(controller, logger, address, protocolParserFactory, sharedSerialPortService, hub)
+            IHubClient hubClient) 
+            : base(controller, logger, address, protocolParserFactory, sharedSerialPortService, hubClient)
         {
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
-            _hub = hub;
+            _hubClient = hubClient;
         }
 
         #endregion

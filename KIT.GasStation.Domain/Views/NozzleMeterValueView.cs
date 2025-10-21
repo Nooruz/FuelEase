@@ -7,11 +7,11 @@ namespace KIT.GasStation.Domain.Views
         #region Private Members
 
         private int _id;
-        private int _controllerId;
+        private int _tankId;
         private string _name;
-        private double _quantity;
-        private double controllerMeter;
-        private double _balance;
+        private decimal _quantity;
+        private decimal controllerMeter;
+        private decimal _balance;
 
         #endregion
 
@@ -27,13 +27,13 @@ namespace KIT.GasStation.Domain.Views
             }
         }
 
-        public int ControllerId
+        public int TankId
         {
-            get => _controllerId;
+            get => _tankId;
             set
             {
-                _controllerId = value;
-                OnPropertyChanged(nameof(ControllerId));
+                _tankId = value;
+                OnPropertyChanged(nameof(TankId));
             }
         }
 
@@ -47,7 +47,7 @@ namespace KIT.GasStation.Domain.Views
             }
         }
 
-        public double Quantity
+        public decimal Quantity
         {
             get => _quantity;
             set
@@ -58,7 +58,7 @@ namespace KIT.GasStation.Domain.Views
         }
 
         [NotMapped]
-        public double ControllerMeter
+        public decimal ControllerMeter
         {
             get => controllerMeter; 
             set
@@ -70,7 +70,7 @@ namespace KIT.GasStation.Domain.Views
         }
 
         [NotMapped]
-        public double Balance
+        public decimal Balance
         {
             get => _balance;
             set

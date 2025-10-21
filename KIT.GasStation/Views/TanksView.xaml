@@ -220,13 +220,7 @@
                         <dxg:GridColumn Header="Резервуар"
                                         FieldName="Tank.Name"/>
                         <dxg:GridColumn Header="Устройство"
-                                        FieldName="ColumnId">
-                            <dxg:GridColumn.EditSettings>
-                                <dxe:ComboBoxEditSettings ItemsSource="{Binding Columns}"
-                                                          DisplayMember="DisplayName"
-                                                          ValueMember="Id"/>
-                            </dxg:GridColumn.EditSettings>
-                        </dxg:GridColumn>
+                                        FieldName="Group"/>
                     </dxg:GridControl>
 
                 </dxlc:LayoutGroup>

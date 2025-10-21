@@ -86,9 +86,9 @@ namespace KIT.GasStation.ViewModels
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                //ignore
+                
             }
         }
 

@@ -3,7 +3,7 @@
     public enum Command
     {
         /// <summary>
-        /// Статус
+        /// Запрос состояния
         /// </summary>
         Status,
 
@@ -53,12 +53,12 @@
         FirmwareVersion,
 
         /// <summary>
-        /// Смена режима управления на программный
+        /// Включить (программный контроль)
         /// </summary>
         ProgramControlMode,
 
         /// <summary>
-        /// Смена режима управления на клавиатурный
+        /// Выключить (клавиатурный контроль)
         /// </summary>
         KeyboardControlMode,
 
@@ -68,7 +68,7 @@
         Sensor,
 
         /// <summary>
-        /// Константа снижение расхода
+        /// Настройка предклапана (снижение расхода)
         /// </summary>
         ReduceCosts,
 
