@@ -35,6 +35,10 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         /// <param name="expectedResponseLength">Ожидаемая длина ответа.</param>
         /// <param name="maxRetries">Количество попыток в случае неудачи.</param>
         /// <param name="writeTimeout">Тайм-аут записи в миллисекундах.</param>
-        Task<byte[]> WriteReadAsync(byte[] bytes, int expectedResponseLength, int maxRetries = 3, int writeTimeout = 200);
+        Task<byte[]> WriteReadAsync(byte[] bytes,
+            int readBufferLength,
+            int maxRetries = 3,
+            int writeToReadDelayMs = 50,
+            int readTimeoutMs = 3000);
     }
 }

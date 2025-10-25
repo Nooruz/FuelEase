@@ -65,6 +65,9 @@ namespace KIT.GasStation.Web.Hubs
         public Task StartPolling(string groupName) =>
             Clients.Group(groupName).StartPolling(new StartPollingCommand { GroupName = groupName });
 
+        public Task StopPolling(string groupName) =>
+            Clients.Group(groupName).StopPolling(new StopPollingCommand { GroupName = groupName });
+
         public Task StartFilling() => Task.CompletedTask;
         public Task StopFilling() => Task.CompletedTask;
 

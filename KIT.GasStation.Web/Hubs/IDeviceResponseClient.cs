@@ -8,5 +8,6 @@ namespace KIT.GasStation.Web.Hubs
         Task StatusChanged(ControllerResponse e);
         Task WorkerStateChanged(string controllerName, string columnName);
         Task StartPolling(StartPollingCommand command);
+        Task StopPolling(StopPollingCommand command);
     }
 }

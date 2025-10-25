@@ -121,71 +121,59 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         }
 
         /// <inheritdoc/>
-        public async Task<byte[]> WriteReadAsync(byte[] bytes, int readBufferLength, int maxRetries = 3, int writeTimeout = 200)
+        public async Task<byte[]> WriteReadAsync(byte[] bytes, 
+            int readBufferLength, 
+            int maxRetries = 3,
+            int writeToReadDelayMs = 50,
+            int readTimeoutMs = 3000)
         {
-            // Watchdog: раз в 10 000 итераций перезапускаем порт
             if (++_writeCounter % 10_000 == 0)
-            {
-                //_logger.Information("Watchdog: перезапускаем порт после {Count} запросов", _writeCounter);
                 await RestartPortAsync();
-            }
-
-            //_logger.Information(
-            //    "Записываем {BytesLength} байт в порт. Ожидание перед чтением: {WriteTimeout} мс. Буфер для чтения: {ReadBufferLength} байт. Повторений: {MaxRetries}.",
-            //    bytes?.Length, writeTimeout, readBufferLength, maxRetries);
 
             await _semaphore.WaitAsync();
             try
             {
-                if (Port == null || !Port.IsOpen)
-                {
+                if (Port is null || !Port.IsOpen)
                     throw new InvalidOperationException("Порт не открыт.");
+
+                var attempt = 0;
+                while (true)
+                {
+                    try
+                    {
+                        // Пишем по-настоящему async. Никаких DiscardOutBuffer!
+                        await Port.BaseStream.WriteAsync(bytes, 0, bytes.Length);
+                        await Port.BaseStream.FlushAsync();
+
+                        if (writeToReadDelayMs > 0)
+                            await Task.Delay(writeToReadDelayMs);
+
+                        var buffer = new byte[readBufferLength];
+                        var read = await ReadExactlyAsync(Port, buffer, 0, readBufferLength, readTimeoutMs);
+
+                        // подчистим хвост (остатки сверх ожидаемого)
+                        var leftover = Port.BytesToRead;
+                        if (leftover > 0) Port.DiscardInBuffer();
+
+                        return buffer;
+                    }
+                    catch (TimeoutException) when (++attempt <= maxRetries)
+                    {
+                        // можно добавить небольшой backoff
+                        await Task.Delay(50 * attempt);
+                        continue;
+                    }
+                    catch (IOException) when (++attempt <= maxRetries)
+                    {
+                        await Task.Delay(50 * attempt);
+                        continue;
+                    }
                 }
-
-                // Запись данных в порт
-                //_logger.Debug("Отправляем данные в порт...");
-                // Асинхронная запись данных с использованием Task.Run
-                await Task.Run(() => Port.Write(bytes, 0, bytes.Length));
-
-                // очистить всё, что осталось в исходящем буфере
-                Port.DiscardOutBuffer();
-                //_logger.Debug("DiscardOutBuffer вызван.");
-
-                // Задержка перед чтением
-                //_logger.Debug("Задержка {WriteTimeout} мс перед чтением...", writeTimeout);
-                await Task.Delay(writeTimeout);
-
-                // Чтение данных из порта
-                byte[] buffer = new byte[readBufferLength];
-                //_logger.Debug("Читаем {ReadBufferLength} байт из порта...", readBufferLength);
-
-                // Чтение данных из порта с таймаутом
-                await ReadExactlyAsync(Port, buffer, 0, readBufferLength, timeout: 3000);
-
-                // логнуть, сколько байт осталось «за плечами»
-                int leftover = Port.BytesToRead;
-                //_logger.Debug("BytesToRead перед очисткой: {Leftover}", leftover);
-
-                // очистить всё, что накопилось сверх ожидаемого
-                Port.DiscardInBuffer();
-                //_logger.Debug("DiscardInBuffer вызван.");
-
-                //await Task.Run(() => Port.Read(buffer, 0, readBufferLength));
-
-                //_logger.Information("Данные успешно прочитаны. Возвращаем {BytesRead} байт.", buffer.Length);
-
-                // Возврат полученных данных
-                return buffer;
             }
             catch (Exception ex)
             {
-                //_logger.Error(ex, "Ошибка при записи/чтении данных в/из порта.");
-
-                // Если порт закрыт или произошла ошибка, запускаем переподключение в фоне.
-                if (Port == null || !Port.IsOpen)
-                {
+                if (Port is null || !Port.IsOpen)
                     _ = TriggerReconnectInBackground();
-                }
 
                 throw new SharedSerialPortException("Ошибка при записи/чтении данных в/из порта.", ex);
             }
@@ -255,59 +243,36 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         /// </summary>
         private async Task<int> ReadExactlyAsync(SerialPort port, byte[] buffer, int offset, int count, int timeout)
         {
-            int totalRead = 0;
-            var cts = new CancellationTokenSource();
-            var timeoutTask = Task.Delay(timeout, cts.Token);
+            if (port is null || !port.IsOpen)
+                throw new InvalidOperationException("Порт не открыт.");
 
-            //_logger.Debug("Начинаем асинхронное чтение {Count} байт с таймаутом {Timeout} мс.", count, timeout);
+            var totalRead = 0;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            try
+            while (totalRead < count)
             {
-                while (totalRead < count)
+                var remaining = count - totalRead;
+                var leftMs = timeout - (int)sw.ElapsedMilliseconds;
+                if (leftMs <= 0)
+                    throw new TimeoutException("Таймаут при чтении из порта.");
+
+                using var cts = new CancellationTokenSource(leftMs);
+
+                // Блокирующее ожидание данных (реально ждёт до leftMs)
+                var read = await port.BaseStream.ReadAsync(
+                    buffer.AsMemory(offset + totalRead, remaining), cts.Token);
+
+                if (read > 0)
                 {
-                    CheckPortStatus(port);
-
-                    var readTask = Task.Run(() =>
-                    {
-                        var bytesAvailable = port.BytesToRead;
-                        if (bytesAvailable == 0) return 0;
-
-                        return port.Read(buffer, offset + totalRead, Math.Min(count - totalRead, bytesAvailable));
-                    }, cts.Token);
-
-                    var completedTask = await Task.WhenAny(readTask, timeoutTask);
-
-                    if (completedTask == timeoutTask)
-                        throw new TimeoutException("Таймаут при чтении из порта.");
-
-                    var bytesRead = await readTask;
-                    if (bytesRead == 0)
-                    {
-                        //_logger.Error("Соединение закрыто до завершения чтения");
-                        throw new IOException("Connection closed before reading all data");
-                    }
-
-                    totalRead += bytesRead;
-                    //_logger.Debug("Прочитано {BytesRead} байт, всего {TotalRead}/{Count}", bytesRead, totalRead, count);
+                    totalRead += read;
+                    continue;
                 }
 
-                return totalRead;
+                // read == 0: данных нет прямо сейчас — крутим цикл до дедлайна
+                // (не бросаем IOException преждевременно)
             }
-            catch (OperationCanceledException)
-            {
-                //_logger.Error("Операция чтения была отменена");
-                throw;
-            }
-            catch (Exception ex)
-            {
-                //_logger.Error(ex, "Ошибка чтения из порта");
-                throw;
-            }
-            finally
-            {
-                cts.Cancel();
-                cts.Dispose();
-            }
+
+            return totalRead;
         }
 
         /// <summary>

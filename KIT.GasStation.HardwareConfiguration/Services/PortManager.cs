@@ -4,12 +4,15 @@
     {
         #region Private Members
 
-        private readonly Dictionary<(string portName, int baudRate), ISharedSerialPortService> _ports = new();
+        private readonly Dictionary<(string portName, int baudRate), 
+            ISharedSerialPortService> _ports = new();
         private readonly object _lock = new object();
 
         #endregion
 
-        public async Task<ISharedSerialPortService> GetPortServiceAsync(string portName, int baudRate)
+        public async Task<ISharedSerialPortService> GetPortServiceAsync(string portName, 
+            int baudRate,
+            CancellationToken cancellation)
         {
             var key = (portName, baudRate);
 
@@ -25,7 +28,7 @@
             // Если ключа нет, создаём новый сервис
             var newService = new SharedSerialPortService();
             // Предположим, что SharedSerialPortService.OpenAsync(...) действительно асинхронный
-            await newService.OpenAsync(portName, baudRate);
+            await newService.OpenAsync(portName, baudRate, cancellation);
 
             // Записываем в словарь внутри lock
             lock (_lock)

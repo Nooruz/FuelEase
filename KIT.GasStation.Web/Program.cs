@@ -1,4 +1,4 @@
-using KIT.GasStation.Web.Hubs;
+п»їusing KIT.GasStation.Web.Hubs;
 using KIT.GasStation.Web.Services;
 using Serilog;
 
@@ -11,7 +11,7 @@ Log.Logger = new LoggerConfiguration()
         path: Path.Combine(logDirectory, "log-.txt"),
         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
         rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 7 // Храним только последние 7 дней
+        retainedFileCountLimit: 7 // РҐСЂР°РЅРёРј С‚РѕР»СЊРєРѕ РїРѕСЃР»РµРґРЅРёРµ 7 РґРЅРµР№
     )
     .CreateLogger();
 
@@ -19,25 +19,36 @@ try
 {
     Log.Information("Starting up");
 
-    var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseWindowsService(options =>
+    {
+        options.ServiceName = "KIT.GasStation.Web";
+    });
 
     builder.Host.UseSerilog();
     builder.Services.AddSignalR();
     builder.Services.AddSingleton<IGroupRegistry, GroupRegistry>();
 
-    // если клиент (RMK) будет подключаться с другого origin:
+    // РµСЃР»Рё РєР»РёРµРЅС‚ (RMK) Р±СѓРґРµС‚ РїРѕРґРєР»СЋС‡Р°С‚СЊСЃСЏ СЃ РґСЂСѓРіРѕРіРѕ origin:
     builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()
-        .SetIsOriginAllowed(_ => true))); // dev: разрешаем все origin
+        .SetIsOriginAllowed(_ => true))); // dev: СЂР°Р·СЂРµС€Р°РµРј РІСЃРµ origin
+
+    builder.WebHost.ConfigureKestrel((context, options) =>
+    {
+        // РџРѕРґС‚СЏРіРёРІР°РµРј РєРѕРЅС„РёРі РёР· "Kestrel" СЃРµРєС†РёРё appsettings.*.json
+        options.Configure(context.Configuration.GetSection("Kestrel"));
+    });
 
     var app = builder.Build();
 
     //app.MapHub<DeviceHub>("/deviceHub");
 
     app.UseSerilogRequestLogging();
-    app.UseCors(); // если включал CORS выше
+    app.UseCors(); // РµСЃР»Рё РІРєР»СЋС‡Р°Р» CORS РІС‹С€Рµ
 
 
     app.MapHub<DeviceResponseHub>("/deviceresponse");
@@ -46,12 +57,13 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Application start-up failed"); // Добавлено логирование ошибки  
+    Log.Fatal(ex, "Application start-up failed"); // Р”РѕР±Р°РІР»РµРЅРѕ Р»РѕРіРёСЂРѕРІР°РЅРёРµ РѕС€РёР±РєРё  
 }
 finally
 {
-    Log.CloseAndFlush(); // Закрытие логгера  
+    Log.CloseAndFlush(); // Р—Р°РєСЂС‹С‚РёРµ Р»РѕРіРіРµСЂР°  
 }
+
 
 
 

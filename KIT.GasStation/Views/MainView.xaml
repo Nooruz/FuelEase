@@ -92,6 +92,21 @@
                         <MenuItem Header="Контакты техподдержки"/>
                     </MenuItem>
                 </MenuItem>
+
+                <MenuItem Header="Сервисы">
+                    <MenuItem Header="Запустить Web"
+                              Command="{Binding StartWebServiceCommand}"/>
+                    <MenuItem Header="Остановить Web"
+                              Command="{Binding StopWebServiceCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="Запустить Worker"
+                              Command="{Binding StartWorkerServiceCommand}"/>
+                    <MenuItem Header="Остановить Worker"
+                              Command="{Binding StopWorkerServiceCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="Перезапустить оба"
+                              Command="{Binding RestartAllServicesCommand}"/>
+                </MenuItem>
             </Menu>
 
             <dxdo:DockLayoutManager Grid.Row="1">

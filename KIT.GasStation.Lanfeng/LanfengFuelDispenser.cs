@@ -22,9 +22,12 @@ namespace KIT.GasStation.Lanfeng
 
         private readonly ILogger<LanfengFuelDispenser> _logger;
         private readonly IProtocolParser _protocolParser;
-        private readonly ISharedSerialPortService _sharedSerialPortService;
+        private readonly IPortManager _portManager;
         private readonly IHubClient _hubClient;
+        private ISharedSerialPortService _sharedSerialPortService;
         private HubConnection _hub;
+        private volatile bool _pollingEnabled;
+        private Task _pollingTask;
 
         #endregion
 
@@ -34,13 +37,13 @@ namespace KIT.GasStation.Lanfeng
             ILogger<LanfengFuelDispenser> logger,
             int address,
             IProtocolParserFactory protocolParserFactory,
-            ISharedSerialPortService sharedSerialPortService,
+            IPortManager portManager,
             IHubClient hubClient) 
-            : base(controller, logger, address, protocolParserFactory, sharedSerialPortService, hubClient)
+            : base(controller, logger, address, protocolParserFactory, portManager, hubClient)
         {
             _logger = logger;
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
-            _sharedSerialPortService = sharedSerialPortService;
+            _portManager = portManager;
             _hubClient = hubClient;
         }
 
@@ -55,12 +58,31 @@ namespace KIT.GasStation.Lanfeng
                 _hub = _hubClient.Connection;
 
                 _hub.On<StartPollingCommand>("StartPolling", async e =>
-                {   
-                    await OnTickAsync(token);
+                {
+                    _pollingEnabled = true;
+                    if (_pollingTask == null || _pollingTask.IsCompleted)
+                    {
+                        try
+                        {
+                            _sharedSerialPortService = await _portManager
+                                .GetPortServiceAsync(Controller.ComPort, Controller.BaudRate, token);
+                        }
+                        catch
+                        {
+
+                        }
+                        _pollingTask = OnTickAsync(token);
+                    }
+                });
+
+                _hub.On<StopPollingCommand>("StopPolling", async e =>
+                {
+                    _pollingEnabled = false;
+                    try { _portManager.ClosePortService(Controller.ComPort, Controller.BaudRate); } catch { }
+                    await Task.CompletedTask;
                 });
 
                 await _hubClient.EnsureStartedAsync();
-                await _sharedSerialPortService.OpenAsync(Controller.ComPort, Controller.BaudRate, token);
 
                 foreach (var item in Controller.Columns)
                 {
@@ -96,7 +118,7 @@ namespace KIT.GasStation.Lanfeng
                 await InitializeByColumns();
             }
 
-            while (!token.IsCancellationRequested)
+            while (!token.IsCancellationRequested && _pollingEnabled)
             {
                 try
                 {
@@ -118,6 +140,10 @@ namespace KIT.GasStation.Lanfeng
                 catch (Exception e)
                 {
                     _logger.LogError(e, e.Message, e.StackTrace);
+                }
+                if (!_pollingEnabled)
+                {
+                    break;
                 }
             }
         }
@@ -233,3 +259,4 @@ namespace KIT.GasStation.Lanfeng
         #endregion
     }
 }
+

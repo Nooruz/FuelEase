@@ -17,6 +17,7 @@ using KIT.GasStation.Views;
 using KIT.GasStation.Views.Details;
 using KIT.GasStation.Views.Info;
 using Microsoft.Extensions.Logging;
+using System.ServiceProcess;
 using System;
 using System.IO;
 using System.Linq;
@@ -200,6 +201,47 @@ namespace KIT.GasStation.ViewModels
             {
                 _logger.LogError(e, e.Message);
             }
+        }
+
+        [Command]
+        public async Task StartWebService()
+        {
+            try { await Services.ServiceManager.StartWebAsync(); }
+            catch (Exception ex) { _logger.LogError(ex, ex.Message); }
+        }
+
+        [Command]
+        public async Task StopWebService()
+        {
+            try { await Services.ServiceManager.StopWebAsync(); }
+            catch (Exception ex) { _logger.LogError(ex, ex.Message); }
+        }
+
+        [Command]
+        public async Task StartWorkerService()
+        {
+            try { await Services.ServiceManager.StartWorkerAsync(); }
+            catch (Exception ex) { _logger.LogError(ex, ex.Message); }
+        }
+
+        [Command]
+        public async Task StopWorkerService()
+        {
+            try { await Services.ServiceManager.StopWorkerAsync(); }
+            catch (Exception ex) { _logger.LogError(ex, ex.Message); }
+        }
+
+        [Command]
+        public async Task RestartAllServices()
+        {
+            try
+            {
+                await Services.ServiceManager.StopWorkerAsync();
+                await Services.ServiceManager.StopWebAsync();
+                await Services.ServiceManager.StartWebAsync();
+                await Services.ServiceManager.StartWorkerAsync();
+            }
+            catch (Exception ex) { _logger.LogError(ex, ex.Message); }
         }
 
         [Command]

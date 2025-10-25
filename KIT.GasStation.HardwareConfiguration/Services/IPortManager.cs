@@ -8,7 +8,7 @@
         /// <param name="portName">Имя порта (например, "COM3").</param>
         /// <param name="baudRate">Скорость порта (например, 9600).</param>
         /// <returns>Экземпляр сервиса, обеспечивающего работу с выбранным портом.</returns>
-        Task<ISharedSerialPortService> GetPortServiceAsync(string portName, int baudRate);
+        Task<ISharedSerialPortService> GetPortServiceAsync(string portName, int baudRate, CancellationToken cancellationToken);
 
         /// <summary>
         /// Явно закрыть и освободить указанный порт.

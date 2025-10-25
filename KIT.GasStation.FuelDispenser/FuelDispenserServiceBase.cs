@@ -4,7 +4,6 @@ using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
 namespace KIT.GasStation.FuelDispenser
@@ -14,7 +13,7 @@ namespace KIT.GasStation.FuelDispenser
         protected readonly Controller Controller;
         protected readonly ILogger<FuelDispenserServiceBase> Logger;
         protected readonly IProtocolParserFactory _protocolParserFactory;
-        protected readonly ISharedSerialPortService _sharedSerialPortService;
+        protected readonly IPortManager _portManager;
         protected readonly IHubClient _hubClient;
         protected readonly int Address;
         protected readonly IReadOnlyList<Column> Columns;
@@ -32,7 +31,7 @@ namespace KIT.GasStation.FuelDispenser
             ILogger<FuelDispenserServiceBase> logger,
             int address,
             IProtocolParserFactory protocolParserFactory,
-            ISharedSerialPortService sharedSerialPortService,
+            IPortManager portManager,
             IHubClient hubClient)
         {
             Controller = controller;
@@ -40,7 +39,7 @@ namespace KIT.GasStation.FuelDispenser
             Address = address;
             Logger = logger;
             _protocolParserFactory = protocolParserFactory;
-            _sharedSerialPortService = sharedSerialPortService;
+            _portManager = portManager;
             _hubClient = hubClient;
         }
 

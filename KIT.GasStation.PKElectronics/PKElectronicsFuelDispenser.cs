@@ -4,7 +4,6 @@ using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
 namespace KIT.GasStation.PKElectronics
@@ -24,9 +23,9 @@ namespace KIT.GasStation.PKElectronics
             ILogger<PKElectronicsFuelDispenser> logger,
             int address,
             IProtocolParserFactory protocolParserFactory,
-            ISharedSerialPortService sharedSerialPortService,
+            IPortManager portManager,
             IHubClient hubClient) 
-            : base(controller, logger, address, protocolParserFactory, sharedSerialPortService, hubClient)
+            : base(controller, logger, address, protocolParserFactory, portManager, hubClient)
         {
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
             _hubClient = hubClient;

@@ -2,8 +2,6 @@
 {
     public sealed class StopPollingCommand
     {
-        public string ControllerKey { get; set; } = "";
-        public string ControllerName { get; set; }
-        public string ColumnName { get; set; }
+        public string GroupName { get; set; } = "";
     }
 }

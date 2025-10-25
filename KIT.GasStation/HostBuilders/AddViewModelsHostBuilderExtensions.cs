@@ -1,4 +1,4 @@
-ï»¿using DevExpress.Mvvm.POCO;
+using DevExpress.Mvvm.POCO;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
@@ -18,8 +18,6 @@ using KIT.GasStation.ViewModels.Details;
 using KIT.GasStation.ViewModels.Discounts;
 using KIT.GasStation.ViewModels.Factories;
 using KIT.GasStation.ViewModels.GlobalReports;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -176,7 +174,7 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IShiftStore>(),
                 services.GetRequiredService<INavigator>(),
                 services.GetRequiredService<ICustomSplashScreenService>(),
-                services.GetRequiredService<IDisÑountStore>(),
+                services.GetRequiredService<IDisñountStore>(),
                 services.GetRequiredService<ICashRegisterStore>(),
                 services.GetRequiredService<IFuelService>());
         }
@@ -267,7 +265,7 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IFuelService>(),
                 services.GetRequiredService<IShiftStore>(),
                 services.GetRequiredService<ICustomSplashScreenService>(),
-                services.GetRequiredService<IDisÑountStore>(),
+                services.GetRequiredService<IDisñountStore>(),
                 services.GetRequiredService<ICashRegisterStore>());
         }
 
@@ -310,3 +308,4 @@ namespace KIT.GasStation.HostBuilders
         }
     }
 }
+
