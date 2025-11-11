@@ -9,8 +9,10 @@ namespace KIT.GasStation.Common.Factories
 {
     public class FuelDispenserFactory : IFuelDispenserFactory
     {
-        public IFuelDispenserService Create(IServiceProvider sp, Controller controller, int address, IHubClient hubClient)
+        public IFuelDispenserService Create(IServiceProvider sp, Controller controller, int address)
         {
+            var hubClient = sp.GetRequiredService<IHubClient>();
+
             return controller.Type switch
             {
                 ControllerType.Lanfeng => ActivatorUtilities.CreateInstance<LanfengFuelDispenser>(sp, controller, address, hubClient),

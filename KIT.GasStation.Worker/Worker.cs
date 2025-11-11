@@ -1,5 +1,4 @@
 using KIT.GasStation.Common.Factories;
-using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
@@ -12,19 +11,16 @@ namespace KIT.GasStation.Worker
         private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private readonly IFuelDispenserFactory _fuelDispenserFactory;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IHubClient _hubClient;
 
         public Worker(ILogger<Worker> logger,
             IHardwareConfigurationService hardwareConfigurationService,
             IFuelDispenserFactory fuelDispenserFactory,
-            IServiceScopeFactory scopeFactory,
-            IHubClient hubClient)
+            IServiceScopeFactory scopeFactory)
         {
             _logger = logger;
             _hardwareConfigurationService = hardwareConfigurationService;
             _fuelDispenserFactory = fuelDispenserFactory;
             _scopeFactory = scopeFactory;
-            _hubClient = hubClient;
         }
 
         
@@ -76,7 +72,7 @@ namespace KIT.GasStation.Worker
                 _logger.LogInformation("Старт цикла для ТРК {Id} (порт {Port}, тип {Type})",
                 ctrl.Id, ctrl.ComPort, ctrl.Type);
 
-                service = _fuelDispenserFactory.Create(sp, ctrl, address, _hubClient);
+                service = _fuelDispenserFactory.Create(sp, ctrl, address);
 
                 // основной цикл сервиса (открытие порта, опрос и т.д.)
                 await service.RunAsync(token);

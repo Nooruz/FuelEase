@@ -107,7 +107,7 @@ namespace KIT.GasStation.Lanfeng
                     }
                 });
 
-                await _hubClient.EnsureStartedAsync();
+                await _hubClient.EnsureStartedAsync(token);
 
                 foreach (var item in Controller.Columns)
                 {
