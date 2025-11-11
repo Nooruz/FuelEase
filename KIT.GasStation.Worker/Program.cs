@@ -37,14 +37,14 @@ try
             var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 
             // 1) Р РЋР В°Р СР С• РЎРѓР С•Р ВµР Т‘Р С‘Р Р…Р ВµР Р…Р С‘Р Вµ РІР‚вЂќ Singleton
-            services.AddSingleton(sp =>
+            services.AddTransient(sp =>
                 new HubConnectionBuilder()
                     .WithUrl(hubUrl)
                     .WithAutomaticReconnect()
                     .Build());
             services.AddSignalR();                 // <-- РЎвЂЎРЎвЂљР С•Р В±РЎвЂ№ IHubContext РЎР‚Р ВµР В·Р С•Р В»Р Р†Р С‘Р В»РЎРѓРЎРЏ
             // 2) (Р С•Р С—РЎвЂ Р С‘Р С•Р Р…Р В°Р В»РЎРЉР Р…Р С•) Р В°Р Р†РЎвЂљР С•РЎРѓРЎвЂљР В°РЎР‚РЎвЂљ РЎРѓР С•Р ВµР Т‘Р С‘Р Р…Р ВµР Р…Р С‘РЎРЏ
-            services.AddSingleton<IHubClient, HubClient>();
+            services.AddTransient<IHubClient, HubClient>();
 
             services.AddHostedService<Worker>(); // Р вЂќР С•Р В±Р В°Р Р†Р В»Р ВµР Р…Р С‘Р Вµ РЎРѓР ВµРЎР‚Р Р†Р С‘РЎРѓР В° Worker Р Р† DI Р С”Р С•Р Р…РЎвЂљР ВµР в„–Р Р…Р ВµРЎР‚
         });

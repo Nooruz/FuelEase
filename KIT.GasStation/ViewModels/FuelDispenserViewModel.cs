@@ -246,7 +246,7 @@ namespace KIT.GasStation.ViewModels
                 _hub.On<ControllerResponse>("StatusChanged", e => OnStatusChanged(e));
                 _hub.On<string, bool>("ColumnLiftedChanged", (groupName, isLifted) => OnColumnLifted(groupName, isLifted));
 
-                await _hubClient.EnsureStartedAsync();
+                await _hubClient.EnsureStartedAsync(token);
 
                 foreach (var item in Nozzles)
                 {
@@ -421,42 +421,44 @@ namespace KIT.GasStation.ViewModels
         /// </summary>ControllerResponse deviceResponse
         private async Task OnStatusChanged(ControllerResponse deviceResponse)
         {
+            var nozzle = Nozzles.FirstOrDefault(n => n.Group == deviceResponse.Group);
+            if (nozzle is null)
+            {
+                return;
+            }
+
             Status = deviceResponse.Status;
 
-            var nozzle = Nozzles.FirstOrDefault(n => n.Group == deviceResponse.Group);
-            if (nozzle is not null)
+            nozzle.Status = Status;
+            switch (Status)
             {
-                nozzle.Status = Status;
-                switch (Status)
-                {
-                    case NozzleStatus.PumpWorking:
-                        await OnStartedFilling(deviceResponse);
-                        break;
-                    case NozzleStatus.WaitingRemoved:
-                        OnWaitingRemoved(nozzle);
-                        break;
-                    case NozzleStatus.PumpStop:
-                        await _hub.InvokeAsync("CompleteRefuelingAsync", nozzle.Group);
-                        break;
-                    case NozzleStatus.WaitingStop:
-                        await _hub.InvokeAsync("CompleteRefuelingAsync", nozzle.Group);
-                        break;
-                    case NozzleStatus.Blocking:
-                        break;
-                    default:
-                        break;
-                }
+                case NozzleStatus.PumpWorking:
+                    await OnStartedFilling(deviceResponse);
+                    break;
+                case NozzleStatus.WaitingRemoved:
+                    OnWaitingRemoved(nozzle);
+                    break;
+                case NozzleStatus.PumpStop:
+                    await _hub.InvokeAsync("CompleteRefuelingAsync", nozzle.Group);
+                    break;
+                case NozzleStatus.WaitingStop:
+                    await _hub.InvokeAsync("CompleteRefuelingAsync", nozzle.Group);
+                    break;
+                case NozzleStatus.Blocking:
+                    break;
+                default:
+                    break;
+            }
 
-                switch (deviceResponse.Command)
-                {
-                    case Command.CounterLiter:
-                        await OnCounterReceived(deviceResponse);
-                        break;
-                    case Command.CompleteFilling:
-                        await OnCompletedFilling(nozzle);
-                        await OnStartedFilling(deviceResponse);
-                        break;
-                }
+            switch (deviceResponse.Command)
+            {
+                case Command.CounterLiter:
+                    await OnCounterReceived(deviceResponse);
+                    break;
+                case Command.CompleteFilling:
+                    await OnCompletedFilling(nozzle);
+                    await OnStartedFilling(deviceResponse);
+                    break;
             }
 
             if (Status == NozzleStatus.Ready)

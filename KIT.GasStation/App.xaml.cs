@@ -154,13 +154,13 @@ namespace KIT.GasStation
                 var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 
                 // 1) Само соединение — Singleton
-                services.AddSingleton(sp =>
+                services.AddTransient(sp =>
                     new HubConnectionBuilder()
                         .WithUrl(hubUrl)
                         .WithAutomaticReconnect()
                         .Build());
 
-                services.AddSingleton<IHubClient, HubClient>();
+                services.AddTransient<IHubClient, HubClient>();
             });
 
             _splashScreenViewModel.Status = "Регистрация моделей представления...";

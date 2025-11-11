@@ -171,6 +171,12 @@ namespace KIT.GasStation.Lanfeng
             return Task.CompletedTask;
         }
 
+        public override async ValueTask DisposeAsync()
+        {
+            (_logger as IDisposable)?.Dispose();
+            await base.DisposeAsync();
+        }
+
         #endregion
 
         #region Private Voids
@@ -466,6 +472,7 @@ namespace KIT.GasStation.Lanfeng
                     path: path,
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 14,
+                    shared: true,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
                 )
                 .CreateLogger();
