@@ -1,20 +1,12 @@
 ﻿namespace KIT.GasStation.HardwareConfigurations.Services
 {
+    /// <summary>
+    /// Менеджер портов: выдаёт лиз (lease) на общий порт с нужными параметрами.
+    /// Гарантирует одиночное открытие и корректное закрытие, когда последний клиент отпустит лиз.
+    /// </summary>
     public interface IPortManager
     {
-        /// <summary>
-        /// Получить сервис, работающий с указанным портом (открывает при необходимости).
-        /// </summary>
-        /// <param name="portName">Имя порта (например, "COM3").</param>
-        /// <param name="baudRate">Скорость порта (например, 9600).</param>
-        /// <returns>Экземпляр сервиса, обеспечивающего работу с выбранным портом.</returns>
-        Task<ISharedSerialPortService> GetPortServiceAsync(string portName, int baudRate, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Явно закрыть и освободить указанный порт.
-        /// </summary>
-        /// <param name="portName">Имя порта (например, "COM3").</param>
-        /// <param name="baudRate">Скорость, с которой открывался порт.</param>
-        void ClosePortService(string portName, int baudRate);
+        Task<PortLease> AcquireAsync(PortKey key, SerialPortOptions options, CancellationToken ct);
+        Task CloseIfIdleAsync(PortKey key); // опционально вручную закрыть, если ref=0
     }
 }

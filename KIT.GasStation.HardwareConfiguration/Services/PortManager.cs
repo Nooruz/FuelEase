@@ -1,70 +1,93 @@
-﻿namespace KIT.GasStation.HardwareConfigurations.Services
+﻿using System.Collections.Concurrent;
+using System.IO.Ports;
+
+namespace KIT.GasStation.HardwareConfigurations.Services
 {
-    public class PortManager : IPortManager
+    /// <summary>
+    /// Менеджер портов: выдаёт lease (аренду) на общий порт.
+    /// Гарантирует одиночное открытие (Lazy<Task<...>>) и закрытие при отсутствии арендаторов.
+    /// </summary>
+    public sealed class PortManager : IPortManager
     {
         #region Private Members
 
-        private readonly Dictionary<(string portName, int baudRate), 
-            ISharedSerialPortService> _ports = new();
-        private readonly object _lock = new object();
+        private readonly ConcurrentDictionary<PortKey, Entry> _map = new();
 
         #endregion
 
-        public async Task<ISharedSerialPortService> GetPortServiceAsync(string portName, 
-            int baudRate,
-            CancellationToken cancellation)
+        public async Task<PortLease> AcquireAsync(PortKey key, SerialPortOptions options, CancellationToken ct)
         {
-            var key = (portName, baudRate);
-
-            lock (_lock)
+            // Создаём ленивое открытие порта РОВНО один раз с ExecutionAndPublication
+            var entry = _map.GetOrAdd(key, _ =>
             {
-                if (_ports.TryGetValue(key, out var existingService))
+                return new Entry(new Lazy<Task<ISharedSerialPortService>>(async () =>
                 {
-                    // Порт уже открыт, возвращаем готовый сервис
-                    return existingService;
-                }
-            }
+                    var svc = new SharedSerialPortService();
+                    try
+                    {
+                        await svc.OpenAsync(key, options, ct);
+                        return svc;
+                    }
+                    catch
+                    {
+                        // Если открытие провалилось — удаляем ключ, чтобы не залипло в сломанном состоянии
+                        _map.TryRemove(key, out Entry _);
+                        await svc.DisposeAsync();
+                        throw;
+                    }
+                }, isThreadSafe: true));
+            });
 
-            // Если ключа нет, создаём новый сервис
-            var newService = new SharedSerialPortService();
-            // Предположим, что SharedSerialPortService.OpenAsync(...) действительно асинхронный
-            await newService.OpenAsync(portName, baudRate, cancellation);
+            // Дожидаемся реального открытия порта (или ошибки открытия)
+            var port = await entry.LazyService.Value;
 
-            // Записываем в словарь внутри lock
-            lock (_lock)
+            // Увеличиваем счётчик ссылок
+            Interlocked.Increment(ref entry.RefCount);
+
+            // Возвращаем lease, который при Dispose уменьшит счётчик и при нуле закроет порт
+            return new PortLease(port, async () =>
             {
-                if (!_ports.ContainsKey(key))
+                if (Interlocked.Decrement(ref entry.RefCount) == 0)
                 {
-                    _ports[key] = newService;
+                    // При нуле — закрываем сервис и удаляем запись
+                    try
+                    {
+                        await port.CloseAsync();
+                        await port.DisposeAsync();
+                    }
+                    finally
+                    {
+                        _map.TryRemove(key, out _);
+                    }
                 }
-                else
+            });
+        }
+
+        /// <summary>
+        /// Явно закрыть порт, если никто им не пользуется (RefCount==0).
+        /// Полезно для уборки простаивающих портов по таймеру.
+        /// </summary>
+        public async Task CloseIfIdleAsync(PortKey key)
+        {
+            if (_map.TryGetValue(key, out var entry) && entry.RefCount == 0)
+            {
+                if (entry.LazyService.IsValueCreated)
                 {
-                    // Если кто-то зашёл «между» нашим lock, придётся закрыть наш только что открытый сервис, 
-                    // чтобы избежать дублирования.
-                    newService.Dispose();
-                    // Или await newService.CloseAsync(); – зависит от вашей реализации
+                    var svc = await entry.LazyService.Value;
+                    await svc.CloseAsync();
+                    await svc.DisposeAsync();
                 }
-                return _ports[key];
+                _map.TryRemove(key, out _);
             }
         }
 
-        public void ClosePortService(string portName, int baudRate)
+        // Внутренняя запись: ленивое создание сервиса + счётчик ссылок
+        private sealed class Entry
         {
-            var key = (portName, baudRate);
+            public Lazy<Task<ISharedSerialPortService>> LazyService { get; }
+            public int RefCount;
 
-            ISharedSerialPortService serviceToClose = null;
-            lock (_lock)
-            {
-                if (_ports.TryGetValue(key, out var existingService))
-                {
-                    serviceToClose = existingService;
-                    _ports.Remove(key);
-                }
-            }
-
-            // Если действительно есть, что закрывать, освобождаем ресурсы
-            // Предположим, что у SharedSerialPortService есть асинхронный метод CloseAsync()
-            serviceToClose?.Close();
+            public Entry(Lazy<Task<ISharedSerialPortService>> lazy) => LazyService = lazy;
         }
     }
 }

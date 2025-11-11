@@ -16,6 +16,8 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         private int _nozzle;
         private ColumnSettings _settings;
         private ConnectionStatus _connectionStatus;
+        private string _groupName;
+        private bool _isLifted;
 
         #endregion
 
@@ -108,7 +110,35 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         public Controller Controller { get; set; }
 
         [XmlIgnore]
-        public string DisplayName => $"{Controller?.Name} / {Name}";
+        public string GroupName
+        {
+            get => _groupName;
+            set
+            {
+                _groupName = value;
+                OnPropertyChanged(nameof(GroupName));
+            }
+        }
+
+        /// <summary>
+        /// Адрес пистолета для протокола Lanfeng в виде степени двойки.
+        /// </summary>
+        [XmlIgnore]
+        public int LanfengAddress => 1 << (Nozzle - 1);
+
+        /// <summary>
+        /// Признак поднятого пистолета
+        /// </summary>
+        [XmlIgnore]
+        public bool IsLifted
+        {
+            get => _isLifted;
+            set
+            {
+                _isLifted = value;
+                OnPropertyChanged(nameof(IsLifted));
+            }
+        }
 
         #endregion
 

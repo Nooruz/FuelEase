@@ -1,369 +1,166 @@
-﻿using KIT.GasStation.HardwareConfigurations.Exceptions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System.IO.Ports;
 
 namespace KIT.GasStation.HardwareConfigurations.Services
 {
     /// <summary>
-    /// Реализация интерфейса ISerialPortStreamState для управления COM-портом.
+    /// Реализация общего владельца порта с очередью I/O.
     /// </summary>
     public class SharedSerialPortService : ISharedSerialPortService
     {
         #region Private Members
 
-        private readonly SemaphoreSlim _semaphore = new(1, 1);
-        private readonly SemaphoreSlim _reconnectLock = new(1, 1);
-        private readonly ILogger<SharedSerialPortService> _logger;
-        private string? _portName;
-        private int _baudRate;
-        private CancellationTokenSource? _reconnectCts;
-        private Task? _reconnectTask;
-        private int _writeCounter = 0;
+        private readonly SemaphoreSlim _io = new(1, 1); // общий семафор на I/O (half-duplex)
+        private SerialPort? _port;
+        private volatile bool _isOpen;
+        private PortKey _key;
+        private SerialPortOptions? _options;
 
         #endregion
 
         #region Public Properties
 
-        public SerialPort Port { get; private set; }
-
-        #endregion
-
-        #region Actions
-
-        /// <inheritdoc/>
-        public event Action<byte[]> OnDataReceived;
-
-        #endregion
-
-        #region Constructors
-
-        public SharedSerialPortService()
-        {
-            // 1. Создадим/убедимся, что существует папка logs
-            var logsDir = Path.Combine(AppContext.BaseDirectory, "logs");
-            Directory.CreateDirectory(logsDir);
-
-            // 2. Формируем имя файла. Можно добавить время, 
-            //    но обязательно без «:» (двоеточий). Например, yyyy-MM-dd_HH-mm-ss.
-            var logFilePath = Path.Combine(logsDir, $"{nameof(SharedSerialPortService)}_{DateTime.Now:dd.MM.yyyy}.log");
-
-            //// 3. Настраиваем Serilog
-            //_logger = new LoggerConfiguration()
-            //    // Указываем минимальный уровень
-            //    .MinimumLevel.Debug()
-            //    // Пишем в файл с «дневным» ротационным интервалом
-            //    .WriteTo.File(
-            //        path: logFilePath,
-            //        rollingInterval: RollingInterval.Day,
-            //        // Можно задать, сколько файлов хранить
-            //        retainedFileCountLimit: 7,
-            //        // Можно включить автопереход на новый файл при достижении лимита размера
-            //        rollOnFileSizeLimit: true
-            //    )
-            //    // При желании можно добавить вывод в консоль
-            //    //.WriteTo.Console()
-            //    .CreateLogger();
-
-            //// 4. Пробный лог на уровне Information
-            //_logger.Information("Менеджер портов инициализирован. [{Timestamp}]",
-            //    DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss.fff"));
-        }
+        public bool IsOpen => _isOpen;
+        public string PortName => _key.PortName;
 
         #endregion
 
         #region Public Voids
 
         /// <inheritdoc/>
-        public async Task OpenAsync(string portName, int baudRate, CancellationToken cancellationToken = default)
+        public async Task OpenAsync(PortKey key, SerialPortOptions options, CancellationToken ct)
         {
-            try
+            // Идемпотентное открытие: если уже открыт под тем же ключом — ничего не делаем.
+            if (_isOpen && _port is not null && _port.IsOpen && _key.Equals(key))
+                return;
+
+            // Закрываем предыдущий инстанс, если был открыт под другим ключом.
+            await CloseAsync();
+
+            _key = key;
+            _options = options;
+
+            // Открытие делаем синхронным внутри Task.Run, чтобы не блокировать вызывающий поток.
+            await Task.Run(() =>
             {
-                _portName = portName;
-                _baudRate = baudRate;
-
-                //_logger.Information("Начинается асинхронное открытие порта [{PortName}] со скоростью {BaudRate}.", portName, baudRate);
-
-                await Task.Run(() =>
+                var p = new SerialPort(key.PortName, key.BaudRate, key.Parity, key.DataBits, key.StopBits)
                 {
-                    // Если отмена запрошена ещё до начала
-                    cancellationToken.ThrowIfCancellationRequested();
+                    ReadTimeout = options.ReadTimeoutMs,
+                    WriteTimeout = options.WriteTimeoutMs,
+                    RtsEnable = options.RtsEnable,
+                    DtrEnable = options.DtrEnable
+                };
+                p.ReadBufferSize = Math.Max(p.ReadBufferSize, options.ReadBufferSize);
+                p.WriteBufferSize = Math.Max(p.WriteBufferSize, options.WriteBufferSize);
 
-                    // Вызываем синхронный Open
-                    Open(portName, baudRate);
-
-                    // Ещё одна проверка отмены сразу после открытия
-                    cancellationToken.ThrowIfCancellationRequested();
-                }, cancellationToken);
-
-                //_logger.Information("Асинхронное открытие порта [{PortName}] завершено (скорость: {BaudRate}).", portName, baudRate);
-            }
-            catch (Exception ex)
-            {
-                throw new SharedSerialPortException("Ошибка при открытии порта.", ex);
-            }
+                p.Open();
+                _port = p;
+                _isOpen = true;
+            }, ct);
         }
 
         /// <inheritdoc/>
-        public void Close()
+        public Task CloseAsync()
         {
-            //_logger.Information("Начинается закрытие порта...");
+            // Идемпотентно закрываем и освобождаем.
             try
             {
-                Port?.Close();
-                Port?.Dispose();
+                var p = _port;
+                _port = null;
+                _isOpen = false;
 
-                //_logger.Information("Порт успешно закрыт и освобождён.");
+                if (p is not null)
+                {
+                    if (p.IsOpen) p.Close();
+                    p.Dispose();
+                }
             }
-            catch (Exception e)
+            catch
             {
-                //_logger.Error(e, "Ошибка при закрытии порта.");
+                // Игнорируем ошибки закрытия — обычно безопасно.
             }
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
-        public async Task<byte[]> WriteReadAsync(byte[] bytes, 
-            int readBufferLength, 
-            int maxRetries = 3,
+        public async Task<byte[]> WriteReadAsync(byte[] tx,
+            int expectedRxLength,
             int writeToReadDelayMs = 50,
-            int readTimeoutMs = 3000)
+            int readTimeoutMs = 3000,
+            int maxRetries = 2,
+            CancellationToken ct = default)
         {
-            if (++_writeCounter % 10_000 == 0)
-                await RestartPortAsync();
+            if (!_isOpen || _port is null || !_port.IsOpen)
+                throw new InvalidOperationException("Порт не открыт.");
 
-            await _semaphore.WaitAsync();
+            await _io.WaitAsync(ct);
             try
             {
-                if (Port is null || !Port.IsOpen)
-                    throw new InvalidOperationException("Порт не открыт.");
-
-                var attempt = 0;
-                while (true)
+                // Простой retry-цикл: если таймаут/IO — ещё попытки (maxRetries).
+                for (int attempt = 1; ; attempt++)
                 {
                     try
                     {
-                        // Пишем по-настоящему async. Никаких DiscardOutBuffer!
-                        await Port.BaseStream.WriteAsync(bytes, 0, bytes.Length);
-                        await Port.BaseStream.FlushAsync();
+                        // === WRITE ===
+                        await _port.BaseStream.WriteAsync(tx, 0, tx.Length, ct);
+                        await _port.BaseStream.FlushAsync(ct);
 
                         if (writeToReadDelayMs > 0)
-                            await Task.Delay(writeToReadDelayMs);
+                            await Task.Delay(writeToReadDelayMs, ct);
 
-                        var buffer = new byte[readBufferLength];
-                        var read = await ReadExactlyAsync(Port, buffer, 0, readBufferLength, readTimeoutMs);
+                        // === READ EXACTLY expectedRxLength ===
+                        var buf = new byte[expectedRxLength];
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+                        var total = 0;
 
-                        // подчистим хвост (остатки сверх ожидаемого)
-                        var leftover = Port.BytesToRead;
-                        if (leftover > 0) Port.DiscardInBuffer();
+                        while (total < expectedRxLength)
+                        {
+                            ct.ThrowIfCancellationRequested();
 
-                        return buffer;
+                            var leftMs = readTimeoutMs - (int)sw.ElapsedMilliseconds;
+                            if (leftMs <= 0)
+                                throw new TimeoutException("Истёк таймаут чтения ответа от устройства.");
+
+                            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                            cts.CancelAfter(leftMs);
+
+                            var n = await _port.BaseStream.ReadAsync(buf.AsMemory(total, expectedRxLength - total), cts.Token);
+                            if (n > 0)
+                            {
+                                total += n;
+                                continue;
+                            }
+                            // n == 0 — просто ждём дальше до дедлайна
+                        }
+
+                        // подчистим возможные лишние байты
+                        if (_port.BytesToRead > 0) _port.DiscardInBuffer();
+
+                        return buf;
                     }
-                    catch (TimeoutException) when (++attempt <= maxRetries)
+                    catch (TimeoutException) when (attempt <= maxRetries)
                     {
-                        // можно добавить небольшой backoff
-                        await Task.Delay(50 * attempt);
+                        // небольшой экспоненциальный бэкофф
+                        await Task.Delay(50 * attempt, ct);
                         continue;
                     }
-                    catch (IOException) when (++attempt <= maxRetries)
+                    catch (IOException) when (attempt <= maxRetries)
                     {
-                        await Task.Delay(50 * attempt);
+                        await Task.Delay(50 * attempt, ct);
                         continue;
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                if (Port is null || !Port.IsOpen)
-                    _ = TriggerReconnectInBackground();
-
-                throw new SharedSerialPortException("Ошибка при записи/чтении данных в/из порта.", ex);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        private async Task RestartPortAsync()
-        {
-            try
-            {
-                if (Port != null)
-                {
-                    Port.Close();
-                    await Task.Delay(100);
-                    Port.Open();
-                    //_logger.Information("Порт успешно перезапущен.");
-                }
-            }
-            catch (Exception ex)
-            {
-                //_logger.Error(ex, "Не удалось перезапустить порт.");
-            }
-        }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            //_logger.Information("Вызывается Dispose(). Закрываем порт и освобождаем ресурсы...");
-
-            // Здесь освобождаем ресурсы
-            Close();
-
-            // Затем можно попросить GC не вызывать финализатор:
-            GC.SuppressFinalize(this);
-        }
-
-        #endregion
-
-        #region Private Voids
-
-        /// <summary>
-        /// Асинхронно запускает попытку переподключения, синхронизируя доступ с помощью SemaphoreSlim.
-        /// Fire-and-forget: задача запускается в фоне и не блокирует вызывающий поток.
-        /// </summary>
-        private async Task TriggerReconnectInBackground()
-        {
-            await _reconnectLock.WaitAsync();
-            try
-            {
-                if (_reconnectTask == null || _reconnectTask.IsCompleted)
-                {
-                    // Запускаем попытку переподключения в фоне
-                    _reconnectTask = AttemptReconnectAsync();
                 }
             }
             finally
             {
-                _reconnectLock.Release();
+                _io.Release();
             }
         }
 
-        /// <summary>
-        /// Чтение данных из порта с таймаутом.
-        /// </summary>
-        private async Task<int> ReadExactlyAsync(SerialPort port, byte[] buffer, int offset, int count, int timeout)
+        public async ValueTask DisposeAsync()
         {
-            if (port is null || !port.IsOpen)
-                throw new InvalidOperationException("Порт не открыт.");
-
-            var totalRead = 0;
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-
-            while (totalRead < count)
-            {
-                var remaining = count - totalRead;
-                var leftMs = timeout - (int)sw.ElapsedMilliseconds;
-                if (leftMs <= 0)
-                    throw new TimeoutException("Таймаут при чтении из порта.");
-
-                using var cts = new CancellationTokenSource(leftMs);
-
-                // Блокирующее ожидание данных (реально ждёт до leftMs)
-                var read = await port.BaseStream.ReadAsync(
-                    buffer.AsMemory(offset + totalRead, remaining), cts.Token);
-
-                if (read > 0)
-                {
-                    totalRead += read;
-                    continue;
-                }
-
-                // read == 0: данных нет прямо сейчас — крутим цикл до дедлайна
-                // (не бросаем IOException преждевременно)
-            }
-
-            return totalRead;
-        }
-
-        /// <summary>
-        /// Открытие порта.
-        /// </summary>
-        private void Open(string portName, int baudRate)
-        {
-            try
-            {
-                //_logger.Information($"Начинаем открытие порта [{portName}] (скорость: {baudRate}).");
-                Port = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One)
-                {
-                    Handshake = Handshake.None,
-                    ReadTimeout = 500,
-                    WriteTimeout = 500
-                };
-
-                if (Port.IsOpen)
-                {
-                    //_logger.Information($"Порт [{portName}] успешно открыт.");
-                }
-                else
-                {
-                    Port.Open();
-                    //_logger.Information($"Не удалось открыть порт [{portName}].");
-                }
-            }
-            catch (Exception ex)
-            {
-                //_logger.Error(ex, $"Ошибка при открытии порта [{portName}].");
-            }
-        }
-
-        /// <summary>
-        /// Попытка переподключения к порту.
-        /// </summary>
-        private async Task AttemptReconnectAsync()
-        {
-            if (string.IsNullOrEmpty(_portName) || _baudRate == 0) return;
-
-            using var cts = new CancellationTokenSource();
-            _reconnectCts = cts;
-
-            //_logger.Information("Начало переподключения к порту {PortName}", _portName);
-
-            while (!cts.IsCancellationRequested)
-            {
-                try
-                {
-                    // Асинхронное закрытие порта
-                    if (Port != null && Port.IsOpen)
-                        await Task.Run(() => Port.Close());
-
-                    // Асинхронная попытка открытия с задержкой
-                    var success = await Task.Run(() =>
-                    {
-                        try
-                        {
-                            Open(_portName, _baudRate);
-                            return Port?.IsOpen == true;
-                        }
-                        catch
-                        {
-                            return false;
-                        }
-                    });
-
-                    if (success) break;
-
-                    // Задержка между попытками
-                    await Task.Delay(1000, cts.Token);
-                }
-                catch (Exception ex)
-                {
-                    //_logger.Error(ex, "Ошибка переподключения");
-                    await Task.Delay(5000, cts.Token);
-                }
-            }
-            _reconnectCts = null;
-        }
-
-        /// <summary>
-        /// Проверка статуса порта.
-        /// </summary>
-        private void CheckPortStatus(SerialPort port)
-        {
-            if (port == null || !port.IsOpen)
-            {
-                //_logger.Error("Порт недоступен для чтения");
-                throw new InvalidOperationException("Порт не открыт");
-            }
+            await CloseAsync();
+            _io.Dispose();
         }
 
         #endregion

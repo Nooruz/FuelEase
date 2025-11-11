@@ -14,8 +14,9 @@ namespace KIT.GasStation.FuelDispenser.Services
 
         private const byte StartTx = 0xA5;
         private const byte StartRx = 0x5A;
-        private LanfengControllerType _lanfengControllerType;
+        private const byte FrameLength = 14;
         private readonly ICommandEncoder _commandEncoder;
+        private LanfengControllerType _controllerType;
 
         #endregion
 
@@ -30,51 +31,70 @@ namespace KIT.GasStation.FuelDispenser.Services
 
         #region Public Voids
 
-        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress, decimal? value = null, decimal? quantity = null)
+        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress = 0, decimal? value = null, bool bySum = true)
         {
             // Берём буфер из пула длиной 14
-            var buffer = ArrayPool<byte>.Shared.Rent(14);
+            var rented = ArrayPool<byte>.Shared.Rent(FrameLength);
             try
             {
-                buffer[0] = StartTx;
-                buffer[1] = (byte)(controllerAddress & 0x0F);
-                buffer[2] = _commandEncoder.Encode(cmd);
+                // работаем строго с окном [0..13]
+                var frame = rented.AsSpan(0, FrameLength);
+
+                // ОБЯЗАТЕЛЬНО: очистить, чтобы не тянуть мусор
+                frame.Clear();
+
+                frame[0] = StartTx;
+                switch (_controllerType)
+                {
+                    case LanfengControllerType.Single:
+                        frame[1] = (byte)(0 << 4 | controllerAddress);
+                        break;
+                    case LanfengControllerType.Multi:
+                        frame[1] = (byte)(columnAddress << 4 | controllerAddress);
+                        break;
+                }
+                frame[2] = _commandEncoder.Encode(cmd);
 
                 // Вставить параметры, в зависимости от команды
                 switch (cmd)
                 {
                     case Command.ChangePrice:
-                        AddPriceBytes(buffer, value);
+                        AddPriceBytes(rented, value);
                         break;
                     case Command.StartFillingSum or Command.StartFillingQuantity:
-                        AddSumBytes(buffer, value);
+                        AddSumBytes(rented, value, bySum);
                         break;
                         // Для статуса и других команд никаких дополнительных байт
                 }
 
                 // Вычисляем контрольную сумму и вставляем в последний байт
-                buffer[13] = CalculateChecksum(buffer, length: 13);
+                frame[13] = CalculateChecksum(rented, length: 13);
 
                 // Возвращаем ровно 14-байтовый массив копией
                 var result = new byte[14];
-                Array.Copy(buffer, result, 14);
+                Buffer.BlockCopy(rented, 0, result, 0, FrameLength);
                 return result;
             }
             finally
             {
-                ArrayPool<byte>.Shared.Return(buffer);
+                ArrayPool<byte>.Shared.Return(rented, clearArray: true);
             }
         }
 
         public ControllerResponse ParseResponse(byte[] rawResponse)
         {
             // Базовая валидация
-            if (rawResponse == null || rawResponse.Length < 5)
+            if (rawResponse == null || rawResponse.Length < FrameLength)
                 return new ControllerResponse { IsValid = false };
 
             // Проверяем стартовый байт
             if (rawResponse[0] != StartRx)
-                return new ControllerResponse { IsValid = false };
+            {
+                if (!TryAlignAndExtractFrame(rawResponse, out var aligned))
+                    return new ControllerResponse { IsValid = false };
+
+                rawResponse = aligned;
+            }
 
             // Проверяем контрольную сумму
             var checksum = CalculateChecksum(rawResponse, rawResponse.Length - 1);
@@ -82,7 +102,7 @@ namespace KIT.GasStation.FuelDispenser.Services
                 return new ControllerResponse { IsValid = false };
 
             var receivedcmd = _commandEncoder.Decode(rawResponse[2]);
-            var address = rawResponse[1] & 0x0F;
+            var address = (rawResponse[1] >> 4) & 0x0F;
 
             // Извлекаем статус колонки из 12-го байта (индекс 11)
             byte statusByte = rawResponse[11];
@@ -90,11 +110,14 @@ namespace KIT.GasStation.FuelDispenser.Services
 
             decimal sumValue = 0m;
             decimal quantityValue = 0m;
-            if (receivedcmd == Command.Status)
+
+            // Сумма хранится в байтах 3–6 (BCD), количество – в байтах 7–10 (BCD)
+            sumValue = ParseBcdQuantity(rawResponse, offset: 3);
+            quantityValue = ParseBcdQuantity(rawResponse, offset: 7);
+
+            if (receivedcmd == Command.FirmwareVersion)
             {
-                // Сумма хранится в байтах 3–6 (BCD), количество – в байтах 7–10 (BCD)
-                sumValue = ParseBcdQuantity(rawResponse, offset: 3);
-                quantityValue = ParseBcdQuantity(rawResponse, offset: 7);
+                _controllerType = (LanfengControllerType)rawResponse[3];
             }
 
             return new ControllerResponse
@@ -159,20 +182,38 @@ namespace KIT.GasStation.FuelDispenser.Services
         private static void AddPriceBytes(byte[] buffer, decimal? price)
         {
             if (price == null) return;
-            // Пример: цена в тийинах без копеек, 6 цифровых символов ASCII
-            int raw = (int)(price * 100);
-            var text = raw.ToString().PadLeft(6, '0');
-            for (int i = 0; i < 6; i++)
-                buffer[3 + i] = (byte)text[i];
+            // 1) Умножаем на 100 — убираем копейки (12.34 -> 1234)
+            int intValue = (int)(price * 100);
+
+            // 2) Формируем шестизначную строку (001234)
+            string strValue = intValue.ToString("D6");
+
+            // 3) Преобразуем каждые 2 цифры в один HEX-байт
+            for (int i = 0; i < 3; i++)
+            {
+                string pair = strValue.Substring(i * 2, 2); // "00", "12", "34"
+                buffer[3 + i] = Convert.ToByte(pair, 16);
+            }
         }
 
-        private static void AddSumBytes(byte[] buffer, decimal? sum)
+        private static void AddSumBytes(byte[] buffer, decimal? sum, bool bySum)
         {
             if (sum == null) return;
-            int raw = (int)(sum * 100);
-            var text = raw.ToString().PadLeft(6, '0');
-            for (int i = 0; i < 6; i++)
-                buffer[3 + i] = (byte)text[i];
+            // 1) Умножаем на 100 — убираем копейки (12.34 -> 1234)
+            int intValue = (int)(sum * 100);
+
+            // 2) Формируем шестизначную строку (00001234)
+            string strValue = intValue.ToString("D8");
+
+            // 3) Выбираем сдвиг в зависимости от режима
+            int startIndex = bySum ? 3 : 6;
+
+            // 4) Преобразуем каждые 2 цифры в один HEX-байт
+            for (int i = 0; i < 4; i++)
+            {
+                string pair = strValue.Substring(i * 2, 2); // "00", "00", "12", "34"
+                buffer[startIndex + i] = Convert.ToByte(pair, 16);
+            }
         }
 
         /// <summary>
@@ -200,6 +241,27 @@ namespace KIT.GasStation.FuelDispenser.Services
             };
 
             return (nozzleAddress, status);
+        }
+
+        //Метод для выравнивания и извлечения кадра из необработанного ответа
+        private bool TryAlignAndExtractFrame(byte[] rawResponse, out byte[] sorted)
+        {
+            sorted = Array.Empty<byte>();
+
+            int idx = Array.IndexOf(rawResponse, StartRx);
+            if (idx < 0)
+                return false; // стартовый байт не найден
+
+            int len = rawResponse.Length;
+            sorted = new byte[len];
+
+            // копируем хвост (с найденного индекса до конца)
+            Array.Copy(rawResponse, idx, sorted, 0, len - idx);
+
+            // копируем голову (всё, что было до стартового байта)
+            Array.Copy(rawResponse, 0, sorted, len - idx, idx);
+
+            return true;
         }
 
         #endregion

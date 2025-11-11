@@ -150,9 +150,13 @@ namespace KIT.GasStation.ViewModels
             //{
             //    MessageBoxService.ShowMessage(e.Message, "Информация");
             //}
-            catch(Exception e)
+            catch (Exception e)
             {
                 MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            }
+            finally
+            {
+                CurrentWindowService.Close();
             }
         }
 

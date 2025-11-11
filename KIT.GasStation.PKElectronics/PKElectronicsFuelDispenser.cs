@@ -19,13 +19,12 @@ namespace KIT.GasStation.PKElectronics
         
         #region Constructors
 
-        public PKElectronicsFuelDispenser(Controller controller, 
-            ILogger<PKElectronicsFuelDispenser> logger,
+        public PKElectronicsFuelDispenser(Controller controller,
             int address,
             IProtocolParserFactory protocolParserFactory,
             IPortManager portManager,
             IHubClient hubClient) 
-            : base(controller, logger, address, protocolParserFactory, portManager, hubClient)
+            : base(controller, address, protocolParserFactory, portManager, hubClient)
         {
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
             _hubClient = hubClient;

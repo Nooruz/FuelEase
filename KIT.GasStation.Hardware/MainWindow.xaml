@@ -12,7 +12,7 @@
     WindowState="Maximized"
     MinHeight="600"
     MinWidth="800"
-        Title="{x:Static local:App.ProductName}">
+        >
 
     <Window.Resources>
 
@@ -93,9 +93,11 @@
                                   Style="{StaticResource CashRegisterTreeViewItem}"
                                   ContextMenu="{StaticResource CashRegisterContextMenu}"/>
                     <TreeViewItem Header="Сканер Штрих-кодов"
-                          Tag="BarcodeScanner"/>
+                                  Tag="BarcodeScanner"/>
                     <TreeViewItem Header="Чековый принтер"
-                          Tag="CheckPrinter"/>
+                                  Tag="CheckPrinter"/>
+                    <TreeViewItem Header="Сервер авторизации"
+                                  Tag="CheckPrinter"/>
                 </TreeView>
 
                 <ContentControl Content="{Binding SelectedBaseViewModel}"/>

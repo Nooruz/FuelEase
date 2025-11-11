@@ -3,42 +3,32 @@
 namespace KIT.GasStation.HardwareConfigurations.Services
 {
     /// <summary>
-    /// Интерфейс для управления состоянием COM-порта.
+    /// Высокоуровневый владелец конкретного COM-порта, обеспечивающий одновременной доступ многим клиентам через очередь.
     /// </summary>
-    public interface ISharedSerialPortService : IDisposable
+    public interface ISharedSerialPortService : IAsyncDisposable
     {
-        SerialPort Port { get; }
+        /// <summary>Признак, что порт открыт.</summary>
+        bool IsOpen { get; }
+
+        /// <summary>Имя порта (COM3 и т.п.).</summary>
+        string PortName { get; }
+
+        /// <summary>Открыть порт (идемпотентно).</summary>
+        Task OpenAsync(PortKey key, SerialPortOptions options, CancellationToken ct);
+
+        /// <summary>Закрыть порт (идемпотентно); обычно вызывается менеджером при отсутствии лизов.</summary>
+        Task CloseAsync();
 
         /// <summary>
-        /// Событие при получении данных.
+        /// Последовательно отправить и прочитать ровно N байт (с ретраями).
+        /// Внутри встроен общий семафор, исключающий одновременный I/O.
         /// </summary>
-        event Action<byte[]> OnDataReceived;
-
-        /// <summary>
-        /// Открытие порта.
-        /// </summary>
-        /// <param name="portName">Имя порта.</param>
-        /// <param name="baudRate">Скорость передачи данных в бодах.</param>
-        /// <param name="cancellationToken">Токен для отмены операции.</param>
-        /// <returns>Задача, представляющая асинхронную операцию открытия порта.</returns>
-        Task OpenAsync(string portName, int baudRate, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Закрытие порта.
-        /// </summary>
-        void Close();
-
-        /// <summary>
-        /// Запись данных в порт.
-        /// </summary>
-        /// <param name="bytes">Данные для записи.</param>
-        /// <param name="expectedResponseLength">Ожидаемая длина ответа.</param>
-        /// <param name="maxRetries">Количество попыток в случае неудачи.</param>
-        /// <param name="writeTimeout">Тайм-аут записи в миллисекундах.</param>
-        Task<byte[]> WriteReadAsync(byte[] bytes,
-            int readBufferLength,
-            int maxRetries = 3,
+        Task<byte[]> WriteReadAsync(
+            byte[] tx,
+            int expectedRxLength,
             int writeToReadDelayMs = 50,
-            int readTimeoutMs = 3000);
+            int readTimeoutMs = 3000,
+            int maxRetries = 2,
+            CancellationToken ct = default);
     }
 }

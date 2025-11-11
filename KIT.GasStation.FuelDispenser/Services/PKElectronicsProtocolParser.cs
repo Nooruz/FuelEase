@@ -211,6 +211,11 @@ namespace KIT.GasStation.FuelDispenser.Services
             return result;
         }
 
+        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress, decimal? value = null, bool bySum = true)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

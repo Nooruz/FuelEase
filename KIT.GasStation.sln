@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.Web", "KIT.G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.Worker", "KIT.GasStation.Worker\KIT.GasStation.Worker.csproj", "{BFAD6AA3-1AB6-428D-A3DF-D714C08D8D0D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.Mobile", "KIT.GasStation.Mobile\KIT.GasStation.Mobile.csproj", "{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -249,6 +251,24 @@ Global
 		{BFAD6AA3-1AB6-428D-A3DF-D714C08D8D0D}.Release|x64.Build.0 = Release|Any CPU
 		{BFAD6AA3-1AB6-428D-A3DF-D714C08D8D0D}.Release|x86.ActiveCfg = Release|Any CPU
 		{BFAD6AA3-1AB6-428D-A3DF-D714C08D8D0D}.Release|x86.Build.0 = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|x64.Build.0 = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|x64.Deploy.0 = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|x86.Build.0 = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Debug|x86.Deploy.0 = Debug|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|x64.ActiveCfg = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|x64.Build.0 = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|x64.Deploy.0 = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|x86.ActiveCfg = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|x86.Build.0 = Release|Any CPU
+		{99015E54-5A0A-4CF5-B797-E6BCA0DD7587}.Release|x86.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

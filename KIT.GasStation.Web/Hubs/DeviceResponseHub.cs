@@ -54,10 +54,17 @@ namespace KIT.GasStation.Web.Hubs
         public Task<IReadOnlyCollection<string>> GetAllGroups() =>
             Task.FromResult(_groups.GetAllGroups());
 
-        // Пример команд от РМК к серверу:
-        public Task SetPrice() =>
-            // здесь пробрасываешь в свой командный обработчик/шину
-            Task.CompletedTask;
+        public Task SetPriceAsync(string groupName, decimal price) =>
+            Clients.Group(groupName).SetPriceAsync(groupName, price);
+
+        public Task StartRefuelingAsync(string groupName, decimal sum, bool bySum) =>
+            Clients.Group(groupName).StartRefuelingAsync(groupName, sum, bySum);
+        public Task ColumnLiftedChanged(string groupName, bool isLifted) =>
+            Clients.Group(groupName).ColumnLiftedChanged(groupName, isLifted);
+        public Task CompleteRefuelingAsync(string groupName) =>
+            Clients.Group(groupName).CompleteRefuelingAsync(groupName);
+        public Task GetCountersAsync(string groupName) =>
+            Clients.Group(groupName).GetCountersAsync(groupName);
 
         public Task RegisterWorker(string groupName) =>
             Groups.AddToGroupAsync(Context.ConnectionId, groupName);
@@ -67,6 +74,7 @@ namespace KIT.GasStation.Web.Hubs
 
         public Task StopPolling(string groupName) =>
             Clients.Group(groupName).StopPolling(new StopPollingCommand { GroupName = groupName });
+
 
         public Task StartFilling() => Task.CompletedTask;
         public Task StopFilling() => Task.CompletedTask;

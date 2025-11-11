@@ -11,7 +11,6 @@ namespace KIT.GasStation.FuelDispenser
     public abstract class FuelDispenserServiceBase : IFuelDispenserService
     {
         protected readonly Controller Controller;
-        protected readonly ILogger<FuelDispenserServiceBase> Logger;
         protected readonly IProtocolParserFactory _protocolParserFactory;
         protected readonly IPortManager _portManager;
         protected readonly IHubClient _hubClient;
@@ -27,8 +26,7 @@ namespace KIT.GasStation.FuelDispenser
         public NozzleStatus Status {  get; set; }
         
 
-        protected FuelDispenserServiceBase(Controller controller, 
-            ILogger<FuelDispenserServiceBase> logger,
+        protected FuelDispenserServiceBase(Controller controller,
             int address,
             IProtocolParserFactory protocolParserFactory,
             IPortManager portManager,
@@ -37,7 +35,6 @@ namespace KIT.GasStation.FuelDispenser
             Controller = controller;
             Columns = Controller.Columns.Where(c => c.Address == address).ToList();
             Address = address;
-            Logger = logger;
             _protocolParserFactory = protocolParserFactory;
             _portManager = portManager;
             _hubClient = hubClient;
@@ -45,14 +42,11 @@ namespace KIT.GasStation.FuelDispenser
 
         public async Task RunAsync(CancellationToken token)
         {
-            Logger.LogInformation("Start {Type} on {Port}", Controller.Type, Controller.ComPort);
-
             await OnOpenAsync(token);
         }
 
         protected virtual Task OnOpenAsync(CancellationToken token) => Task.CompletedTask;
         protected virtual Task OnCloseAsync() => Task.CompletedTask;
-        protected virtual Task GetStatusAsync() => Task.CompletedTask;
 
         // Обязательный шаг: тик опроса/обработки
         protected abstract Task OnTickAsync(CancellationToken token);

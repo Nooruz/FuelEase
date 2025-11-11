@@ -141,7 +141,7 @@
                                               Height="30"
                                               HorizontalAlignment="Right"
                                               VerticalAlignment="Top"
-                                              Text="{Binding SelectedNozzle.ReceivedSum, StringFormat=F2, FallbackValue=0.00}"
+                                              Text="{Binding ReceivedSum, StringFormat=F2, FallbackValue=0.00}"
                                               Style="{StaticResource DefaultDigitalScreenStyle}"
                                               Margin="0 0 0 2"/>
 
@@ -150,7 +150,7 @@
                                               HorizontalAlignment="Right"
                                               VerticalAlignment="Top"
                                               Style="{StaticResource DefaultDigitalScreenStyle}"
-                                              Text="{Binding SelectedNozzle.ReceivedQuantity, StringFormat=F2, FallbackValue=0.00}"
+                                              Text="{Binding ReceivedQuantity, StringFormat=F2, FallbackValue=0.00}"
                                               Margin="0 0 0 2"/>
 
 
