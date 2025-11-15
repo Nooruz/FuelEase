@@ -10,7 +10,6 @@ using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
 using System.IO.Ports;
-using System.Net;
 using System.Text.RegularExpressions;
 
 namespace KIT.GasStation.Lanfeng
@@ -36,6 +35,7 @@ namespace KIT.GasStation.Lanfeng
         private readonly object _pollLock = new();
         private const int _frameLen = 14;
         private ILogger _logger;
+        private LanfengControllerType _controllerType;
 
         #endregion
 
@@ -51,6 +51,11 @@ namespace KIT.GasStation.Lanfeng
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
             _portManager = portManager;
             _hubClient = hubClient;
+
+            if (Columns != null)
+            {
+                _controllerType = Columns.Count > 1 ? LanfengControllerType.Multi : LanfengControllerType.Single;
+            }
 
             CreateLogger();
         }
@@ -152,7 +157,9 @@ namespace KIT.GasStation.Lanfeng
                 try
                 {
                     // опрос — одна команда через универсальный метод
-                    if (Status is NozzleStatus.Ready or NozzleStatus.PumpWorking)
+                    if (Status is NozzleStatus.Ready or 
+                        NozzleStatus.PumpWorking or
+                        NozzleStatus.WaitingRemoved)
                     {
                         await ExecuteCommandAsync(Command.Status, Address, 0, null, ct: token);
                     }
@@ -222,7 +229,14 @@ namespace KIT.GasStation.Lanfeng
                     }
                     else
                     {
-                        column = Columns.FirstOrDefault(c => c.LanfengAddress == resp.StatusAddress);
+                        if (_controllerType == LanfengControllerType.Single)
+                        {
+                            column = Columns.FirstOrDefault();
+                        }
+                        else
+                        {
+                            column = Columns.FirstOrDefault(c => c.LanfengAddress == resp.StatusAddress);
+                        }
                     }
 
                     if (column is not null)
@@ -413,6 +427,8 @@ namespace KIT.GasStation.Lanfeng
 
         private async Task HandleColumnLiftedAsync(byte[] response)
         {
+            if (response is null) return;
+
             // Протокол: в младшем полубайте (low nibble) порядковый номер пистолета (1..n).
             int liftedOrdinal = response[12] & 0x0F;
 
@@ -453,14 +469,16 @@ namespace KIT.GasStation.Lanfeng
 
         private void CreateLogger()
         {
-            // создаём каталог
-            var logDir = Path.Combine(AppContext.BaseDirectory, "logs", "trk");
-            Directory.CreateDirectory(logDir);
+            // создаём общую папку для логов ТРК
+            var logRoot = Path.Combine(AppContext.BaseDirectory, "logs", "trk");
+            Directory.CreateDirectory(logRoot);
 
-            // безопасное имя файла
-            string safeController = Sanitize($"{Controller.Name}");
-            string fileName = $"TRK_{Controller.Type}_{safeController}_{Address}.log";
-            string path = Path.Combine(logDir, fileName);
+            // безопасное имя файла (уникальное для экземпляра)
+            string safeController = Sanitize(Controller.Name);
+            string safePort = Sanitize(Controller.ComPort);
+            string controllerId = Controller.Id == Guid.Empty ? "noid" : Controller.Id.ToString("N");
+            string fileName = $"TRK_{Controller.Type}_{safeController}_{safePort}_{controllerId}_{Address}.log";
+            string path = Path.Combine(logRoot, fileName);
 
             // отдельный Serilog для файла инстанса
             _logger = new LoggerConfiguration()

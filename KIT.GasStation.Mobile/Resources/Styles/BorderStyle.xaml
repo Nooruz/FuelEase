@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xaml-comp compile="true" ?>
+<ResourceDictionary 
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+
+    <Style x:Key="NozzleBorder"
+           TargetType="Border">
+
+        <!-- Аналог BorderThickness / CornerRadius / Width / Height -->
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="HeightRequest" Value="40" />
+        <Setter Property="WidthRequest" Value="40" />
+        <Setter Property="Background" Value="White" />
+        <Setter Property="Stroke" Value="Black" />
+
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="40" />
+            </Setter.Value>
+        </Setter>
+
+        <!-- В MAUI есть DataTrigger, но без анимации -->
+        <Style.Triggers>
+            <!-- Когда Lifted = True -->
+            <DataTrigger TargetType="Border"
+                     Binding="{Binding Lifted}"
+                     Value="True">
+                <!-- Тут можем просто менять фон, без мигания -->
+                <Setter Property="Background" Value="Transparent" />
+            </DataTrigger>
+
+            <!-- Когда Lifted = False -->
+            <DataTrigger TargetType="Border"
+                         Binding="{Binding Lifted}"
+                         Value="False">
+                <Setter Property="Background" Value="White" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

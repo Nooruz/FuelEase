@@ -42,7 +42,26 @@ namespace KIT.GasStation.FuelDispenser
 
         public async Task RunAsync(CancellationToken token)
         {
-            await OnOpenAsync(token);
+            var opened = false;
+
+            try
+            {
+                await OnOpenAsync(token);
+                opened = true;
+
+                await Task.Delay(Timeout.Infinite, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                // ожидаем штатное завершение по токену отмены
+            }
+            finally
+            {
+                if (opened)
+                {
+                    await OnCloseAsync();
+                }
+            }
         }
 
         protected virtual Task OnOpenAsync(CancellationToken token) => Task.CompletedTask;

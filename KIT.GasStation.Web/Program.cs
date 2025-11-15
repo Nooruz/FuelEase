@@ -1,5 +1,9 @@
-﻿using KIT.GasStation.Web.Hubs;
+﻿using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Services;
+using KIT.GasStation.Web.Hubs;
 using KIT.GasStation.Web.Services;
+using KIT.GasStation.Web.Services.Api;
+using KIT.GasStation.Web.HostBuilders;
 using Serilog;
 
 var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -26,7 +30,10 @@ var builder = WebApplication.CreateBuilder(args);
         options.ServiceName = "KIT.GasStation.Web";
     });
 
-    builder.Host.UseSerilog();
+    builder.Host.UseSerilog()
+        .AddConfiguration()
+        .AddDbContext();
+
     builder.Services.AddSignalR();
     builder.Services.AddSingleton<IGroupRegistry, GroupRegistry>();
 
@@ -36,6 +43,19 @@ var builder = WebApplication.CreateBuilder(args);
         .AllowAnyMethod()
         .AllowCredentials()
         .SetIsOriginAllowed(_ => true))); // dev: разрешаем все origin
+
+    builder.Services.AddHttpClient("GasStationApi", client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"]);
+    });
+
+    builder.Services.AddScoped(typeof(IDataService<>), serviceProvider =>
+    {
+        var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        return new ApiDataService<DomainObject>(
+            httpClientFactory.CreateClient("GasStationApi"),
+            resourcePath: /* подставьте имя ресурса для конкретного T через фабрику */ "");
+    });
 
     builder.WebHost.ConfigureKestrel((context, options) =>
     {

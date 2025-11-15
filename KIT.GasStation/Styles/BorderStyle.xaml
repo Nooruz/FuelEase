@@ -2,8 +2,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:converters="clr-namespace:KIT.GasStation.Converters">
 
-    <converters:DrawingColorToBrushConverter x:Key="DrawingColorToBrushConverter"/>
-
 
     <Style TargetType="Border" x:Key="NozzleBorder">
         <Setter Property="BorderThickness" Value="2"/>

@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using CommunityToolkit.Maui;
+using KIT.GasStation.Mobile.HostBuilders;
 
 namespace KIT.GasStation.Mobile
 {
@@ -7,18 +9,20 @@ namespace KIT.GasStation.Mobile
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
+            builder.UseMauiApp<App>()
+                .UseMauiCommunityToolkit();
+
+            // Host-цепочка
             builder
-                .UseMauiApp<App>()
-                .ConfigureFonts(fonts =>
-                {
-                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-                });
+                .AddConfiguration()
+                .AddPages()
+                .AddViewModels()
+                .AddStores()
+                .AddServices();
 
 #if DEBUG
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
-
             return builder.Build();
         }
     }

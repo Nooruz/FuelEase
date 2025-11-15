@@ -62,7 +62,7 @@ namespace KIT.GasStation.Worker
         {
             var backoff = TimeSpan.FromSeconds(1);
 
-            await using var scope = _scopeFactory.CreateAsyncScope();
+            var scope = _scopeFactory.CreateAsyncScope();
             var sp = scope.ServiceProvider;
 
             IFuelDispenserService? service = null;

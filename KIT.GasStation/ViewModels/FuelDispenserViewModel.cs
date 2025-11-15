@@ -323,10 +323,17 @@ namespace KIT.GasStation.ViewModels
         /// <summary>
         /// Обработчик события завершения заправки
         /// </summary>
-        private async Task OnCompletedFilling(Nozzle nozzle)
+        private async Task OnCompletedFilling(Nozzle nozzle, ControllerResponse response)
         {
             try
             {
+                decimal quantity = response.Quantity;
+                decimal sum = response.Sum;
+
+                SelectedNozzle.FuelSale.ReceivedQuantity = quantity;
+                SelectedNozzle.FuelSale.ReceivedSum = sum;
+                ReceivedQuantity = quantity;
+                ReceivedSum = sum;
                 nozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.Completed;
                 await _fuelSaleService.UpdateAsync(nozzle.FuelSale.Id, nozzle.FuelSale);
                 await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
@@ -370,15 +377,12 @@ namespace KIT.GasStation.ViewModels
         /// <summary>
         /// Обработчик события ожидания снятия пистолета
         /// </summary>
-        private void OnWaitingRemoved(Nozzle nozzle)
+        private async Task OnWaitingRemoved(Nozzle nozzle)
         {
             if (nozzle.FuelSale == null) return;
 
-            Task.Run(async () =>
-            {
-                nozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.InProgress;
-                await _fuelSaleService.UpdateAsync(nozzle.FuelSale.Id, nozzle.FuelSale);
-            });
+            nozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.InProgress;
+            await _fuelSaleService.UpdateAsync(nozzle.FuelSale.Id, nozzle.FuelSale);
         }
 
         /// <summary>
@@ -394,6 +398,8 @@ namespace KIT.GasStation.ViewModels
             var nozzle = Nozzles.FirstOrDefault(n => n.Group == deviceResponse.Group);
 
             if (nozzle is null) return;
+
+            if (SelectedNozzle == null) return;
 
             if (SelectedNozzle.FuelSale == null) return;
 
@@ -436,7 +442,7 @@ namespace KIT.GasStation.ViewModels
                     await OnStartedFilling(deviceResponse);
                     break;
                 case NozzleStatus.WaitingRemoved:
-                    OnWaitingRemoved(nozzle);
+                    await OnWaitingRemoved(nozzle);
                     break;
                 case NozzleStatus.PumpStop:
                     await _hub.InvokeAsync("CompleteRefuelingAsync", nozzle.Group);
@@ -456,8 +462,7 @@ namespace KIT.GasStation.ViewModels
                     await OnCounterReceived(deviceResponse);
                     break;
                 case Command.CompleteFilling:
-                    await OnCompletedFilling(nozzle);
-                    await OnStartedFilling(deviceResponse);
+                    await OnCompletedFilling(nozzle, deviceResponse);
                     break;
             }
 
