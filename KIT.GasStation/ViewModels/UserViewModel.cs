@@ -75,12 +75,16 @@ namespace KIT.GasStation.ViewModels
         #region Public Voids
 
         [Command]
-        public void CreateUser()
+        public async Task CreateUser()
         {
             try
             {
+                var viewModel = new UserDetailViewModel(_userDetailViewModelLogger, _userRoleService, _userService);
+
+                await viewModel.StartAsync();
+
                 WindowService.Title = "Создание пользователя";
-                WindowService.Show(nameof(UserDetailView), new UserDetailViewModel(_userDetailViewModelLogger, _userRoleService, _userService));
+                WindowService.Show(nameof(UserDetailView), viewModel);
             }
             catch (Exception e)
             {
@@ -89,14 +93,13 @@ namespace KIT.GasStation.ViewModels
         }
 
         [Command]
-        public void EditUser()
+        public async Task EditUser()
         {
             try
             {
                 if (SelectedUser != null)
                 {
-                    WindowService.Title = $"Редактирование пользователя ({SelectedUser.FullName})";
-                    WindowService.Show(nameof(UserDetailView), new UserDetailViewModel(_userDetailViewModelLogger, _userRoleService, _userService)
+                    var viewModel = new UserDetailViewModel(_userDetailViewModelLogger, _userRoleService, _userService)
                     {
                         CreatedUser = new User
                         {
@@ -106,7 +109,12 @@ namespace KIT.GasStation.ViewModels
                             Password = SelectedUser.Password,
                             Deleted = SelectedUser.Deleted
                         }
-                    });
+                    };
+
+                    await viewModel.StartAsync();
+
+                    WindowService.Title = $"Редактирование пользователя ({SelectedUser.FullName})";
+                    WindowService.Show(nameof(UserDetailView), viewModel);
                 }
             }
             catch (Exception e)
@@ -138,6 +146,7 @@ namespace KIT.GasStation.ViewModels
         private async Task GetData()
         {
             Users = new(await _userService.GetAllAsync());
+            
         }
 
         private void UserService_OnUpdated(User updatedUser)
