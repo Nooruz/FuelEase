@@ -181,6 +181,37 @@ namespace KIT.GasStation.NewCas
         /// <inheritdoc/>
         public async Task ReturnAsync(FuelSale fuelSale, Fuel fuel)
         {
+            //Данные для отправки в запросе
+            OpenAndCloseRec openAndCloseRec = new()
+            {
+                RecType = RecType.ReturnComing,
+                PrintToBitmaps = true,
+                SourceFDNumber = fuelSale.FiscalData.FiscalDocument,
+                SourceFMNumber = fuelSale.FiscalData.FiscalModule,
+                Goods = new(){
+                    new Goods() {
+                             Count = Math.Round(fuelSale.Sum / fuelSale.Price, 6),
+                             Price = fuelSale.Price,
+                             ItemName = fuelSale.Tank.Fuel.Name,
+                             Article = "",
+                             Total = fuelSale.Sum.ToString(),
+                             Unit = fuelSale.Tank.Fuel.UnitOfMeasurement.Name,
+                             VatNum = fuelSale.Tank.Fuel.ValueAddedTax ? 1 : 0,
+                             StNum = (int)(fuelSale.Tank.Fuel.SalesTax * 100)}],
+                PayItems = new(){
+                    new PayItems() {
+                             PayType = GetPayType(fuelSale.PaymentType),
+                             Total = fuelSale.Sum.ToString()
+                         } }
+                }
+            };
+
+            HttpResponseMessage? sale = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
+
+            if (sale != null && sale.IsSuccessStatusCode)
+            {
+                await UpdateFuelSaleWhenReturn(fuelSale, sale);
+            }
 
         }
 

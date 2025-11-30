@@ -151,7 +151,7 @@ namespace KIT.GasStation
             host.ConfigureServices((hostContext, services) =>
             {
                 var cfg = hostContext.Configuration;
-                var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5000";
+                var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
                 var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
                 var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 

@@ -133,8 +133,6 @@ namespace KIT.GasStation.ViewModels
                 CreateFuelSale.CreateDate = DateTime.Now;
                 CreateFuelSale.CustomerSum = PaySum;
 
-                //await _fuelSaleService.CreateAsync(CreateFuelSale);
-
                 // Если тип оплаты - наличные или безналичные средства, обрабатываем продажу через ККМ
                 if (CreateFuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
                 {

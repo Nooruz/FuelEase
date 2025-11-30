@@ -114,7 +114,6 @@ namespace KIT.GasStation.ViewModels
             }
 
             await _cashRegisterStore.ReturnAsync(SelectedFuelSale, SelectedFuelSale.Tank.Fuel);
-
         }
 
         #endregion
