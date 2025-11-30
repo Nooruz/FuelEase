@@ -15,6 +15,8 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         int ReadTimeoutMs = 3000,
         int WriteTimeoutMs = 1000,
         int ReadBufferSize = 64 * 1024,
-        int WriteBufferSize = 64 * 1024
+        int WriteBufferSize = 64 * 1024,
+        int OpenRetryTimeoutMs = 30_000,
+        int OpenRetryDelayMs = 1_000
     );
 }

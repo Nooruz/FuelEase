@@ -6,7 +6,7 @@ namespace KIT.GasStation.Mobile.HostBuilders
     {
         public static MauiAppBuilder AddServices(this MauiAppBuilder builder)
         {
-            builder.Services.AddTransient<MainPageViewModel>();
+            //builder.Services.AddTransient<MainPageViewModel>();
             // остальные VM
 
             return builder;

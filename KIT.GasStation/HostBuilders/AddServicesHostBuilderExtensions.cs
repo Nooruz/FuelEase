@@ -3,6 +3,7 @@ using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Services.AuthenticationServices;
 using KIT.GasStation.Domain.Views;
 using KIT.GasStation.EntityFramework.Services;
+using KIT.GasStation.HardwareConfigurations.Services;
 using KIT.GasStation.SplashScreen;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -36,6 +37,7 @@ namespace KIT.GasStation.HostBuilders
                 _ = services.AddSingleton<IDiscountService, DiscountService>();
                 _ = services.AddSingleton<IFiscalDataService, FiscalDataService>();
                 _ = services.AddSingleton<IFuelIntakeService, FuelIntakeService>();
+                _ = services.AddSingleton<IHardwareConfigurationService, HardwareConfigurationService>();
             });
         }
     }

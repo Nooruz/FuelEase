@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\KIT.GasStation.Common\KIT.GasStation.Common.csproj" />
     <ProjectReference Include="..\KIT.GasStation.EntityFramework\KIT.GasStation.EntityFramework.csproj" />
     <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
   </ItemGroup>

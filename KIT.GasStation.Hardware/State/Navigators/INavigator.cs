@@ -5,12 +5,16 @@ using System.Threading.Tasks;
 
 namespace KIT.GasStation.Hardware.State.Navigators
 {
+    /// <summary>
+    /// Тип ViewModel
+    /// </summary>
     public enum ViewType
     {
         MainWindow,
         Main,
         Lanfeng,
         EKassa,
+        NewCas,
         PKElectronics
     }
     public interface INavigator

@@ -17,7 +17,7 @@ namespace KIT.GasStation.Domain.Models
         private int _tankId;
         private string _group;
         private NozzleStatus _status;
-        private NozzleControlMode _controlMode;
+        private bool _isProgramControl;
         private decimal _lastCounter;
         private decimal _salesSum;
         private decimal _receivedSum;
@@ -27,6 +27,8 @@ namespace KIT.GasStation.Domain.Models
         private bool _lifted;
         private FuelSale _fuelSale;
         private int _number;
+        private string? _workerStateMessage;
+        private DateTimeOffset _workerStateUpdatedAt;
 
         #endregion
 
@@ -101,6 +103,28 @@ namespace KIT.GasStation.Domain.Models
 
         public ICollection<ShiftCounter> NozzleShiftCounters { get; set; }
 
+        [NotMapped]
+        public string? WorkerStateMessage
+        {
+            get => _workerStateMessage;
+            set
+            {
+                _workerStateMessage = value;
+                OnPropertyChanged(nameof(WorkerStateMessage));
+            }
+        }
+
+        [NotMapped]
+        public DateTimeOffset WorkerStateUpdatedAt
+        {
+            get => _workerStateUpdatedAt;
+            set
+            {
+                _workerStateUpdatedAt = value;
+                OnPropertyChanged(nameof(WorkerStateUpdatedAt));
+            }
+        }
+
         /// <summary>
         /// Статус
         /// </summary>
@@ -119,13 +143,13 @@ namespace KIT.GasStation.Domain.Models
         /// Режим управления
         /// </summary>
         [NotMapped]
-        public NozzleControlMode ControlMode
+        public bool IsProgramControl
         {
-            get => _controlMode;
+            get => _isProgramControl;
             set
             {
-                _controlMode = value;
-                OnPropertyChanged(nameof(ControlMode));
+                _isProgramControl = value;
+                OnPropertyChanged(nameof(IsProgramControl));
             }
         }
 

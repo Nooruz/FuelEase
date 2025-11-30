@@ -21,14 +21,22 @@ namespace KIT.GasStation.Hardware.HostBuilders
                 services.AddTransient(CreateLanfengViewModel);
                 services.AddTransient(CreatePKElectronicsViewModel);
                 services.AddTransient(CreateEKassaViewModel);
+                services.AddTransient(CreateNewCasViewModel);
 
                 services.AddSingleton<CreateViewModel<MainWindowViewModel>>(servicesProvider => () => CreateMainWindowViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<LanfengViewModel>>(servicesProvider => () => CreateLanfengViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<PKElectronicsViewModel>>(servicesProvider => () => CreatePKElectronicsViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<EKassaViewModel>>(servicesProvider => () => CreateEKassaViewModel(servicesProvider));
+                services.AddSingleton<CreateViewModel<NewCasViewModel>>(servicesProvider => () => CreateNewCasViewModel(servicesProvider));
 
                 services.AddSingleton<IViewModelFactory, ViewModelFactory>();
             });
+        }
+
+        private static NewCasViewModel CreateNewCasViewModel(IServiceProvider services)
+        {
+            return new NewCasViewModel(services.GetRequiredService<IHardwareConfigurationService>(),
+                services.GetRequiredService<ICashRegisterFactory>());
         }
 
         private static EKassaViewModel CreateEKassaViewModel(IServiceProvider services)

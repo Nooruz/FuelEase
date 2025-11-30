@@ -265,11 +265,14 @@ namespace KIT.GasStation.Hardware.ViewModels
                 case CashRegisterType.None:
                     break;
                 case CashRegisterType.EKassa:
-                    EKassaViewModel viewModel = (EKassaViewModel)_navigator.GetViewModel(ViewType.EKassa);
-                    viewModel.SelectedCashRegister = cashRegister;
-                    SelectedBaseViewModel = viewModel;
+                    EKassaViewModel eKassaViewModel = (EKassaViewModel)_navigator.GetViewModel(ViewType.EKassa);
+                    eKassaViewModel.SelectedCashRegister = cashRegister;
+                    SelectedBaseViewModel = eKassaViewModel;
                     break;
                 case CashRegisterType.NewCas:
+                    NewCasViewModel newCasViewModel = (NewCasViewModel)_navigator.GetViewModel(ViewType.NewCas);
+                    newCasViewModel.SelectedCashRegister = cashRegister;
+                    SelectedBaseViewModel = newCasViewModel;
                     break;
                 case CashRegisterType.MF:
                     break;

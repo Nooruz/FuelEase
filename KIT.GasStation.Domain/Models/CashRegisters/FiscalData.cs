@@ -9,6 +9,7 @@
         private string? _check;
         private string? _returnCheck;
         private string? _registrationNumber;
+        private int _fuelSaleId;
 
         #endregion
 
@@ -79,10 +80,20 @@
             }
         }
 
+        public int FuelSaleId
+        {
+            get => _fuelSaleId;
+            set
+            {
+                _fuelSaleId = value;
+                OnPropertyChanged(nameof(FuelSaleId));
+            }
+        }
+
         /// <summary>
         /// Продажа топлива
         /// </summary>
-        public FuelSale FuelSale { get; set; }
+        public FuelSale FuelSale { get; set; } = null!;
 
         #endregion
 

@@ -1,9 +1,7 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.Domain.Services;
+﻿using KIT.GasStation.Common.HostBuilders;
+using KIT.GasStation.Web.HostBuilders;
 using KIT.GasStation.Web.Hubs;
 using KIT.GasStation.Web.Services;
-using KIT.GasStation.Web.Services.Api;
-using KIT.GasStation.Web.HostBuilders;
 using Serilog;
 
 var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -32,10 +30,13 @@ var builder = WebApplication.CreateBuilder(args);
 
     builder.Host.UseSerilog()
         .AddConfiguration()
-        .AddDbContext();
+        .AddDbContext()
+        .AddServices()
+        .AddCashRegisters();
 
     builder.Services.AddSignalR();
     builder.Services.AddSingleton<IGroupRegistry, GroupRegistry>();
+    builder.Services.AddSingleton<IWorkerStateStore, WorkerStateStore>();
 
     // если клиент (RMK) будет подключаться с другого origin:
     builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
@@ -49,13 +50,13 @@ var builder = WebApplication.CreateBuilder(args);
         client.BaseAddress = new Uri(builder.Configuration["Api:BaseUrl"]);
     });
 
-    builder.Services.AddScoped(typeof(IDataService<>), serviceProvider =>
-    {
-        var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
-        return new ApiDataService<DomainObject>(
-            httpClientFactory.CreateClient("GasStationApi"),
-            resourcePath: /* подставьте имя ресурса для конкретного T через фабрику */ "");
-    });
+    //builder.Services.AddScoped(typeof(IDataService<DomainObject>), serviceProvider =>
+    //{
+    //    var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+    //    return new ApiDataService<DomainObject>(
+    //        httpClientFactory.CreateClient("GasStationApi"),
+    //        resourcePath: /* подставьте имя ресурса для конкретного T через фабрику */ "");
+    //});
 
     builder.WebHost.ConfigureKestrel((context, options) =>
     {

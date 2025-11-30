@@ -1,4 +1,5 @@
 ﻿using KIT.GasStation.Domain.Models;
+using KIT.GasStation.HardwareConfigurations.Models;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.ObjectModel;
@@ -17,10 +18,10 @@ namespace KIT.GasStation.State.CashRegisters
         event Action OnShiftClosed;
         event Action<FuelSale> OnReturning;
         event Action<string> OnUnknownError;
-        //event Action<CashRegisterStatus> OnStatusChanged;
+        event Action<CashRegisterStatus> OnStatusChanged;
 
-        //CashRegister CashRegister { get; }
-        //ObservableCollection<CashRegister> CashRegisters { get; }
+        CashRegister CashRegister { get; }
+        ObservableCollection<CashRegister> CashRegisters { get; }
 
         void ChangeDefaultCashRegister(Guid guid);
 
@@ -51,7 +52,7 @@ namespace KIT.GasStation.State.CashRegisters
         /// <summary>
         /// Продажа
         /// </summary>
-        Task SaleAsync(FuelSale fuelSale, Fuel fuel);
+        Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel);
 
         /// <summary>
         /// Возврат

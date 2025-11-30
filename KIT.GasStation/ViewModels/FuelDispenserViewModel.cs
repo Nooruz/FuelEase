@@ -9,10 +9,10 @@ using KIT.GasStation.State.Nozzles;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
@@ -49,6 +49,9 @@ namespace KIT.GasStation.ViewModels
         private readonly ConcurrentDictionary<Guid, NozzleStatus> _lastStatuses = new();
         private CancellationTokenSource _cts;
         private Task _startTask;
+        private bool _hubHandlersRegistered;
+        private int _hubReconnectLoop;
+        private const string WorkerOfflineDueToHubMessage = "Нет связи с сервером";
 
         #endregion
 
@@ -231,9 +234,18 @@ namespace KIT.GasStation.ViewModels
             //await _fuelDispenserService.StopRefuelingAsync(SelectedNozzle);
         }
 
+        [Command]
+        public async Task ChangeControlMode()
+        {
+            if (SelectedNozzle != null)
+            {
+                await ChangeControlModeAsync(SelectedNozzle);
+            }
+        }
+
         #endregion
 
-        #region Private Members
+        #region ТРК Команды
 
         private async Task StartAsync(CancellationToken token)
         {
@@ -243,16 +255,11 @@ namespace KIT.GasStation.ViewModels
 
                 _hub = _hubClient.Connection;
 
-                _hub.On<ControllerResponse>("StatusChanged", e => OnStatusChanged(e));
-                _hub.On<string, bool>("ColumnLiftedChanged", (groupName, isLifted) => OnColumnLifted(groupName, isLifted));
+                RegisterHubHandlers();
 
                 await _hubClient.EnsureStartedAsync(token);
 
-                foreach (var item in Nozzles)
-                {
-                    await _hub.InvokeAsync("JoinController", item.Group);
-                    await _hub.InvokeAsync("StartPolling", item.Group);
-                }
+                await JoinAndStartPollingAsync();
 
                 //// важно: после переподключения — заново join
                 //hub.Reconnected += _ => hub.InvokeAsync("JoinController", "jf", 0);
@@ -320,6 +327,29 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        private async Task ChangeAllControlModeAsync()
+        {
+            try
+            {
+                if (Nozzles != null)
+                {
+                    foreach (var item in Nozzles)
+                    {
+                        await ChangeControlModeAsync(item);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        private async Task ChangeControlModeAsync(Nozzle nozzle)
+        {
+            await _hub.InvokeAsync("ChangeControlModeAsync", nozzle.Group, true);
+        }
+
         /// <summary>
         /// Обработчик события завершения заправки
         /// </summary>
@@ -340,7 +370,7 @@ namespace KIT.GasStation.ViewModels
             }
             catch (Exception e)
             {
-                
+
             }
         }
 
@@ -464,6 +494,12 @@ namespace KIT.GasStation.ViewModels
                 case Command.CompleteFilling:
                     await OnCompletedFilling(nozzle, deviceResponse);
                     break;
+                case Command.ProgramControlMode:
+                    var sa = 0;
+                    break;
+                case Command.KeyboardControlMode:
+                    var sass = 0;
+                    break;
             }
 
             if (Status == NozzleStatus.Ready)
@@ -531,7 +567,17 @@ namespace KIT.GasStation.ViewModels
 
                 if (nozzle is null) return;
 
-                nozzle.Lifted = isLifted;
+                if (isLifted)
+                {
+                    nozzle.Lifted = isLifted;
+                }
+                else
+                {
+                    foreach (var item in Nozzles)
+                    {
+                        item.Lifted = false;
+                    }
+                }
             }
             catch (Exception)
             {
@@ -539,45 +585,178 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        /// <summary>
-        /// Обработчик события выбора пистолета
-        /// </summary>
-        private void OnNozzleSelected(int tube)
-        {
-            if (SelectedNozzle == null)
-            {
-                SelectNozzle(tube);
-                return;
-            }
+        #endregion
 
-            if (SelectedNozzle.Tube != tube)
-            {
-                SelectNozzle(tube);
-            }
+        #region Private Members
+
+        private void RegisterHubHandlers()
+        {
+            if (_hubHandlersRegistered || _hub is null)
+                return;
+
+            _hub.Reconnecting += OnHubReconnecting;
+            _hub.Reconnected += OnHubReconnected;
+            _hub.Closed += OnHubClosed;
+            _hubHandlersRegistered = true;
+
+            _hub.On<ControllerResponse>("StatusChanged", e => OnStatusChanged(e));
+            _hub.On<string, bool>("ColumnLiftedChanged", (groupName, isLifted) => OnColumnLifted(groupName, isLifted));
+            _hub.On<WorkerStateNotification>("WorkerStateChanged", notification => OnWorkerStateChanged(notification));
         }
 
-        private void OnNozzleCountersRequested()
+        private Task OnHubReconnecting(Exception? error)
         {
-            Task.Run(async () =>
+            OnConnectionLost();
+            MarkAllWorkersOffline();
+            return Task.CompletedTask;
+        }
+
+        private async Task OnHubReconnected(string? connectionId)
+        {
+            Interlocked.Exchange(ref _connectionLostHandled, 0);
+            await JoinAndStartPollingAsync();
+        }
+
+        private Task OnHubClosed(Exception? error)
+        {
+            OnConnectionLost();
+            MarkAllWorkersOffline();
+            return RestartHubConnectionLoopAsync();
+        }
+
+        private Task RestartHubConnectionLoopAsync()
+        {
+            if (_hub is null)
+                return Task.CompletedTask;
+
+            if (Interlocked.CompareExchange(ref _hubReconnectLoop, 1, 0) != 0)
+                return Task.CompletedTask;
+
+            return Task.Run(async () =>
             {
-
-                foreach (var nozzle in Nozzles)
+                try
                 {
-                    //await _fuelDispenserService.GetCountersAsync(nozzle);
+                    while (_hub.State != HubConnectionState.Connected)
+                    {
+                        try
+                        {
+                            await _hub.StartAsync();
+                            await JoinAndStartPollingAsync();
+                            break;
+                        }
+                        catch
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(5));
+                        }
+                    }
                 }
-
+                finally
+                {
+                    Interlocked.Exchange(ref _hubReconnectLoop, 0);
+                }
             });
         }
 
-        /// <summary>
-        /// Присваивает выбранный пистолет
-        /// </summary>
-        private void SelectNozzle(int tube)
+        private async Task JoinAndStartPollingAsync()
         {
-            Nozzle? newSelectedNozzle = Nozzles.FirstOrDefault(n => n.Tube == tube);
-            if (newSelectedNozzle != null)
+            if (_hub is null || Nozzles is null || Nozzles.Count == 0)
+                return;
+
+            var groups = Nozzles
+                .Select(n => n.Group)
+                .Where(g => !string.IsNullOrWhiteSpace(g))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+            foreach (var group in groups)
             {
-                SelectedNozzle = newSelectedNozzle;
+                await _hub.InvokeAsync("JoinController", group, false);
+
+                await ChangeAllControlModeAsync();
+
+                await _hub.InvokeAsync("StartPolling", group);
+            }
+
+            await RequestWorkerStateSnapshotAsync(groups);
+        }
+
+        private void MarkAllWorkersOffline()
+        {
+            if (Nozzles is null)
+                return;
+
+            var now = DateTimeOffset.Now;
+            foreach (var nozzle in Nozzles)
+            {
+                nozzle.Status = NozzleStatus.Unknown;
+                nozzle.Lifted = false;
+                nozzle.WorkerStateMessage = WorkerOfflineDueToHubMessage;
+                nozzle.WorkerStateUpdatedAt = now;
+            }
+        }
+
+        private async Task RequestWorkerStateSnapshotAsync(string[] groups)
+        {
+            if (_hub is null)
+                return;
+
+            if (groups is null || groups.Length == 0)
+                return;
+
+            try
+            {
+                var snapshot = await _hub.InvokeAsync<IReadOnlyCollection<WorkerStateNotification>>("GetWorkerStatesSnapshot", groups);
+                await ApplyWorkerStates(snapshot);
+            }
+            catch
+            {
+                // намеренно проглатываем: потеря снимка не критична, события догонят позже
+            }
+        }
+
+        private async Task ApplyWorkerStates(IEnumerable<WorkerStateNotification> states)
+        {
+            if (states is null)
+                return;
+
+            foreach (var state in states)
+            {
+                await ApplyWorkerState(state);
+            }
+        }
+
+        private async Task OnWorkerStateChanged(WorkerStateNotification? notification)
+        {
+            await ApplyWorkerState(notification);
+            
+        }
+
+        private async Task ApplyWorkerState(WorkerStateNotification? notification)
+        {
+            if (notification is null || Nozzles is null)
+                return;
+
+            try
+            {
+                var nozzle = Nozzles.FirstOrDefault(n => n.Group == notification.GroupName);
+
+                if (nozzle is null) return;
+
+                if (!notification.IsOnline)
+                {
+                    nozzle.Status = NozzleStatus.Unknown;
+                    nozzle.Lifted = false;
+                    if (notification is null || Nozzles is null)
+                        return;
+                }
+                else
+                {
+                    await _hub.InvokeAsync("StartPolling", nozzle.Group);
+                }
+            }
+            catch (Exception)
+            {
+
             }
         }
 
@@ -641,39 +820,9 @@ namespace KIT.GasStation.ViewModels
             CanSelectedNozzle = true;
         }
 
-        /// <summary>
-        /// При авторизации
-        /// </summary>
-        /// <param name="shift"></param>
-        private void ShiftStore_OnLogin(Shift shift)
-        {
-            _cts = new CancellationTokenSource();
-            _startTask = StartAsync(_cts.Token);
-        }
-
         private async void UserStore_OnLogout()
         {
             await StopAsync();
-        }
-
-        /// <summary>
-        /// Получить информацию о последнем продаже по пистолетам
-        /// </summary>
-        private async Task GetNozzleLastFuelSale()
-        {
-            if (_shiftStore.CurrentShiftState != ShiftState.None)
-            {
-                foreach (Nozzle nozzle in Nozzles)
-                {
-                    nozzle.SalesSum = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, _shiftStore.CurrentShift.Id);
-
-                    FuelSale? fuelSale = await _fuelSaleService.GetLastFuelSale(nozzle.Id, _shiftStore.CurrentShift.Id);
-                    if (fuelSale != null)
-                    {
-                        nozzle.FuelSale = fuelSale;
-                    }
-                }
-            }
         }
 
         private ListBoxItem? FindListBoxItemFromEvent(MouseButtonEventArgs e)
@@ -773,6 +922,16 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        /// <summary>
+        /// При авторизации
+        /// </summary>
+        /// <param name="shift"></param>
+        private void ShiftStore_OnLogin(Shift shift)
+        {
+            _cts = new CancellationTokenSource();
+            _startTask = StartAsync(_cts.Token);
+        }
+
         #endregion
 
         #region Топлива
@@ -798,6 +957,72 @@ namespace KIT.GasStation.ViewModels
                    //Log.Error(ex, "Ошибка при массовом обновлении цен");
                 }
             });
+        }
+
+        #endregion
+
+        #region Nozzle
+
+        /// <summary>
+        /// Обработчик события выбора пистолета
+        /// </summary>
+        private void OnNozzleSelected(int tube)
+        {
+            if (SelectedNozzle == null)
+            {
+                SelectNozzle(tube);
+                return;
+            }
+
+            if (SelectedNozzle.Tube != tube)
+            {
+                SelectNozzle(tube);
+            }
+        }
+
+        private void OnNozzleCountersRequested()
+        {
+            Task.Run(async () =>
+            {
+
+                foreach (var nozzle in Nozzles)
+                {
+                    //await _fuelDispenserService.GetCountersAsync(nozzle);
+                }
+
+            });
+        }
+
+        /// <summary>
+        /// Присваивает выбранный пистолет
+        /// </summary>
+        private void SelectNozzle(int tube)
+        {
+            Nozzle? newSelectedNozzle = Nozzles.FirstOrDefault(n => n.Tube == tube);
+            if (newSelectedNozzle != null)
+            {
+                SelectedNozzle = newSelectedNozzle;
+            }
+        }
+
+        /// <summary>
+        /// Получить информацию о последнем продаже по пистолетам
+        /// </summary>
+        private async Task GetNozzleLastFuelSale()
+        {
+            if (_shiftStore.CurrentShiftState != ShiftState.None)
+            {
+                foreach (Nozzle nozzle in Nozzles)
+                {
+                    nozzle.SalesSum = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, _shiftStore.CurrentShift.Id);
+
+                    FuelSale? fuelSale = await _fuelSaleService.GetLastFuelSale(nozzle.Id, _shiftStore.CurrentShift.Id);
+                    if (fuelSale != null)
+                    {
+                        nozzle.FuelSale = fuelSale;
+                    }
+                }
+            }
         }
 
         #endregion

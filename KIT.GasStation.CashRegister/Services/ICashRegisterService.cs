@@ -29,17 +29,17 @@ namespace KIT.GasStation.CashRegisters.Services
         /// <summary>
         /// Открывает смену.
         /// </summary>
-        Task OpenShiftAsync();
+        Task OpenShiftAsync(string cashierName);
 
         /// <summary>
         /// Закрывает смену.
         /// </summary>
-        Task CloseShiftAsync();
+        Task CloseShiftAsync(string cashierName);
 
         /// <summary>
         /// Проводит операцию продажи.
         /// </summary>
-        Task SaleAsync(FuelSale fuelSale, Fuel fuel);
+        Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName);
 
         /// <summary>
         /// Х-отчет.

@@ -1,4 +1,5 @@
 ﻿using DevExpress.Mvvm.DataAnnotations;
+using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.ViewModels.Base;
 using System.Collections.ObjectModel;
@@ -10,22 +11,22 @@ namespace KIT.GasStation.ViewModels
         #region Private Members
 
         private readonly ICashRegisterStore _cashRegisterStore;
-        //private CashRegister _selectedCashRegister;
+        private CashRegister _selectedCashRegister;
 
         #endregion
 
         #region Public Properties
 
-        //public CashRegister SelectedCashRegister
-        //{
-        //    get => _selectedCashRegister;
-        //    set
-        //    {
-        //        _selectedCashRegister = value;
-        //        OnPropertyChanged(nameof(SelectedCashRegister));
-        //    }
-        //}
-        //public ObservableCollection<CashRegister> CashRegisters => _cashRegisterStore.CashRegisters;
+        public CashRegister SelectedCashRegister
+        {
+            get => _selectedCashRegister;
+            set
+            {
+                _selectedCashRegister = value;
+                OnPropertyChanged(nameof(SelectedCashRegister));
+            }
+        }
+        public ObservableCollection<CashRegister> CashRegisters => _cashRegisterStore.CashRegisters;
 
         #endregion
 
@@ -34,7 +35,7 @@ namespace KIT.GasStation.ViewModels
         public WorkplaceSettingsViewModel(ICashRegisterStore cashRegisterStore)
         {
             _cashRegisterStore = cashRegisterStore;
-            //_selectedCashRegister = _cashRegisterStore.CashRegister;
+            _selectedCashRegister = _cashRegisterStore.CashRegister;
         }
 
         #endregion
@@ -44,11 +45,10 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public void Save()
         {
-            //if (SelectedCashRegister != null)
-            //{
-            //    _cashRegisterStore.ChangeDefaultCashRegister(SelectedCashRegister.Id);
-                
-            //}
+            if (SelectedCashRegister != null)
+            {
+                _cashRegisterStore.ChangeDefaultCashRegister(SelectedCashRegister.Id);
+            }
 
             CurrentWindowService?.Close();
         }

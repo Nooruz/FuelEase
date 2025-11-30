@@ -37,7 +37,7 @@
             <Setter.Value>
                 <MultiBinding Converter="{StaticResource NozzleStatusToBackgroundConverter}">
                     <Binding Path="Status"/>
-                    <Binding Path="ControlMode"/>
+                    <Binding Path="IsProgramControl"/>
                 </MultiBinding>
             </Setter.Value>
         </Setter>

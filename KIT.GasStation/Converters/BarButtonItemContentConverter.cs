@@ -1,5 +1,4 @@
 ﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.ViewModels;
 using System;
 using System.Globalization;
 using System.Windows.Data;
@@ -16,7 +15,7 @@ namespace KIT.GasStation.Converters
             return parameter.ToString() switch
             {
                 "Block" => value is NozzleStatus status ? status == NozzleStatus.Blocking ? "Разблокировать ТРК" : (object)"Блокировать ТРК" : "Блокировать ТРК",
-                "ControlMode" => value is FuelTransperControllerControlMode mode ? mode == FuelTransperControllerControlMode.Keyboard ? "Откл. автоном. режим" : (object)"Вкл. автоном. режим" : "Вкл. автоном. режим",
+                "ControlMode" => value is bool mode ? true ? "Откл. автоном. режим" : (object)"Вкл. автоном. режим" : "Вкл. автоном. режим",
                 _ => "",
             };
         }

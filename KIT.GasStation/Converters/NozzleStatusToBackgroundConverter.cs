@@ -29,14 +29,14 @@ namespace KIT.GasStation.Converters
                 status = nozzleStatus;
             }
 
-            NozzleControlMode controlMode = (NozzleControlMode)values[1];
+            bool controlMode = (bool)values[1];
 
             //if (command == FuelNozzleCommand.Block)
             //{
             //    return new SolidColorBrush((Color)Application.Current.Resources["FuelNozzleBlockColor"]);
             //}
 
-            if (controlMode == NozzleControlMode.Keyboard)
+            if (controlMode)
             {
                 return new SolidColorBrush((Color)Application.Current.Resources["NozzleControlModeProgramColor"]);
             }

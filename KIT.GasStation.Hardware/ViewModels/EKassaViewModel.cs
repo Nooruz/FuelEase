@@ -120,7 +120,7 @@ namespace KIT.GasStation.Hardware.ViewModels
 
                 await cashRegisterService.InitializationAsync(SelectedCashRegister.Id);
 
-                await cashRegisterService.OpenShiftAsync();
+                await cashRegisterService.OpenShiftAsync("");
             }
             catch (Exception e)
             {
@@ -150,7 +150,7 @@ namespace KIT.GasStation.Hardware.ViewModels
 
                 await cashRegisterService.InitializationAsync(SelectedCashRegister.Id);
 
-                await cashRegisterService.CloseShiftAsync();
+                await cashRegisterService.CloseShiftAsync("");
             }
             catch (Exception e)
             {

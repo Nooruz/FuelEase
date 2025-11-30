@@ -122,10 +122,10 @@
                     <dxdo:LayoutGroup Orientation="Vertical">
 
                         <dxdo:DocumentPanel x:Name="Current" 
-                                    AllowMaximize="True"
-                                    Background="AliceBlue"
-                                    AllowClose="False" 
-                                    Content="{Binding CurrentViewModel}"/>
+                                            AllowMaximize="True"
+                                            Background="AliceBlue"
+                                            AllowClose="False" 
+                                            Content="{Binding CurrentViewModel}"/>
 
                         <dxdo:LayoutPanel x:Name="Reservoir"
                                           Caption="Панель резервуаров"

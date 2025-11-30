@@ -1,6 +1,7 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Core;
+using KIT.GasStation.Common.HostBuilders;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.EntityFramework;
 using KIT.GasStation.FuelDispenser.Hubs;
@@ -141,6 +142,7 @@ namespace KIT.GasStation
 
             _splashScreenViewModel.Status = "Регистрация дополнительных сервисов...";
             host.AddServices();
+            host.AddCashRegisters();
 
             _splashScreenViewModel.Status = "Регистрация хранилищ...";
             host.AddStores();

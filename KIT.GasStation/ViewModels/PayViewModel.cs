@@ -1,6 +1,7 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Editors;
+using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.State.CashRegisters;
@@ -137,8 +138,13 @@ namespace KIT.GasStation.ViewModels
                 // Если тип оплаты - наличные или безналичные средства, обрабатываем продажу через ККМ
                 if (CreateFuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
                 {
-                    Task saleTask = _cashRegisterStore.SaleAsync(CreateFuelSale, SelectedNozzle.Tank.Fuel);
-                    await saleTask;
+                    var fiscalData = _cashRegisterStore.SaleAsync(CreateFuelSale, SelectedNozzle.Tank.Fuel);
+                    
+                    if (fiscalData != null)
+                    {
+                        CreateFuelSale.FiscalData = await fiscalData;
+                        await _fuelSaleService.CreateAsync(CreateFuelSale);
+                    }
                 }
                 // В противном случае создаем продажу через сервис продажи топлива
                 else
@@ -146,10 +152,10 @@ namespace KIT.GasStation.ViewModels
                     await _fuelSaleService.CreateAsync(CreateFuelSale);
                 }
             }
-            //catch (CashRegisterManagerException e)
-            //{
-            //    MessageBoxService.ShowMessage(e.Message, "Информация");
-            //}
+            catch (CashRegisterException e)
+            {
+                MessageBoxService.ShowMessage(e.Message, "Информация");
+            }
             catch (Exception e)
             {
                 MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);

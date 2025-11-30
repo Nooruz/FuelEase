@@ -60,7 +60,7 @@ namespace KIT.GasStation.EKassa
         #region Public Voids
 
         /// <inheritdoc/>
-        public async Task CloseShiftAsync()
+        public async Task CloseShiftAsync(string cashierName)
         {
             _logger.Information("Закрытие смены ККМ...");
             dynamic fiscalNumber = new ExpandoObject();
@@ -107,7 +107,7 @@ namespace KIT.GasStation.EKassa
         }
 
         /// <inheritdoc/>
-        public async Task OpenShiftAsync()
+        public async Task OpenShiftAsync(string cashierName)
         {
             _logger.Information("Открытие смены ККМ...");
 
@@ -133,7 +133,7 @@ namespace KIT.GasStation.EKassa
         }
 
         /// <inheritdoc/>
-        public async Task SaleAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
         {
             try
             {
@@ -190,7 +190,7 @@ namespace KIT.GasStation.EKassa
                 {
                     OnReceiptPrinting?.Invoke();
                 }
-
+                return null;
             }
             catch (Exception ex)
             {

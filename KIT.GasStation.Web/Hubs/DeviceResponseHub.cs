@@ -11,14 +11,17 @@ namespace KIT.GasStation.Web.Hubs
 
         private readonly IGroupRegistry _groups;
         private readonly ILogger<DeviceResponseHub> _log;
+        private readonly IWorkerStateStore _workerStateStore;
+        private static readonly ConcurrentDictionary<string, byte> _workerConnections = new();
 
         #endregion
 
         #region Constructors
 
-        public DeviceResponseHub(IGroupRegistry groups, ILogger<DeviceResponseHub> log)
+        public DeviceResponseHub(IGroupRegistry groups, IWorkerStateStore workerStateStore, ILogger<DeviceResponseHub> log)
         {
             _groups = groups;
+            _workerStateStore = workerStateStore;
             _log = log;
         }
 
@@ -26,11 +29,21 @@ namespace KIT.GasStation.Web.Hubs
 
         #region Public Voids
 
-        public async Task JoinController(string groupName)
+        public async Task JoinController(string groupName, bool isWorker = false)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
             _groups.Add(Context.ConnectionId, groupName);
-            _log.LogInformation("JOIN {Conn} -> {Group}", Context.ConnectionId, groupName);
+            _log.LogInformation("JOIN {Conn} -> {Group}. Worker={Worker}", Context.ConnectionId, groupName, isWorker);
+
+            if (isWorker)
+            {
+                _workerConnections.TryAdd(Context.ConnectionId, 0);
+                await BroadcastWorkerStateChangedAsync(groupName, true, "Worker connected");
+            }
+            else if (_workerStateStore.TryGet(groupName, out var state))
+            {
+                await Clients.Caller.WorkerStateChanged(state);
+            }
         }
 
         public async Task LeaveController(string groupName)
@@ -40,10 +53,20 @@ namespace KIT.GasStation.Web.Hubs
             _log.LogInformation("LEAVE {Conn} -> {Group}", Context.ConnectionId, groupName);
         }
 
-        public override Task OnDisconnectedAsync(Exception? exception)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            var groups = _groups.GetGroupsForConnection(Context.ConnectionId);
             _groups.RemoveAllForConnection(Context.ConnectionId);
-            return base.OnDisconnectedAsync(exception);
+
+            if (_workerConnections.TryRemove(Context.ConnectionId, out _))
+            {
+                foreach (var g in groups)
+                {
+                    await BroadcastWorkerStateChangedAsync(g, false, "SignalR disconnected");
+                }
+            }
+
+            await base.OnDisconnectedAsync(exception);
         }
 
         // Группы текущего подключения
@@ -66,6 +89,9 @@ namespace KIT.GasStation.Web.Hubs
         public Task GetCountersAsync(string groupName) =>
             Clients.Group(groupName).GetCountersAsync(groupName);
 
+        public Task ChangeControlModeAsync(string groupName, bool isProgramMode) =>
+            Clients.Group(groupName).ChangeControlModeAsync(groupName, isProgramMode);
+
         public Task RegisterWorker(string groupName) =>
             Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
@@ -74,6 +100,28 @@ namespace KIT.GasStation.Web.Hubs
 
         public Task StopPolling(string groupName) =>
             Clients.Group(groupName).StopPolling(new StopPollingCommand { GroupName = groupName });
+
+        public async Task ReportWorkerAvailability(WorkerAvailabilityReport report)
+        {
+            if (report is null || string.IsNullOrWhiteSpace(report.GroupName))
+                throw new HubException("Отсутствует название группы для отчета о состоянии воркера");
+
+            var groups = _groups.GetGroupsForConnection(Context.ConnectionId);
+            if (!groups.Contains(report.GroupName))
+            {
+                _log.LogWarning("Connection {Conn} tried to report state for unjoined group {Group}",
+                    Context.ConnectionId, report.GroupName);
+                throw new HubException("Подключение не зарегистрировано в указанной группе");
+            }
+
+            await BroadcastWorkerStateChangedAsync(report.GroupName, report.IsAvailable, report.Reason);
+        }
+
+        public Task<IReadOnlyCollection<WorkerStateNotification>> GetWorkerStatesSnapshot(string[]? groupNames = null)
+        {
+            var snapshot = _workerStateStore.GetSnapshot(groupNames);
+            return Task.FromResult(snapshot);
+        }
 
 
         public Task StartFilling() => Task.CompletedTask;
@@ -92,6 +140,13 @@ namespace KIT.GasStation.Web.Hubs
 
         private static readonly ConcurrentDictionary<string, ControllerResponse> _last = new();
 
-        
+        private Task BroadcastWorkerStateChangedAsync(string groupName, bool isOnline, string? reason = null)
+        {
+            if (!_workerStateStore.TryUpdate(groupName, isOnline, reason, out var notification))
+                return Task.CompletedTask;
+
+            return Clients.Group(groupName).WorkerStateChanged(notification);
+        }
+
     }
 }

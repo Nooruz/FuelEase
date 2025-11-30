@@ -36,6 +36,10 @@ namespace KIT.GasStation.Lanfeng
         private const int _frameLen = 14;
         private ILogger _logger;
         private LanfengControllerType _controllerType;
+        private volatile bool _hardwareAvailable = true;
+        private string? _lastAvailabilityReason;
+        private bool _hubHandlersRegistered;
+        private int _hubRestartLoop;    
 
         #endregion
 
@@ -77,6 +81,7 @@ namespace KIT.GasStation.Lanfeng
                 );
 
                 _hub = _hubClient.Connection;
+                RegisterHubConnectionHandlers();
 
                 _hub.On<StartPollingCommand>("StartPolling", async e =>
                 {
@@ -103,6 +108,11 @@ namespace KIT.GasStation.Lanfeng
                     await CompleteRefuelingAsync(groupName);
                 });
 
+                _hub.On<string, bool>("ChangeControlModeAsync", async (groupName, isProgramMode) =>
+                {
+                    await ChangeControlModeAsync(groupName, isProgramMode);
+                });
+
                 _hub.On<string>("GetCountersAsync", async (groupName) =>
                 {
                     var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
@@ -114,12 +124,8 @@ namespace KIT.GasStation.Lanfeng
 
                 await _hubClient.EnsureStartedAsync(token);
 
-                foreach (var item in Controller.Columns)
-                {
-                    string groupName = $"{Controller.Name}/{item.Name}";
-                    await _hub.InvokeAsync("JoinController", groupName);
-                    item.GroupName = groupName;
-                }
+                await JoinWorkerGroupsAsync();
+                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
             }
             catch (Exception e)
             {
@@ -138,8 +144,8 @@ namespace KIT.GasStation.Lanfeng
             if (Status is NozzleStatus.Unknown)
             {
                 // Задаем программное управление
-                await _pauseGate.WaitAsync(token);
-                await ExecuteCommandAsync(Command.ProgramControlMode, Address, 0);
+                //await _pauseGate.WaitAsync(token);
+                //await ExecuteCommandAsync(Command.KeyboardControlMode, Address, 0);
 
                 // Получаем версию прошивки
                 await _pauseGate.WaitAsync(token);
@@ -209,13 +215,24 @@ namespace KIT.GasStation.Lanfeng
                 var frame = _protocolParser.BuildRequest(cmd, controllerAddress, nozzleMask, value);
                 _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
 
-                var rx = await _sharedSerialPortService.WriteReadAsync(
-                    frame,
-                    expectedRxLength: expectedLength,
-                    writeToReadDelayMs: writeToReadDelayMs,
-                    readTimeoutMs: readTimeoutMs,
-                    maxRetries: maxRetries,
-                    ct: ct);
+                byte[] rx;
+                try
+                {
+                    rx = await _sharedSerialPortService.WriteReadAsync(
+                        frame,
+                        expectedRxLength: expectedLength,
+                        writeToReadDelayMs: writeToReadDelayMs,
+                        readTimeoutMs: readTimeoutMs,
+                        maxRetries: maxRetries,
+                        ct: ct);
+                    await BroadcastWorkerAvailabilityAsync(true);
+                }
+                catch (Exception ex) when (IsCriticalSerialException(ex))
+                {
+                    _logger.Error(ex, "Ошибка обмена с COM-портом, колонка будет отмечена как недоступная");
+                    await BroadcastWorkerAvailabilityAsync(false, ex.Message);
+                    throw;
+                }
 
                 var resp = _protocolParser.ParseResponse(rx);
 
@@ -245,7 +262,7 @@ namespace KIT.GasStation.Lanfeng
                         await _hub.InvokeAsync("PublishStatus", resp, column.GroupName);
                     }
 
-                    await HandleColumnLiftedAsync(resp.Data);
+                    await HandleColumnLiftedAsync(resp);
 
                     Status = resp.Status;
                 }
@@ -286,6 +303,25 @@ namespace KIT.GasStation.Lanfeng
             finally
             {
                 _exclusive.Release();
+            }
+        }
+
+        private async Task ChangeControlModeAsync(string groupName, bool isProgramMode)
+        {
+            try
+            {
+                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
+                if (column is null)
+                {
+                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                var cmd = isProgramMode ? Command.ProgramControlMode : Command.KeyboardControlMode;
+                await ExecuteCommandAsync(cmd, Address, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
             }
         }
 
@@ -408,6 +444,7 @@ namespace KIT.GasStation.Lanfeng
 
                     // 3) Стартуем цикл опроса (lease остаётся жить в поле)
                     _pollingTask = OnTickAsync(token);
+                    await BroadcastWorkerAvailabilityAsync(true, "Polling started");
                 }
                 catch (Exception ex)
                 {
@@ -421,25 +458,34 @@ namespace KIT.GasStation.Lanfeng
                         _lease = null;
                     }
                     _sharedSerialPortService = null!;
+                    await BroadcastWorkerAvailabilityAsync(false);
                 }
             }
         }
 
-        private async Task HandleColumnLiftedAsync(byte[] response)
+        private async Task HandleColumnLiftedAsync(ControllerResponse response)
         {
-            if (response is null) return;
+            if (response.Data is null) return;
 
             // Протокол: в младшем полубайте (low nibble) порядковый номер пистолета (1..n).
-            int liftedOrdinal = response[12] & 0x0F;
+            int liftedOrdinal = response.Data[12] & 0x0F;
 
-            foreach (var column in Columns)
+            if (liftedOrdinal == 0)
             {
-                bool isLifted = column.LanfengAddress == liftedOrdinal;
-
-                if (column.IsLifted != isLifted)
+                var liftedColumn = Columns.FirstOrDefault(c => c.IsLifted);
+                if (liftedColumn is not null)
                 {
-                    column.IsLifted = isLifted;
-                    await _hub.InvokeAsync("ColumnLiftedChanged", column.GroupName, isLifted);
+                    liftedColumn.IsLifted = false;
+                    await _hub.InvokeAsync("ColumnLiftedChanged", liftedColumn.GroupName, false);
+                }
+            }
+            else
+            {
+                var column = Columns.FirstOrDefault(c => c.LanfengAddress == liftedOrdinal);
+                if (column is not null)
+                {
+                    column.IsLifted = true;
+                    await _hub.InvokeAsync("ColumnLiftedChanged", column.GroupName, true);
                 }
             }
         }
@@ -462,6 +508,143 @@ namespace KIT.GasStation.Lanfeng
                 _logger.Error(e, e.Message);
             }
         }
+
+        private void RegisterHubConnectionHandlers()
+        {
+            if (_hubHandlersRegistered || _hub is null)
+                return;
+
+            _hub.Reconnecting += OnHubReconnecting;
+            _hub.Reconnected += OnHubReconnected;
+            _hub.Closed += OnHubClosed;
+            _hubHandlersRegistered = true;
+        }
+
+        private Task OnHubReconnecting(Exception? error)
+        {
+            _logger.Warning("Потеряно соединение с SignalR: {Message}", error?.Message ?? "unknown");
+            return Task.CompletedTask;
+        }
+
+        private async Task OnHubReconnected(string? connectionId)
+        {
+            _logger.Information("SignalR переподключен. ConnectionId={ConnectionId}", connectionId);
+            try
+            {
+                await JoinWorkerGroupsAsync();
+                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Не удалось повторно присоединиться к группам после переподключения");
+            }
+        }
+
+        private Task OnHubClosed(Exception? error)
+        {
+            _logger.Error(error, "Соединение с SignalR было закрыто");
+            return RestartHubConnectionLoopAsync();
+        }
+
+        private Task RestartHubConnectionLoopAsync()
+        {
+            if (_hub is null)
+                return Task.CompletedTask;
+
+            if (Interlocked.CompareExchange(ref _hubRestartLoop, 1, 0) != 0)
+                return Task.CompletedTask;
+
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    while (_hub.State != HubConnectionState.Connected)
+                    {
+                        try
+                        {
+                            await _hub.StartAsync();
+                            await JoinWorkerGroupsAsync();
+                            await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "Не удалось переподключиться к SignalR, повтор через 5 секунд");
+                            await Task.Delay(TimeSpan.FromSeconds(5));
+                        }
+                    }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _hubRestartLoop, 0);
+                }
+            });
+        }
+
+        private async Task JoinWorkerGroupsAsync()
+        {
+            if (_hub is null || Controller?.Columns is null)
+                return;
+
+            foreach (var item in Controller.Columns)
+            {
+                if (string.IsNullOrWhiteSpace(item.GroupName))
+                {
+                    item.GroupName = $"{Controller.Name}/{item.Name}";
+                }
+
+                await _hub.InvokeAsync("JoinController", item.GroupName, true);
+            }
+        }
+
+        private async Task BroadcastWorkerAvailabilityAsync(bool isAvailable, string? reason = null, bool force = false)
+        {
+            var sanitizedReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+
+            if (!force &&
+                _hardwareAvailable == isAvailable &&
+                string.Equals(_lastAvailabilityReason ?? string.Empty, sanitizedReason ?? string.Empty, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _hardwareAvailable = isAvailable;
+            _lastAvailabilityReason = sanitizedReason;
+
+            if (_hub is null || _hub.State != HubConnectionState.Connected)
+                return;
+
+            if (Controller?.Columns is null)
+                return;
+
+            var groups = Controller.Columns
+                .Where(c => !string.IsNullOrWhiteSpace(c.GroupName))
+                .Select(c => c.GroupName!);
+
+            var tasks = groups.Select(group => SendAvailabilityAsync(group, isAvailable, sanitizedReason));
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task SendAvailabilityAsync(string groupName, bool isAvailable, string? reason)
+        {
+            try
+            {
+                var report = new WorkerAvailabilityReport
+                {
+                    GroupName = groupName,
+                    IsAvailable = isAvailable,
+                    Reason = reason
+                };
+                await _hub.InvokeAsync("ReportWorkerAvailability", report);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Не удалось отправить состояние worker для {Group}", groupName);
+            }
+        }
+
+        private static bool IsCriticalSerialException(Exception ex) =>
+            ex is TimeoutException || ex is IOException || ex is InvalidOperationException || ex is UnauthorizedAccessException;
 
         #endregion
 

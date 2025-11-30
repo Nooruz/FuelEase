@@ -51,8 +51,8 @@
                                     Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}, Mode=FindAncestor}, Path=DataContext.NozzleBlockCommand}"/>
                      
                  <!--Включить автономный режим-->
-                 <dxb:BarButtonItem Content="{Binding ControlMode, Converter={StaticResource BarButtonItemContentConverter}, UpdateSourceTrigger=PropertyChanged, ConverterParameter=ControlMode}"
-                                    IsEnabled="{Binding ControlMode, Converter={StaticResource ControlModeToIsEnabledConverter}, UpdateSourceTrigger=PropertyChanged, ConverterParameter=ControlMode}"
+                    <dxb:BarButtonItem Content="{Binding IsProgramControl, Converter={StaticResource BarButtonItemContentConverter}, UpdateSourceTrigger=PropertyChanged, ConverterParameter=IsProgramControl}"
+                                    IsEnabled="{Binding IsProgramControl, Converter={StaticResource ControlModeToIsEnabledConverter}, UpdateSourceTrigger=PropertyChanged, ConverterParameter=IsProgramControl}"
                                     Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}, Mode=FindAncestor}, Path=DataContext.ChangeControlModeCommand}"/>
                  </dxb:BarSubItem>
              </dxb:PopupMenu.Items>

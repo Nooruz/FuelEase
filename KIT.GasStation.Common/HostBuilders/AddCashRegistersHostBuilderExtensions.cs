@@ -2,6 +2,7 @@
 using KIT.GasStation.Common.Factories;
 using KIT.GasStation.EKassa;
 using KIT.GasStation.HardwareConfigurations.Services;
+using KIT.GasStation.NewCas;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -22,8 +23,10 @@ namespace KIT.GasStation.Common.HostBuilders
             return host.ConfigureServices(services =>
             {
                 services.AddTransient(CreateEKassaCashRegister);
+                services.AddTransient(CreateNewCasCashRegister);
 
                 services.AddSingleton<CreateCashRegister<EKassaCashRegister>>(servicesProvider => () => CreateEKassaCashRegister(servicesProvider));
+                services.AddSingleton<CreateCashRegister<NewCasCashRegister>>(servicesProvider => () => CreateNewCasCashRegister(servicesProvider));
 
                 services.AddSingleton<ICashRegisterFactory, CashRegisterFactory>();
             });
@@ -37,6 +40,11 @@ namespace KIT.GasStation.Common.HostBuilders
         public static EKassaCashRegister CreateEKassaCashRegister(IServiceProvider services)
         {
             return new EKassaCashRegister(services.GetRequiredService<IHardwareConfigurationService>());
+        }
+
+        public static NewCasCashRegister CreateNewCasCashRegister(IServiceProvider services)
+        {
+            return new NewCasCashRegister(services.GetRequiredService<IHardwareConfigurationService>());
         }
     }
 }

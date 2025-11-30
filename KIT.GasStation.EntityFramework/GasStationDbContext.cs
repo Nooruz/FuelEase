@@ -100,9 +100,9 @@ namespace KIT.GasStation.EntityFramework
                 .HasForeignKey<DiscountSale>(d => d.FuelSaleId); // Внешний ключ в DiscountSale
 
             modelBuilder.Entity<FuelSale>()
-                .HasOne(f => f.FiscalData) // Навигационное свойство в FuelSale
-                .WithOne(d => d.FuelSale)    // Навигационное свойство в FiscalData
-                .HasForeignKey<FuelSale>(d => d.FiscalDataId); // Внешний ключ в FiscalData
+                .HasOne(fd => fd.FiscalData) // Навигационное свойство в FuelSale
+                .WithOne(fs => fs.FuelSale)    // Навигационное свойство в FiscalData
+                .HasForeignKey<FiscalData>(fd => fd.FuelSaleId); // Внешний ключ в FiscalData
 
             base.OnModelCreating(modelBuilder);
         }

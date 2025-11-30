@@ -17,6 +17,7 @@
     <ProjectReference Include="..\KIT.GasStation.FuelDispenserEmulator\KIT.GasStation.FuelDispenserEmulator.csproj" />
     <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
     <ProjectReference Include="..\KIT.GasStation.Lanfeng\KIT.GasStation.Lanfeng.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.NewCas\KIT.GasStation.NewCas.csproj" />
     <ProjectReference Include="..\KIT.GasStation.PKElectronics\KIT.GasStation.PKElectronics.csproj" />
     <ProjectReference Include="..\KIT.GasStation.TechnoProjekt\KIT.GasStation.TechnoProjekt.csproj" />
   </ItemGroup>

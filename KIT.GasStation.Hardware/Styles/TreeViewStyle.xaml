@@ -21,7 +21,7 @@
 
     <ContextMenu x:Key="CashRegisterContextMenu">
         <MenuItem Header="Добавить ККМ"
-              Command="{Binding CashRegisterCreateCommand}"/>
+                  Command="{Binding CashRegisterCreateCommand}"/>
     </ContextMenu>
 
     <Style TargetType="{x:Type TreeView}" x:Key="HardWareTreeView">

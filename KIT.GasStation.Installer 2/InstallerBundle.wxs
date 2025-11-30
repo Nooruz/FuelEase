@@ -35,11 +35,11 @@
 
 			<!-- Установка вашей программы -->
 			<MsiPackage Id="FuelEaseInstaller"
-						SourceFile="D:\Installer\FuelEase-$(var.BuildVersion)-$(var.Configuration)-$(var.Platform).msi"
-						DisplayName="$(loc.AppName)"
-						Vital="yes"
-						Compressed="yes" 
-						DisplayInternalUI="yes" />
+                        SourceFile="$(var.InstallerOutputPath)\\FuelEase-$(var.BuildVersion)-$(var.Configuration)-$(var.Platform).msi"
+                        DisplayName="$(loc.AppName)"
+                        Vital="yes"
+                        Compressed="yes"
+                        DisplayInternalUI="yes" />
 		</Chain>
 
 		<!-- Приводим путь к файлу лицензии к единому значению -->

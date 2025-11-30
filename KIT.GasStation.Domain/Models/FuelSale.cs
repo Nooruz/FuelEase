@@ -13,7 +13,6 @@ namespace KIT.GasStation.Domain.Models
         private int _shiftId;
         private int _nozzleId;
         private int? _discountSaleId;
-        private int? _fiscalDataId;
         private PaymentType _paymentType;
         private DateTime _createDate;
         private decimal _price;
@@ -67,19 +66,6 @@ namespace KIT.GasStation.Domain.Models
             {
                 _discountSaleId = value;
                 OnPropertyChanged(nameof(DiscountSaleId));
-            }
-        }
-
-        /// <summary>
-        /// Id фискальных данных
-        /// </summary>
-        public int? FiscalDataId
-        {
-            get => _fiscalDataId;
-            set
-            {
-                _fiscalDataId = value;
-                OnPropertyChanged(nameof(FiscalDataId));
             }
         }
 

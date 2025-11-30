@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Diagnostics;
 using System.IO.Ports;
 
 namespace KIT.GasStation.HardwareConfigurations.Services
@@ -41,22 +41,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             _options = options;
 
             // Открытие делаем синхронным внутри Task.Run, чтобы не блокировать вызывающий поток.
-            await Task.Run(() =>
-            {
-                var p = new SerialPort(key.PortName, key.BaudRate, key.Parity, key.DataBits, key.StopBits)
-                {
-                    ReadTimeout = options.ReadTimeoutMs,
-                    WriteTimeout = options.WriteTimeoutMs,
-                    RtsEnable = options.RtsEnable,
-                    DtrEnable = options.DtrEnable
-                };
-                p.ReadBufferSize = Math.Max(p.ReadBufferSize, options.ReadBufferSize);
-                p.WriteBufferSize = Math.Max(p.WriteBufferSize, options.WriteBufferSize);
-
-                p.Open();
-                _port = p;
-                _isOpen = true;
-            }, ct);
+            await OpenWithRetriesAsync(key, options, ct);
         }
 
         /// <inheritdoc/>
@@ -90,12 +75,11 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             int maxRetries = 2,
             CancellationToken ct = default)
         {
-            if (!_isOpen || _port is null || !_port.IsOpen)
-                throw new InvalidOperationException("Порт не открыт.");
-
             await _io.WaitAsync(ct);
             try
             {
+                if (PortRequiresReopen())
+                    await RecoverPortAsync(ct);
                 // Простой retry-цикл: если таймаут/IO — ещё попытки (maxRetries).
                 for (int attempt = 1; ; attempt++)
                 {
@@ -110,7 +94,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
                         // === READ EXACTLY expectedRxLength ===
                         var buf = new byte[expectedRxLength];
-                        var sw = System.Diagnostics.Stopwatch.StartNew();
+                        var sw = Stopwatch.StartNew();
                         var total = 0;
 
                         while (total < expectedRxLength)
@@ -146,6 +130,13 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                     }
                     catch (IOException) when (attempt <= maxRetries)
                     {
+                        await RecoverPortAsync(ct);
+                        await Task.Delay(50 * attempt, ct);
+                        continue;
+                    }
+                    catch (InvalidOperationException) when (attempt <= maxRetries)
+                    {
+                        await RecoverPortAsync(ct);
                         await Task.Delay(50 * attempt, ct);
                         continue;
                     }
@@ -161,6 +152,95 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         {
             await CloseAsync();
             _io.Dispose();
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        private async Task OpenWithRetriesAsync(PortKey key, SerialPortOptions options, CancellationToken ct)
+        {
+            var totalTimeout = TimeSpan.FromMilliseconds(Math.Max(0, options.OpenRetryTimeoutMs));
+            var retryDelay = TimeSpan.FromMilliseconds(Math.Max(1, options.OpenRetryDelayMs));
+            var sw = Stopwatch.StartNew();
+            Exception? lastError = null;
+
+            while (true)
+            {
+                try
+                {
+                    // Открытие делаем синхронным внутри Task.Run, чтобы не блокировать вызывающий поток.
+                    await Task.Run(() => OpenPortOnce(key, options), ct);
+                    return;
+                }
+                catch (Exception ex) when (IsPortUnavailableException(ex))
+                {
+                    lastError = ex;
+                    if (sw.Elapsed >= totalTimeout)
+                    {
+                        throw new IOException($"Не удалось открыть порт {key.PortName} в течение отведённого времени.", ex);
+                    }
+
+                    var remaining = totalTimeout - sw.Elapsed;
+                    var delay = remaining < retryDelay ? remaining : retryDelay;
+                    if (delay <= TimeSpan.Zero)
+                        delay = TimeSpan.FromMilliseconds(50);
+
+                    await Task.Delay(delay, ct);
+                }
+            }
+        }
+
+        private void OpenPortOnce(PortKey key, SerialPortOptions options)
+        {
+            SerialPort? createdPort = null;
+            try
+            {
+                var p = new SerialPort(key.PortName, key.BaudRate, key.Parity, key.DataBits, key.StopBits)
+                {
+                    ReadTimeout = options.ReadTimeoutMs,
+                    WriteTimeout = options.WriteTimeoutMs,
+                    RtsEnable = options.RtsEnable,
+                    DtrEnable = options.DtrEnable
+                };
+                p.ReadBufferSize = Math.Max(p.ReadBufferSize, options.ReadBufferSize);
+                p.WriteBufferSize = Math.Max(p.WriteBufferSize, options.WriteBufferSize);
+
+                createdPort = p;
+                p.Open();
+
+                _port = p;
+                _isOpen = true;
+                createdPort = null; // ответственность передана _port
+            }
+            finally
+            {
+                if (createdPort is not null)
+                {
+                    try
+                    {
+                        createdPort.Dispose();
+                    }
+                    catch
+                    {
+                        // best effort cleanup
+                    }
+                }
+            }
+        }
+
+        private static bool IsPortUnavailableException(Exception ex) =>
+            ex is IOException || ex is UnauthorizedAccessException;
+
+        private bool PortRequiresReopen() => !_isOpen || _port is null || !_port.IsOpen;
+
+        private async Task RecoverPortAsync(CancellationToken ct)
+        {
+            if (_options is null)
+                throw new InvalidOperationException("Параметры последовательного порта не заданы.");
+
+            await CloseAsync();
+            await OpenWithRetriesAsync(_key, _options, ct);
         }
 
         #endregion

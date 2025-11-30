@@ -12,6 +12,7 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
         private readonly CreateViewModel<LanfengViewModel> _createLanfengViewModel;
         private readonly CreateViewModel<PKElectronicsViewModel> _createPKElectronicsViewModel;
         private readonly CreateViewModel<EKassaViewModel> _createEKassaViewModel;
+        private readonly CreateViewModel<NewCasViewModel> _createNewCasViewModel;
 
         #endregion
 
@@ -20,12 +21,14 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
         public ViewModelFactory(CreateViewModel<MainWindowViewModel> createMainWindowViewModel,
             CreateViewModel<LanfengViewModel> createLanfengViewModel,
             CreateViewModel<PKElectronicsViewModel> createPKElectronicsViewModel,
-            CreateViewModel<EKassaViewModel> createEKassaViewModel)
+            CreateViewModel<EKassaViewModel> createEKassaViewModel,
+            CreateViewModel<NewCasViewModel> createNewCasViewModel)
         {
             _createMainWindowViewModel = createMainWindowViewModel;
             _createLanfengViewModel = createLanfengViewModel;
             _createPKElectronicsViewModel = createPKElectronicsViewModel;
             _createEKassaViewModel = createEKassaViewModel;
+            _createNewCasViewModel = createNewCasViewModel;
         }
 
         #endregion
@@ -43,6 +46,7 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
                     ViewType.Lanfeng => _createLanfengViewModel(),
                     ViewType.PKElectronics => _createPKElectronicsViewModel(),
                     ViewType.EKassa => _createEKassaViewModel(),
+                    ViewType.NewCas => _createNewCasViewModel(),
                     _ => throw new ArgumentException("The ViewType does not have a ViewModel.", nameof(viewType)),
                 };
             });
@@ -56,6 +60,7 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
                 ViewType.Lanfeng => _createLanfengViewModel(),
                 ViewType.PKElectronics => _createPKElectronicsViewModel(),
                 ViewType.EKassa => _createEKassaViewModel(),
+                ViewType.NewCas => _createNewCasViewModel(),
                 _ => throw new ArgumentException("The ViewType does not have a ViewModel.", nameof(viewType)),
             };
         }
