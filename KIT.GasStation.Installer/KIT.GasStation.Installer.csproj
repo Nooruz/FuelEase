@@ -10,6 +10,7 @@
     <RollForward>Major</RollForward>
     <!-- https://stackoverflow.com/questions/58844785/how-to-reference-system-windows-forms-in-net-core-3-0-for-wpf-apps -->
     <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,6 +29,13 @@
 
   <ItemGroup>
     <PackageReference Include="WixSharp-wix4.WPF" Version="2.12.0" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Content Include="Assets\License.rtf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 
