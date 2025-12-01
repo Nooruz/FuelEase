@@ -188,21 +188,25 @@ namespace KIT.GasStation.NewCas
                 PrintToBitmaps = true,
                 SourceFDNumber = fuelSale.FiscalData.FiscalDocument,
                 SourceFMNumber = fuelSale.FiscalData.FiscalModule,
-                Goods = new(){
-                    new Goods() {
-                             Count = Math.Round(fuelSale.Sum / fuelSale.Price, 6),
-                             Price = fuelSale.Price,
-                             ItemName = fuelSale.Tank.Fuel.Name,
-                             Article = "",
-                             Total = fuelSale.Sum.ToString(),
-                             Unit = fuelSale.Tank.Fuel.UnitOfMeasurement.Name,
-                             VatNum = fuelSale.Tank.Fuel.ValueAddedTax ? 1 : 0,
-                             StNum = (int)(fuelSale.Tank.Fuel.SalesTax * 100)}],
-                PayItems = new(){
-                    new PayItems() {
+                Goods = new[]
+                {
+                    new Goods {
+                        Count = Math.Round(fuelSale.Sum / fuelSale.Price, 6),
+                        Price = fuelSale.Price,
+                        ItemName = fuelSale.Tank.Fuel.Name,
+                        Article = "",
+                        Total = fuelSale.Sum.ToString(),
+                        Unit = fuelSale.Tank.Fuel.UnitOfMeasurement.Name,
+                        VatNum = fuelSale.Tank.Fuel.ValueAddedTax ? 1 : 0,
+                        StNum = (int)(fuelSale.Tank.Fuel.SalesTax * 100) } 
+                },
+                PayItems = new []
+                {
+                    new PayItems() 
+                    {
                              PayType = GetPayType(fuelSale.PaymentType),
                              Total = fuelSale.Sum.ToString()
-                         } }
+                    }
                 }
             };
 
@@ -210,7 +214,7 @@ namespace KIT.GasStation.NewCas
 
             if (sale != null && sale.IsSuccessStatusCode)
             {
-                await UpdateFuelSaleWhenReturn(fuelSale, sale);
+                //await UpdateFuelSaleWhenReturn(fuelSale, sale);
             }
 
         }

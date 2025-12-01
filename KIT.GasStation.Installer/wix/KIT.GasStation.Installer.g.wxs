@@ -6,39 +6,1056 @@
     To suppress generation of this file remove `set ide=true` from the PostBuildEvent of the VS project
 </auto-generated>
 -->
-  <Package Compressed="yes" ProductCode="9098e750-40c2-4f53-ae3d-fdbb6f9eed2d" Name="MyProduct" Language="1033" Version="1.0.0.0" UpgradeCode="9098e750-40c2-4f53-ae3d-fdbb5f9eed2c" Manufacturer="nooru" InstallerVersion="200">
-    <SummaryInformation Codepage="Windows-1252" />
-    <Media Id="1" Cabinet="MyProduct.cab" EmbedCab="yes" />
+  <Package Compressed="yes" ProductCode="9098e750-40c2-4f53-ae3d-fdbb6f9efd2c" Name="КИТ-АЗС" Language="1049" Version="1.0.0" UpgradeCode="9098e750-40c2-4f53-ae3d-fdbb5f9eed2c" Manufacturer="ОсОО &quot;КИТ&quot;" InstallerVersion="200">
+    <SummaryInformation Codepage="windows-1251" />
+    <Media Id="1" Cabinet="_41a4184222d410417421_.cab" EmbedCab="yes" />
 
     <StandardDirectory Id="ProgramFilesFolder">
-      <Directory Id="My20Company" Name="My Company">
-        <Directory Id="INSTALLDIR" Name="My Product">
+      <Directory Id="KIT" Name="KIT">
+        <Directory Id="INSTALLDIR" Name="GasStation">
 
-          <Component Id="Component.Program.cs_2198778745" Guid="9098e750-40c2-4f53-ae3d-fdbbd9efec6c">
-            <File Id="Program.cs_2198778745" Source="Program.cs" />
+          <Component Id="Component.appsettings.json_1638537219" Guid="9098e750-40c2-4f53-ae3d-fdbb9368b88b">
+            <File Id="appsettings.json_1638537219" Source="appsettings.json" />
           </Component>
 
+          <Component Id="Component.Azure.Core.dll_2699202477" Guid="9098e750-40c2-4f53-ae3d-fdbb8516a9b8">
+            <File Id="Azure.Core.dll_2699202477" Source="Azure.Core.dll" />
+          </Component>
+
+          <Component Id="Component.Azure.Identity.dll_3211912176" Guid="9098e750-40c2-4f53-ae3d-fdbbda093fc6">
+            <File Id="Azure.Identity.dll_3211912176" Source="Azure.Identity.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Charts.Designer.v21.2.dll_2638460693" Guid="9098e750-40c2-4f53-ae3d-fdbbac7a95ca">
+            <File Id="DevExpress.Charts.Designer.v21.2.dll_2638460693" Source="DevExpress.Charts.Designer.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Charts.v21.2.Core.dll_2756705481" Guid="9098e750-40c2-4f53-ae3d-fdbbc8da13c7">
+            <File Id="DevExpress.Charts.v21.2.Core.dll_2756705481" Source="DevExpress.Charts.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.CodeParser.v21.2.dll_669449811" Guid="9098e750-40c2-4f53-ae3d-fdbb9dcafd3a">
+            <File Id="DevExpress.CodeParser.v21.2.dll_669449811" Source="DevExpress.CodeParser.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Dashboard.v21.2.Core.dll_147259860" Guid="9098e750-40c2-4f53-ae3d-fdbb5154eafd">
+            <File Id="DevExpress.Dashboard.v21.2.Core.dll_147259860" Source="DevExpress.Dashboard.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Dashboard.v21.2.Wpf.dll_815936359" Guid="9098e750-40c2-4f53-ae3d-fdbb92cf6d9b">
+            <File Id="DevExpress.Dashboard.v21.2.Wpf.dll_815936359" Source="DevExpress.Dashboard.v21.2.Wpf.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Data.Desktop.v21.2.dll_1741148463" Guid="9098e750-40c2-4f53-ae3d-fdbbebc7bc5a">
+            <File Id="DevExpress.Data.Desktop.v21.2.dll_1741148463" Source="DevExpress.Data.Desktop.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Data.v21.2.dll_657925727" Guid="9098e750-40c2-4f53-ae3d-fdbbd343de9e">
+            <File Id="DevExpress.Data.v21.2.dll_657925727" Source="DevExpress.Data.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.DataAccess.v21.2.dll_1292070117" Guid="9098e750-40c2-4f53-ae3d-fdbb527bfccf">
+            <File Id="DevExpress.DataAccess.v21.2.dll_1292070117" Source="DevExpress.DataAccess.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.DataAccess.v21.2.UI.dll_131092581" Guid="9098e750-40c2-4f53-ae3d-fdbb7762d66d">
+            <File Id="DevExpress.DataAccess.v21.2.UI.dll_131092581" Source="DevExpress.DataAccess.v21.2.UI.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.DataVisualization.v21.2.Core.dll_2332522779" Guid="9098e750-40c2-4f53-ae3d-fdbbb6170d73">
+            <File Id="DevExpress.DataVisualization.v21.2.Core.dll_2332522779" Source="DevExpress.DataVisualization.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Diagram.v21.2.Core.dll_541773887" Guid="9098e750-40c2-4f53-ae3d-fdbb56405305">
+            <File Id="DevExpress.Diagram.v21.2.Core.dll_541773887" Source="DevExpress.Diagram.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Images.v21.2.dll_1871291144" Guid="9098e750-40c2-4f53-ae3d-fdbb10a633ac">
+            <File Id="DevExpress.Images.v21.2.dll_1871291144" Source="DevExpress.Images.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Map.v21.2.Core.dll_3877364209" Guid="9098e750-40c2-4f53-ae3d-fdbb351ede51">
+            <File Id="DevExpress.Map.v21.2.Core.dll_3877364209" Source="DevExpress.Map.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Mvvm.v21.2.dll_3482035657" Guid="9098e750-40c2-4f53-ae3d-fdbbb797d90c">
+            <File Id="DevExpress.Mvvm.v21.2.dll_3482035657" Source="DevExpress.Mvvm.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Office.v21.2.Core.dll_4175954857" Guid="9098e750-40c2-4f53-ae3d-fdbb7c5ab39e">
+            <File Id="DevExpress.Office.v21.2.Core.dll_4175954857" Source="DevExpress.Office.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Pdf.v21.2.Core.dll_1753027789" Guid="9098e750-40c2-4f53-ae3d-fdbbb500484e">
+            <File Id="DevExpress.Pdf.v21.2.Core.dll_1753027789" Source="DevExpress.Pdf.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Pdf.v21.2.Drawing.dll_2977707966" Guid="9098e750-40c2-4f53-ae3d-fdbbf83ea17f">
+            <File Id="DevExpress.Pdf.v21.2.Drawing.dll_2977707966" Source="DevExpress.Pdf.v21.2.Drawing.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.PivotGrid.v21.2.Core.dll_2080821903" Guid="9098e750-40c2-4f53-ae3d-fdbbf489e230">
+            <File Id="DevExpress.PivotGrid.v21.2.Core.dll_2080821903" Source="DevExpress.PivotGrid.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Printing.v21.2.Core.dll_319896822" Guid="9098e750-40c2-4f53-ae3d-fdbb5cc636ef">
+            <File Id="DevExpress.Printing.v21.2.Core.dll_319896822" Source="DevExpress.Printing.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.RichEdit.v21.2.Core.dll_630893766" Guid="9098e750-40c2-4f53-ae3d-fdbb9fa92ea4">
+            <File Id="DevExpress.RichEdit.v21.2.Core.dll_630893766" Source="DevExpress.RichEdit.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.RichEdit.v21.2.Export.dll_1228176519" Guid="9098e750-40c2-4f53-ae3d-fdbb29167112">
+            <File Id="DevExpress.RichEdit.v21.2.Export.dll_1228176519" Source="DevExpress.RichEdit.v21.2.Export.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Sparkline.v21.2.Core.dll_3040520962" Guid="9098e750-40c2-4f53-ae3d-fdbb2fe1baa2">
+            <File Id="DevExpress.Sparkline.v21.2.Core.dll_3040520962" Source="DevExpress.Sparkline.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.TreeMap.v21.2.Core.dll_179852542" Guid="9098e750-40c2-4f53-ae3d-fdbba9307565">
+            <File Id="DevExpress.TreeMap.v21.2.Core.dll_179852542" Source="DevExpress.TreeMap.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Utils.v21.2.dll_574534161" Guid="9098e750-40c2-4f53-ae3d-fdbb511802d6">
+            <File Id="DevExpress.Utils.v21.2.dll_574534161" Source="DevExpress.Utils.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Utils.v21.2.UI.dll_3113882879" Guid="9098e750-40c2-4f53-ae3d-fdbba6cdb36f">
+            <File Id="DevExpress.Utils.v21.2.UI.dll_3113882879" Source="DevExpress.Utils.v21.2.UI.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Accordion.v21.2.dll_1957037952" Guid="9098e750-40c2-4f53-ae3d-fdbbd0f25e04">
+            <File Id="DevExpress.Xpf.Accordion.v21.2.dll_1957037952" Source="DevExpress.Xpf.Accordion.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Charts.v21.2.dll_1993036028" Guid="9098e750-40c2-4f53-ae3d-fdbb4508106a">
+            <File Id="DevExpress.Xpf.Charts.v21.2.dll_1993036028" Source="DevExpress.Xpf.Charts.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Controls.v21.2.dll_2667905047" Guid="9098e750-40c2-4f53-ae3d-fdbbda5078cb">
+            <File Id="DevExpress.Xpf.Controls.v21.2.dll_2667905047" Source="DevExpress.Xpf.Controls.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Core.v21.2.dll_2647446792" Guid="9098e750-40c2-4f53-ae3d-fdbbfb3375b0">
+            <File Id="DevExpress.Xpf.Core.v21.2.dll_2647446792" Source="DevExpress.Xpf.Core.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Dashboard.v21.2.dll_1396736689" Guid="9098e750-40c2-4f53-ae3d-fdbbd402c522">
+            <File Id="DevExpress.Xpf.Dashboard.v21.2.dll_1396736689" Source="DevExpress.Xpf.Dashboard.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Docking.v21.2.dll_3171690656" Guid="9098e750-40c2-4f53-ae3d-fdbbf1663649">
+            <File Id="DevExpress.Xpf.Docking.v21.2.dll_3171690656" Source="DevExpress.Xpf.Docking.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.DocumentViewer.v21.2.Core.dll_3448395378" Guid="9098e750-40c2-4f53-ae3d-fdbbfda38db7">
+            <File Id="DevExpress.Xpf.DocumentViewer.v21.2.Core.dll_3448395378" Source="DevExpress.Xpf.DocumentViewer.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.ExpressionEditor.v21.2.dll_3403913394" Guid="9098e750-40c2-4f53-ae3d-fdbb4238b509">
+            <File Id="DevExpress.Xpf.ExpressionEditor.v21.2.dll_3403913394" Source="DevExpress.Xpf.ExpressionEditor.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Gauges.v21.2.dll_3736654077" Guid="9098e750-40c2-4f53-ae3d-fdbbabccca43">
+            <File Id="DevExpress.Xpf.Gauges.v21.2.dll_3736654077" Source="DevExpress.Xpf.Gauges.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Grid.v21.2.Core.dll_2206790796" Guid="9098e750-40c2-4f53-ae3d-fdbbeb350130">
+            <File Id="DevExpress.Xpf.Grid.v21.2.Core.dll_2206790796" Source="DevExpress.Xpf.Grid.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Grid.v21.2.dll_2923378427" Guid="9098e750-40c2-4f53-ae3d-fdbbf0f00ba0">
+            <File Id="DevExpress.Xpf.Grid.v21.2.dll_2923378427" Source="DevExpress.Xpf.Grid.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Grid.v21.2.Extensions.dll_2582634422" Guid="9098e750-40c2-4f53-ae3d-fdbbef5994d1">
+            <File Id="DevExpress.Xpf.Grid.v21.2.Extensions.dll_2582634422" Source="DevExpress.Xpf.Grid.v21.2.Extensions.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Layout.v21.2.Core.dll_765892601" Guid="9098e750-40c2-4f53-ae3d-fdbbb5dbe3ef">
+            <File Id="DevExpress.Xpf.Layout.v21.2.Core.dll_765892601" Source="DevExpress.Xpf.Layout.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.LayoutControl.v21.2.dll_3245590790" Guid="9098e750-40c2-4f53-ae3d-fdbba73ac757">
+            <File Id="DevExpress.Xpf.LayoutControl.v21.2.dll_3245590790" Source="DevExpress.Xpf.LayoutControl.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Map.v21.2.dll_2281651992" Guid="9098e750-40c2-4f53-ae3d-fdbb75bd87b4">
+            <File Id="DevExpress.Xpf.Map.v21.2.dll_2281651992" Source="DevExpress.Xpf.Map.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Office.v21.2.dll_795997769" Guid="9098e750-40c2-4f53-ae3d-fdbbc4fa7c08">
+            <File Id="DevExpress.Xpf.Office.v21.2.dll_795997769" Source="DevExpress.Xpf.Office.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.PivotGrid.v21.2.dll_3838965216" Guid="9098e750-40c2-4f53-ae3d-fdbb799e9f1a">
+            <File Id="DevExpress.Xpf.PivotGrid.v21.2.dll_3838965216" Source="DevExpress.Xpf.PivotGrid.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Printing.v21.2.dll_3542008394" Guid="9098e750-40c2-4f53-ae3d-fdbbd7720331">
+            <File Id="DevExpress.Xpf.Printing.v21.2.dll_3542008394" Source="DevExpress.Xpf.Printing.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.PropertyGrid.v21.2.dll_951268358" Guid="9098e750-40c2-4f53-ae3d-fdbbfca5a7f2">
+            <File Id="DevExpress.Xpf.PropertyGrid.v21.2.dll_951268358" Source="DevExpress.Xpf.PropertyGrid.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Ribbon.v21.2.dll_891257249" Guid="9098e750-40c2-4f53-ae3d-fdbb08b6cad6">
+            <File Id="DevExpress.Xpf.Ribbon.v21.2.dll_891257249" Source="DevExpress.Xpf.Ribbon.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.RichEdit.v21.2.dll_3298994848" Guid="9098e750-40c2-4f53-ae3d-fdbb2ee0b51e">
+            <File Id="DevExpress.Xpf.RichEdit.v21.2.dll_3298994848" Source="DevExpress.Xpf.RichEdit.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.Themes.Office2019Colorful.v21.2.dll_1854810212" Guid="9098e750-40c2-4f53-ae3d-fdbbbf819dc0">
+            <File Id="DevExpress.Xpf.Themes.Office2019Colorful.v21.2.dll_1854810212" Source="DevExpress.Xpf.Themes.Office2019Colorful.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpf.TreeMap.v21.2.dll_3560380776" Guid="9098e750-40c2-4f53-ae3d-fdbbefe2b065">
+            <File Id="DevExpress.Xpf.TreeMap.v21.2.dll_3560380776" Source="DevExpress.Xpf.TreeMap.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.Xpo.v21.2.dll_3114688904" Guid="9098e750-40c2-4f53-ae3d-fdbb6511b285">
+            <File Id="DevExpress.Xpo.v21.2.dll_3114688904" Source="DevExpress.Xpo.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraBars.v21.2.dll_922668024" Guid="9098e750-40c2-4f53-ae3d-fdbb44a6a570">
+            <File Id="DevExpress.XtraBars.v21.2.dll_922668024" Source="DevExpress.XtraBars.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraCharts.v21.2.dll_4159041732" Guid="9098e750-40c2-4f53-ae3d-fdbba969731e">
+            <File Id="DevExpress.XtraCharts.v21.2.dll_4159041732" Source="DevExpress.XtraCharts.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraDiagram.v21.2.dll_3060516830" Guid="9098e750-40c2-4f53-ae3d-fdbb98ee6d71">
+            <File Id="DevExpress.XtraDiagram.v21.2.dll_3060516830" Source="DevExpress.XtraDiagram.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraEditors.v21.2.dll_2986176683" Guid="9098e750-40c2-4f53-ae3d-fdbb9597af5e">
+            <File Id="DevExpress.XtraEditors.v21.2.dll_2986176683" Source="DevExpress.XtraEditors.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraGauges.v21.2.Core.dll_1356601117" Guid="9098e750-40c2-4f53-ae3d-fdbb3ab3805b">
+            <File Id="DevExpress.XtraGauges.v21.2.Core.dll_1356601117" Source="DevExpress.XtraGauges.v21.2.Core.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraGrid.v21.2.dll_1127893309" Guid="9098e750-40c2-4f53-ae3d-fdbbcd5a1fe2">
+            <File Id="DevExpress.XtraGrid.v21.2.dll_1127893309" Source="DevExpress.XtraGrid.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraLayout.v21.2.dll_2813506273" Guid="9098e750-40c2-4f53-ae3d-fdbb2e325e0f">
+            <File Id="DevExpress.XtraLayout.v21.2.dll_2813506273" Source="DevExpress.XtraLayout.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraPrinting.v21.2.dll_1820804708" Guid="9098e750-40c2-4f53-ae3d-fdbb1aec4318">
+            <File Id="DevExpress.XtraPrinting.v21.2.dll_1820804708" Source="DevExpress.XtraPrinting.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraReports.v21.2.dll_2678571051" Guid="9098e750-40c2-4f53-ae3d-fdbb77d1569a">
+            <File Id="DevExpress.XtraReports.v21.2.dll_2678571051" Source="DevExpress.XtraReports.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraRichEdit.v21.2.dll_741572263" Guid="9098e750-40c2-4f53-ae3d-fdbb81b9f455">
+            <File Id="DevExpress.XtraRichEdit.v21.2.dll_741572263" Source="DevExpress.XtraRichEdit.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraTreeList.v21.2.dll_1779796777" Guid="9098e750-40c2-4f53-ae3d-fdbb5ad7baa5">
+            <File Id="DevExpress.XtraTreeList.v21.2.dll_1779796777" Source="DevExpress.XtraTreeList.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraTreeMap.v21.2.dll_1100426356" Guid="9098e750-40c2-4f53-ae3d-fdbb04a9ed8e">
+            <File Id="DevExpress.XtraTreeMap.v21.2.dll_1100426356" Source="DevExpress.XtraTreeMap.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.DevExpress.XtraVerticalGrid.v21.2.dll_1302798107" Guid="9098e750-40c2-4f53-ae3d-fdbb76916ff4">
+            <File Id="DevExpress.XtraVerticalGrid.v21.2.dll_1302798107" Source="DevExpress.XtraVerticalGrid.v21.2.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.CashRegisters.dll_507639518" Guid="9098e750-40c2-4f53-ae3d-fdbbb1ce8cba">
+            <File Id="KIT.GasStation.CashRegisters.dll_507639518" Source="KIT.GasStation.CashRegisters.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.CashRegisters.pdb_2802579158" Guid="9098e750-40c2-4f53-ae3d-fdbba72cf2d0">
+            <File Id="KIT.GasStation.CashRegisters.pdb_2802579158" Source="KIT.GasStation.CashRegisters.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.Common.dll_3474946227" Guid="9098e750-40c2-4f53-ae3d-fdbbbe7dbcc3">
+            <File Id="KIT.GasStation.Common.dll_3474946227" Source="KIT.GasStation.Common.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.Common.pdb_343302653" Guid="9098e750-40c2-4f53-ae3d-fdbbf165894a">
+            <File Id="KIT.GasStation.Common.pdb_343302653" Source="KIT.GasStation.Common.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.Domain.dll_2795272247" Guid="9098e750-40c2-4f53-ae3d-fdbb2d8ed17a">
+            <File Id="KIT.GasStation.Domain.dll_2795272247" Source="KIT.GasStation.Domain.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.Domain.pdb_3957547385" Guid="9098e750-40c2-4f53-ae3d-fdbb40b43077">
+            <File Id="KIT.GasStation.Domain.pdb_3957547385" Source="KIT.GasStation.Domain.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.EKassa.dll_3170226816" Guid="9098e750-40c2-4f53-ae3d-fdbb77a1918b">
+            <File Id="KIT.GasStation.EKassa.dll_3170226816" Source="KIT.GasStation.EKassa.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.EKassa.pdb_2363133462" Guid="9098e750-40c2-4f53-ae3d-fdbb4b3212f7">
+            <File Id="KIT.GasStation.EKassa.pdb_2363133462" Source="KIT.GasStation.EKassa.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.EntityFramework.dll_120070921" Guid="9098e750-40c2-4f53-ae3d-fdbb3684bad5">
+            <File Id="KIT.GasStation.EntityFramework.dll_120070921" Source="KIT.GasStation.EntityFramework.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.EntityFramework.pdb_2438889009" Guid="9098e750-40c2-4f53-ae3d-fdbb48332a3c">
+            <File Id="KIT.GasStation.EntityFramework.pdb_2438889009" Source="KIT.GasStation.EntityFramework.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.FuelDispenser.dll_212384089" Guid="9098e750-40c2-4f53-ae3d-fdbb71dd9c0e">
+            <File Id="KIT.GasStation.FuelDispenser.dll_212384089" Source="KIT.GasStation.FuelDispenser.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.FuelDispenser.pdb_684112209" Guid="9098e750-40c2-4f53-ae3d-fdbb3999e847">
+            <File Id="KIT.GasStation.FuelDispenser.pdb_684112209" Source="KIT.GasStation.FuelDispenser.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.FuelDispenserEmulator.dll_326382487" Guid="9098e750-40c2-4f53-ae3d-fdbb91a7c480">
+            <File Id="KIT.GasStation.FuelDispenserEmulator.dll_326382487" Source="KIT.GasStation.FuelDispenserEmulator.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.FuelDispenserEmulator.pdb_2619749263" Guid="9098e750-40c2-4f53-ae3d-fdbb9ce4ed5c">
+            <File Id="KIT.GasStation.FuelDispenserEmulator.pdb_2619749263" Source="KIT.GasStation.FuelDispenserEmulator.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.HardwareConfigurations.dll_1630021809" Guid="9098e750-40c2-4f53-ae3d-fdbbcf0d783f">
+            <File Id="KIT.GasStation.HardwareConfigurations.dll_1630021809" Source="KIT.GasStation.HardwareConfigurations.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.HardwareConfigurations.pdb_2437115163" Guid="9098e750-40c2-4f53-ae3d-fdbb9cb4d053">
+            <File Id="KIT.GasStation.HardwareConfigurations.pdb_2437115163" Source="KIT.GasStation.HardwareConfigurations.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.NewCas.dll_1575488456" Guid="9098e750-40c2-4f53-ae3d-fdbb7ac80c88">
+            <File Id="KIT.GasStation.NewCas.dll_1575488456" Source="KIT.GasStation.NewCas.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.NewCas.pdb_55934414" Guid="9098e750-40c2-4f53-ae3d-fdbbd3011505">
+            <File Id="KIT.GasStation.NewCas.pdb_55934414" Source="KIT.GasStation.NewCas.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.PKElectronics.dll_3510751322" Guid="9098e750-40c2-4f53-ae3d-fdbbddbdefbe">
+            <File Id="KIT.GasStation.PKElectronics.dll_3510751322" Source="KIT.GasStation.PKElectronics.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.PKElectronics.pdb_1510461522" Guid="9098e750-40c2-4f53-ae3d-fdbb21bd786e">
+            <File Id="KIT.GasStation.PKElectronics.pdb_1510461522" Source="KIT.GasStation.PKElectronics.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.TechnoProjekt.dll_2082482622" Guid="9098e750-40c2-4f53-ae3d-fdbb3c0470f8">
+            <File Id="KIT.GasStation.TechnoProjekt.dll_2082482622" Source="KIT.GasStation.TechnoProjekt.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStation.TechnoProjekt.pdb_81406390" Guid="9098e750-40c2-4f53-ae3d-fdbb28ecaeee">
+            <File Id="KIT.GasStation.TechnoProjekt.pdb_81406390" Source="KIT.GasStation.TechnoProjekt.pdb" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStationLanfeng.dll_3771163336" Guid="9098e750-40c2-4f53-ae3d-fdbb985b5072">
+            <File Id="KIT.GasStationLanfeng.dll_3771163336" Source="KIT.GasStationLanfeng.dll" />
+          </Component>
+
+          <Component Id="Component.KIT.GasStationLanfeng.pdb_4222026338" Guid="9098e750-40c2-4f53-ae3d-fdbbe8b1a2a9">
+            <File Id="KIT.GasStationLanfeng.pdb_4222026338" Source="KIT.GasStationLanfeng.pdb" />
+          </Component>
+
+          <Component Id="Component.layout.xml_597231030" Guid="9098e750-40c2-4f53-ae3d-fdbba3e19e03">
+            <File Id="layout.xml_597231030" Source="layout.xml" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.Authorization.dll_3664923113" Guid="9098e750-40c2-4f53-ae3d-fdbb71cdee19">
+            <File Id="Microsoft.AspNetCore.Authorization.dll_3664923113" Source="Microsoft.AspNetCore.Authorization.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.Connections.Abstractions.dll_901993842" Guid="9098e750-40c2-4f53-ae3d-fdbb9c690cd6">
+            <File Id="Microsoft.AspNetCore.Connections.Abstractions.dll_901993842" Source="Microsoft.AspNetCore.Connections.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.Hosting.Abstractions.dll_106308506" Guid="9098e750-40c2-4f53-ae3d-fdbb40bcbfe3">
+            <File Id="Microsoft.AspNetCore.Hosting.Abstractions.dll_106308506" Source="Microsoft.AspNetCore.Hosting.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.Hosting.Server.Abstractions.dll_2721251922" Guid="9098e750-40c2-4f53-ae3d-fdbb9fd55795">
+            <File Id="Microsoft.AspNetCore.Hosting.Server.Abstractions.dll_2721251922" Source="Microsoft.AspNetCore.Hosting.Server.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.Http.Abstractions.dll_3634984118" Guid="9098e750-40c2-4f53-ae3d-fdbbedf284ad">
+            <File Id="Microsoft.AspNetCore.Http.Abstractions.dll_3634984118" Source="Microsoft.AspNetCore.Http.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.Http.Connections.Client.dll_115721637" Guid="9098e750-40c2-4f53-ae3d-fdbba2dbfe32">
+            <File Id="Microsoft.AspNetCore.Http.Connections.Client.dll_115721637" Source="Microsoft.AspNetCore.Http.Connections.Client.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.Http.Connections.Common.dll_2932162776" Guid="9098e750-40c2-4f53-ae3d-fdbbe1cb5ffb">
+            <File Id="Microsoft.AspNetCore.Http.Connections.Common.dll_2932162776" Source="Microsoft.AspNetCore.Http.Connections.Common.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.Http.Features.dll_652208804" Guid="9098e750-40c2-4f53-ae3d-fdbbc84d9979">
+            <File Id="Microsoft.AspNetCore.Http.Features.dll_652208804" Source="Microsoft.AspNetCore.Http.Features.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.SignalR.Client.Core.dll_1216497459" Guid="9098e750-40c2-4f53-ae3d-fdbb62320138">
+            <File Id="Microsoft.AspNetCore.SignalR.Client.Core.dll_1216497459" Source="Microsoft.AspNetCore.SignalR.Client.Core.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.SignalR.Client.dll_990522232" Guid="9098e750-40c2-4f53-ae3d-fdbbf73d456a">
+            <File Id="Microsoft.AspNetCore.SignalR.Client.dll_990522232" Source="Microsoft.AspNetCore.SignalR.Client.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.SignalR.Common.dll_1803776761" Guid="9098e750-40c2-4f53-ae3d-fdbb380c366e">
+            <File Id="Microsoft.AspNetCore.SignalR.Common.dll_1803776761" Source="Microsoft.AspNetCore.SignalR.Common.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.SignalR.Core.dll_1424891039" Guid="9098e750-40c2-4f53-ae3d-fdbbba45f585">
+            <File Id="Microsoft.AspNetCore.SignalR.Core.dll_1424891039" Source="Microsoft.AspNetCore.SignalR.Core.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.AspNetCore.SignalR.Protocols.Json.dll_1384471480" Guid="9098e750-40c2-4f53-ae3d-fdbb03e8d726">
+            <File Id="Microsoft.AspNetCore.SignalR.Protocols.Json.dll_1384471480" Source="Microsoft.AspNetCore.SignalR.Protocols.Json.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Bcl.AsyncInterfaces.dll_1393209501" Guid="9098e750-40c2-4f53-ae3d-fdbb9916aa14">
+            <File Id="Microsoft.Bcl.AsyncInterfaces.dll_1393209501" Source="Microsoft.Bcl.AsyncInterfaces.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Bcl.TimeProvider.dll_2127186724" Guid="9098e750-40c2-4f53-ae3d-fdbb4fa25012">
+            <File Id="Microsoft.Bcl.TimeProvider.dll_2127186724" Source="Microsoft.Bcl.TimeProvider.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Data.SqlClient.dll_2834983071" Guid="9098e750-40c2-4f53-ae3d-fdbbb2ea840a">
+            <File Id="Microsoft.Data.SqlClient.dll_2834983071" Source="Microsoft.Data.SqlClient.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Data.SqlClient.SNI.dll_4099252231" Guid="9098e750-40c2-4f53-ae3d-fdbb285d676f">
+            <File Id="Microsoft.Data.SqlClient.SNI.dll_4099252231" Source="Microsoft.Data.SqlClient.SNI.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.EntityFrameworkCore.Abstractions.dll_2144290212" Guid="9098e750-40c2-4f53-ae3d-fdbb1ef1ade1">
+            <File Id="Microsoft.EntityFrameworkCore.Abstractions.dll_2144290212" Source="Microsoft.EntityFrameworkCore.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.EntityFrameworkCore.dll_864925329" Guid="9098e750-40c2-4f53-ae3d-fdbbb7709727">
+            <File Id="Microsoft.EntityFrameworkCore.dll_864925329" Source="Microsoft.EntityFrameworkCore.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.EntityFrameworkCore.Relational.dll_55569969" Guid="9098e750-40c2-4f53-ae3d-fdbb6e69fa48">
+            <File Id="Microsoft.EntityFrameworkCore.Relational.dll_55569969" Source="Microsoft.EntityFrameworkCore.Relational.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.EntityFrameworkCore.SqlServer.dll_3391374314" Guid="9098e750-40c2-4f53-ae3d-fdbb4b478cbd">
+            <File Id="Microsoft.EntityFrameworkCore.SqlServer.dll_3391374314" Source="Microsoft.EntityFrameworkCore.SqlServer.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Caching.Abstractions.dll_1277258629" Guid="9098e750-40c2-4f53-ae3d-fdbbe6c9ef47">
+            <File Id="Microsoft.Extensions.Caching.Abstractions.dll_1277258629" Source="Microsoft.Extensions.Caching.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Caching.Memory.dll_374459971" Guid="9098e750-40c2-4f53-ae3d-fdbb865399db">
+            <File Id="Microsoft.Extensions.Caching.Memory.dll_374459971" Source="Microsoft.Extensions.Caching.Memory.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Configuration.Abstractions.dll_105463729" Guid="9098e750-40c2-4f53-ae3d-fdbbbbbe8ac8">
+            <File Id="Microsoft.Extensions.Configuration.Abstractions.dll_105463729" Source="Microsoft.Extensions.Configuration.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Configuration.Binder.dll_2015484796" Guid="9098e750-40c2-4f53-ae3d-fdbb5fb40980">
+            <File Id="Microsoft.Extensions.Configuration.Binder.dll_2015484796" Source="Microsoft.Extensions.Configuration.Binder.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Configuration.CommandLine.dll_3059807083" Guid="9098e750-40c2-4f53-ae3d-fdbb1869363d">
+            <File Id="Microsoft.Extensions.Configuration.CommandLine.dll_3059807083" Source="Microsoft.Extensions.Configuration.CommandLine.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Configuration.dll_3220628731" Guid="9098e750-40c2-4f53-ae3d-fdbb033f655a">
+            <File Id="Microsoft.Extensions.Configuration.dll_3220628731" Source="Microsoft.Extensions.Configuration.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Configuration.EnvironmentVariables.dll_2993482708" Guid="9098e750-40c2-4f53-ae3d-fdbbcac923a1">
+            <File Id="Microsoft.Extensions.Configuration.EnvironmentVariables.dll_2993482708" Source="Microsoft.Extensions.Configuration.EnvironmentVariables.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Configuration.FileExtensions.dll_11322310" Guid="9098e750-40c2-4f53-ae3d-fdbbae2a9d16">
+            <File Id="Microsoft.Extensions.Configuration.FileExtensions.dll_11322310" Source="Microsoft.Extensions.Configuration.FileExtensions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Configuration.Json.dll_3308731753" Guid="9098e750-40c2-4f53-ae3d-fdbbcc9bf056">
+            <File Id="Microsoft.Extensions.Configuration.Json.dll_3308731753" Source="Microsoft.Extensions.Configuration.Json.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Configuration.UserSecrets.dll_1487624923" Guid="9098e750-40c2-4f53-ae3d-fdbb640b0582">
+            <File Id="Microsoft.Extensions.Configuration.UserSecrets.dll_1487624923" Source="Microsoft.Extensions.Configuration.UserSecrets.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.DependencyInjection.Abstractions.dll_1003367414" Guid="9098e750-40c2-4f53-ae3d-fdbb463bdf30">
+            <File Id="Microsoft.Extensions.DependencyInjection.Abstractions.dll_1003367414" Source="Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.DependencyInjection.dll_3374023300" Guid="9098e750-40c2-4f53-ae3d-fdbbc0c48975">
+            <File Id="Microsoft.Extensions.DependencyInjection.dll_3374023300" Source="Microsoft.Extensions.DependencyInjection.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.DependencyModel.dll_2849169862" Guid="9098e750-40c2-4f53-ae3d-fdbba67f3806">
+            <File Id="Microsoft.Extensions.DependencyModel.dll_2849169862" Source="Microsoft.Extensions.DependencyModel.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Diagnostics.Abstractions.dll_76709591" Guid="9098e750-40c2-4f53-ae3d-fdbbfe8f7d89">
+            <File Id="Microsoft.Extensions.Diagnostics.Abstractions.dll_76709591" Source="Microsoft.Extensions.Diagnostics.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Diagnostics.dll_2737537590" Guid="9098e750-40c2-4f53-ae3d-fdbb336f8653">
+            <File Id="Microsoft.Extensions.Diagnostics.dll_2737537590" Source="Microsoft.Extensions.Diagnostics.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Features.dll_4094596868" Guid="9098e750-40c2-4f53-ae3d-fdbba8d52de6">
+            <File Id="Microsoft.Extensions.Features.dll_4094596868" Source="Microsoft.Extensions.Features.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.FileProviders.Abstractions.dll_22054048" Guid="9098e750-40c2-4f53-ae3d-fdbb477fd726">
+            <File Id="Microsoft.Extensions.FileProviders.Abstractions.dll_22054048" Source="Microsoft.Extensions.FileProviders.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.FileProviders.Physical.dll_2641210762" Guid="9098e750-40c2-4f53-ae3d-fdbb07db251e">
+            <File Id="Microsoft.Extensions.FileProviders.Physical.dll_2641210762" Source="Microsoft.Extensions.FileProviders.Physical.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.FileSystemGlobbing.dll_216848901" Guid="9098e750-40c2-4f53-ae3d-fdbbb70655a6">
+            <File Id="Microsoft.Extensions.FileSystemGlobbing.dll_216848901" Source="Microsoft.Extensions.FileSystemGlobbing.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Hosting.Abstractions.dll_3226303412" Guid="9098e750-40c2-4f53-ae3d-fdbbd0b0656f">
+            <File Id="Microsoft.Extensions.Hosting.Abstractions.dll_3226303412" Source="Microsoft.Extensions.Hosting.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Hosting.dll_1169355275" Guid="9098e750-40c2-4f53-ae3d-fdbba95ca81e">
+            <File Id="Microsoft.Extensions.Hosting.dll_1169355275" Source="Microsoft.Extensions.Hosting.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Logging.Abstractions.dll_1085504863" Guid="9098e750-40c2-4f53-ae3d-fdbb9f9b9427">
+            <File Id="Microsoft.Extensions.Logging.Abstractions.dll_1085504863" Source="Microsoft.Extensions.Logging.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Logging.Configuration.dll_2277720233" Guid="9098e750-40c2-4f53-ae3d-fdbb061f77cd">
+            <File Id="Microsoft.Extensions.Logging.Configuration.dll_2277720233" Source="Microsoft.Extensions.Logging.Configuration.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Logging.Console.dll_1005420722" Guid="9098e750-40c2-4f53-ae3d-fdbbea712e4d">
+            <File Id="Microsoft.Extensions.Logging.Console.dll_1005420722" Source="Microsoft.Extensions.Logging.Console.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Logging.Debug.dll_3837431634" Guid="9098e750-40c2-4f53-ae3d-fdbb153e6cf0">
+            <File Id="Microsoft.Extensions.Logging.Debug.dll_3837431634" Source="Microsoft.Extensions.Logging.Debug.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Logging.dll_805243796" Guid="9098e750-40c2-4f53-ae3d-fdbbaf61b405">
+            <File Id="Microsoft.Extensions.Logging.dll_805243796" Source="Microsoft.Extensions.Logging.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Logging.EventLog.dll_3855875391" Guid="9098e750-40c2-4f53-ae3d-fdbb09eaa5b6">
+            <File Id="Microsoft.Extensions.Logging.EventLog.dll_3855875391" Source="Microsoft.Extensions.Logging.EventLog.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Logging.EventSource.dll_3991573445" Guid="9098e750-40c2-4f53-ae3d-fdbb52538b75">
+            <File Id="Microsoft.Extensions.Logging.EventSource.dll_3991573445" Source="Microsoft.Extensions.Logging.EventSource.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Options.ConfigurationExtensions.dll_4096498745" Guid="9098e750-40c2-4f53-ae3d-fdbbd3637741">
+            <File Id="Microsoft.Extensions.Options.ConfigurationExtensions.dll_4096498745" Source="Microsoft.Extensions.Options.ConfigurationExtensions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Options.dll_2644928207" Guid="9098e750-40c2-4f53-ae3d-fdbb9cd54592">
+            <File Id="Microsoft.Extensions.Options.dll_2644928207" Source="Microsoft.Extensions.Options.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Extensions.Primitives.dll_3222557782" Guid="9098e750-40c2-4f53-ae3d-fdbb6139b925">
+            <File Id="Microsoft.Extensions.Primitives.dll_3222557782" Source="Microsoft.Extensions.Primitives.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Identity.Client.dll_4162822640" Guid="9098e750-40c2-4f53-ae3d-fdbbaa9b41df">
+            <File Id="Microsoft.Identity.Client.dll_4162822640" Source="Microsoft.Identity.Client.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.Identity.Client.Extensions.Msal.dll_2964518141" Guid="9098e750-40c2-4f53-ae3d-fdbb2e689abe">
+            <File Id="Microsoft.Identity.Client.Extensions.Msal.dll_2964518141" Source="Microsoft.Identity.Client.Extensions.Msal.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.IdentityModel.Abstractions.dll_378078404" Guid="9098e750-40c2-4f53-ae3d-fdbbb4482113">
+            <File Id="Microsoft.IdentityModel.Abstractions.dll_378078404" Source="Microsoft.IdentityModel.Abstractions.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.IdentityModel.JsonWebTokens.dll_4059437371" Guid="9098e750-40c2-4f53-ae3d-fdbb69503494">
+            <File Id="Microsoft.IdentityModel.JsonWebTokens.dll_4059437371" Source="Microsoft.IdentityModel.JsonWebTokens.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.IdentityModel.Logging.dll_2675689909" Guid="9098e750-40c2-4f53-ae3d-fdbbc23b0ebc">
+            <File Id="Microsoft.IdentityModel.Logging.dll_2675689909" Source="Microsoft.IdentityModel.Logging.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.IdentityModel.Protocols.dll_4272317334" Guid="9098e750-40c2-4f53-ae3d-fdbb884d44a5">
+            <File Id="Microsoft.IdentityModel.Protocols.dll_4272317334" Source="Microsoft.IdentityModel.Protocols.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.IdentityModel.Protocols.OpenIdConnect.dll_2636130900" Guid="9098e750-40c2-4f53-ae3d-fdbb99a02c96">
+            <File Id="Microsoft.IdentityModel.Protocols.OpenIdConnect.dll_2636130900" Source="Microsoft.IdentityModel.Protocols.OpenIdConnect.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.IdentityModel.Tokens.dll_4155908248" Guid="9098e750-40c2-4f53-ae3d-fdbbf0d7e35f">
+            <File Id="Microsoft.IdentityModel.Tokens.dll_4155908248" Source="Microsoft.IdentityModel.Tokens.dll" />
+          </Component>
+
+          <Component Id="Component.Microsoft.SqlServer.Server.dll_2953482421" Guid="9098e750-40c2-4f53-ae3d-fdbb81a7d580">
+            <File Id="Microsoft.SqlServer.Server.dll_2953482421" Source="Microsoft.SqlServer.Server.dll" />
+          </Component>
+
+          <Component Id="Component.Newtonsoft.Json.dll_2276759577" Guid="9098e750-40c2-4f53-ae3d-fdbb5003741e">
+            <File Id="Newtonsoft.Json.dll_2276759577" Source="Newtonsoft.Json.dll" />
+          </Component>
+
+          <Component Id="Component.QRCoder.dll_1138790007" Guid="9098e750-40c2-4f53-ae3d-fdbbd8552eef">
+            <File Id="QRCoder.dll_1138790007" Source="QRCoder.dll" />
+          </Component>
+
+          <Component Id="Component.SerialPortStreamCore.dll_4152865200" Guid="9098e750-40c2-4f53-ae3d-fdbb397e8204">
+            <File Id="SerialPortStreamCore.dll_4152865200" Source="SerialPortStreamCore.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.AspNetCore.dll_2180430580" Guid="9098e750-40c2-4f53-ae3d-fdbb2907216e">
+            <File Id="Serilog.AspNetCore.dll_2180430580" Source="Serilog.AspNetCore.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.dll_2881967997" Guid="9098e750-40c2-4f53-ae3d-fdbb1b8cb091">
+            <File Id="Serilog.dll_2881967997" Source="Serilog.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.Extensions.Hosting.dll_2128972913" Guid="9098e750-40c2-4f53-ae3d-fdbb204fbe1a">
+            <File Id="Serilog.Extensions.Hosting.dll_2128972913" Source="Serilog.Extensions.Hosting.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.Extensions.Logging.dll_4069886590" Guid="9098e750-40c2-4f53-ae3d-fdbbb4884add">
+            <File Id="Serilog.Extensions.Logging.dll_4069886590" Source="Serilog.Extensions.Logging.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.Formatting.Compact.dll_3960388796" Guid="9098e750-40c2-4f53-ae3d-fdbb0d151268">
+            <File Id="Serilog.Formatting.Compact.dll_3960388796" Source="Serilog.Formatting.Compact.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.Settings.Configuration.dll_915762919" Guid="9098e750-40c2-4f53-ae3d-fdbb191f352a">
+            <File Id="Serilog.Settings.Configuration.dll_915762919" Source="Serilog.Settings.Configuration.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.Sinks.Console.dll_945296204" Guid="9098e750-40c2-4f53-ae3d-fdbb6b33b836">
+            <File Id="Serilog.Sinks.Console.dll_945296204" Source="Serilog.Sinks.Console.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.Sinks.Debug.dll_3908041990" Guid="9098e750-40c2-4f53-ae3d-fdbbd944befc">
+            <File Id="Serilog.Sinks.Debug.dll_3908041990" Source="Serilog.Sinks.Debug.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.Sinks.File.dll_1205186265" Guid="9098e750-40c2-4f53-ae3d-fdbb7a6f7ea3">
+            <File Id="Serilog.Sinks.File.dll_1205186265" Source="Serilog.Sinks.File.dll" />
+          </Component>
+
+          <Component Id="Component.Serilog.Sinks.MSSqlServer.dll_1713122323" Guid="9098e750-40c2-4f53-ae3d-fdbbf5da03fa">
+            <File Id="Serilog.Sinks.MSSqlServer.dll_1713122323" Source="Serilog.Sinks.MSSqlServer.dll" />
+          </Component>
+
+          <Component Id="Component.sni.dll_113794710" Guid="9098e750-40c2-4f53-ae3d-fdbbbaa7695d">
+            <File Id="sni.dll_113794710" Source="sni.dll" />
+          </Component>
+
+          <Component Id="Component.System.ClientModel.dll_876517806" Guid="9098e750-40c2-4f53-ae3d-fdbb2b02ae99">
+            <File Id="System.ClientModel.dll_876517806" Source="System.ClientModel.dll" />
+          </Component>
+
+          <Component Id="Component.System.CodeDom.dll_4051139242" Guid="9098e750-40c2-4f53-ae3d-fdbbed48cccf">
+            <File Id="System.CodeDom.dll_4051139242" Source="System.CodeDom.dll" />
+          </Component>
+
+          <Component Id="Component.System.Configuration.ConfigurationManager.dll_1732004667" Guid="9098e750-40c2-4f53-ae3d-fdbbb43f7c05">
+            <File Id="System.Configuration.ConfigurationManager.dll_1732004667" Source="System.Configuration.ConfigurationManager.dll" />
+          </Component>
+
+          <Component Id="Component.System.Data.SqlClient.dll_3144787247" Guid="9098e750-40c2-4f53-ae3d-fdbbf560494c">
+            <File Id="System.Data.SqlClient.dll_3144787247" Source="System.Data.SqlClient.dll" />
+          </Component>
+
+          <Component Id="Component.System.Diagnostics.DiagnosticSource.dll_1369107109" Guid="9098e750-40c2-4f53-ae3d-fdbbdb890f58">
+            <File Id="System.Diagnostics.DiagnosticSource.dll_1369107109" Source="System.Diagnostics.DiagnosticSource.dll" />
+          </Component>
+
+          <Component Id="Component.System.Diagnostics.EventLog.dll_1458837386" Guid="9098e750-40c2-4f53-ae3d-fdbbfeb060cc">
+            <File Id="System.Diagnostics.EventLog.dll_1458837386" Source="System.Diagnostics.EventLog.dll" />
+          </Component>
+
+          <Component Id="Component.System.Diagnostics.EventLog.Messages.dll_950459315" Guid="9098e750-40c2-4f53-ae3d-fdbb15b104b2">
+            <File Id="System.Diagnostics.EventLog.Messages.dll_950459315" Source="System.Diagnostics.EventLog.Messages.dll" />
+          </Component>
+
+          <Component Id="Component.System.IdentityModel.Tokens.Jwt.dll_695936541" Guid="9098e750-40c2-4f53-ae3d-fdbb83de7fe9">
+            <File Id="System.IdentityModel.Tokens.Jwt.dll_695936541" Source="System.IdentityModel.Tokens.Jwt.dll" />
+          </Component>
+
+          <Component Id="Component.System.IO.Pipelines.dll_2421627427" Guid="9098e750-40c2-4f53-ae3d-fdbb226deb1c">
+            <File Id="System.IO.Pipelines.dll_2421627427" Source="System.IO.Pipelines.dll" />
+          </Component>
+
+          <Component Id="Component.System.IO.Ports.dll_2650010505" Guid="9098e750-40c2-4f53-ae3d-fdbb3e8c5b7a">
+            <File Id="System.IO.Ports.dll_2650010505" Source="System.IO.Ports.dll" />
+          </Component>
+
+          <Component Id="Component.System.Management.dll_619285291" Guid="9098e750-40c2-4f53-ae3d-fdbba8f6187d">
+            <File Id="System.Management.dll_619285291" Source="System.Management.dll" />
+          </Component>
+
+          <Component Id="Component.System.Memory.Data.dll_1483088017" Guid="9098e750-40c2-4f53-ae3d-fdbbe2ce5d3d">
+            <File Id="System.Memory.Data.dll_1483088017" Source="System.Memory.Data.dll" />
+          </Component>
+
+          <Component Id="Component.System.Net.ServerSentEvents.dll_1319568897" Guid="9098e750-40c2-4f53-ae3d-fdbb3e99f47a">
+            <File Id="System.Net.ServerSentEvents.dll_1319568897" Source="System.Net.ServerSentEvents.dll" />
+          </Component>
+
+          <Component Id="Component.System.Private.ServiceModel.dll_4257781002" Guid="9098e750-40c2-4f53-ae3d-fdbb9f7ceaa6">
+            <File Id="System.Private.ServiceModel.dll_4257781002" Source="System.Private.ServiceModel.dll" />
+          </Component>
+
+          <Component Id="Component.System.Runtime.Caching.dll_2437587115" Guid="9098e750-40c2-4f53-ae3d-fdbb7f70fbbd">
+            <File Id="System.Runtime.Caching.dll_2437587115" Source="System.Runtime.Caching.dll" />
+          </Component>
+
+          <Component Id="Component.System.ServiceModel.dll_2040437422" Guid="9098e750-40c2-4f53-ae3d-fdbb84a8fd47">
+            <File Id="System.ServiceModel.dll_2040437422" Source="System.ServiceModel.dll" />
+          </Component>
+
+          <Component Id="Component.System.ServiceModel.Http.dll_2585212641" Guid="9098e750-40c2-4f53-ae3d-fdbb2ec93210">
+            <File Id="System.ServiceModel.Http.dll_2585212641" Source="System.ServiceModel.Http.dll" />
+          </Component>
+
+          <Component Id="Component.System.ServiceModel.NetTcp.dll_3607009297" Guid="9098e750-40c2-4f53-ae3d-fdbb50c938d4">
+            <File Id="System.ServiceModel.NetTcp.dll_3607009297" Source="System.ServiceModel.NetTcp.dll" />
+          </Component>
+
+          <Component Id="Component.System.ServiceModel.Primitives.dll_2769418801" Guid="9098e750-40c2-4f53-ae3d-fdbbb8b0ff10">
+            <File Id="System.ServiceModel.Primitives.dll_2769418801" Source="System.ServiceModel.Primitives.dll" />
+          </Component>
+
+          <Component Id="Component.System.ServiceModel.Security.dll_662200308" Guid="9098e750-40c2-4f53-ae3d-fdbb361cf639">
+            <File Id="System.ServiceModel.Security.dll_662200308" Source="System.ServiceModel.Security.dll" />
+          </Component>
+
+          <Component Id="Component.System.ServiceProcess.ServiceController.dll_594698157" Guid="9098e750-40c2-4f53-ae3d-fdbb0d5f9a83">
+            <File Id="System.ServiceProcess.ServiceController.dll_594698157" Source="System.ServiceProcess.ServiceController.dll" />
+          </Component>
+
+          <Component Id="Component.System.Text.Encodings.Web.dll_3016713555" Guid="9098e750-40c2-4f53-ae3d-fdbbcef9659e">
+            <File Id="System.Text.Encodings.Web.dll_3016713555" Source="System.Text.Encodings.Web.dll" />
+          </Component>
+
+          <Component Id="Component.System.Text.Json.dll_4029377442" Guid="9098e750-40c2-4f53-ae3d-fdbbddefa4a7">
+            <File Id="System.Text.Json.dll_4029377442" Source="System.Text.Json.dll" />
+          </Component>
+
+          <Component Id="Component.System.Threading.Channels.dll_563935035" Guid="9098e750-40c2-4f53-ae3d-fdbb692679ac">
+            <File Id="System.Threading.Channels.dll_563935035" Source="System.Threading.Channels.dll" />
+          </Component>
+
+          <Component Id="Component._41a4184222d410417421.deps.json_3466657611" Guid="9098e750-40c2-4f53-ae3d-fdbb167aceea">
+            <File Id="_41a4184222d410417421.deps.json_3466657611" Source="КИТ-АЗС.deps.json" />
+          </Component>
+
+          <Component Id="Component._41a4184222d410417421.dll_1424096629" Guid="9098e750-40c2-4f53-ae3d-fdbbb9d9066a">
+            <File Id="_41a4184222d410417421.dll_1424096629" Source="КИТ-АЗС.dll" />
+          </Component>
+
+          <Component Id="Component._41a4184222d410417421.dll.config_4159974086" Guid="9098e750-40c2-4f53-ae3d-fdbb3121d6bf">
+            <File Id="_41a4184222d410417421.dll.config_4159974086" Source="КИТ-АЗС.dll.config" />
+          </Component>
+
+          <Component Id="Component._41a4184222d410417421.exe_989235425" Guid="9098e750-40c2-4f53-ae3d-fdbb5080db72">
+            <File Id="_41a4184222d410417421.exe_989235425" Source="КИТ-АЗС.exe" />
+          </Component>
+
+          <Component Id="Component._41a4184222d410417421.pdb_2932808083" Guid="9098e750-40c2-4f53-ae3d-fdbb21e8f86e">
+            <File Id="_41a4184222d410417421.pdb_2932808083" Source="КИТ-АЗС.pdb" />
+          </Component>
+
+          <Component Id="Component._41a4184222d410417421.runtimeconfig.json_1697280788" Guid="9098e750-40c2-4f53-ae3d-fdbb2737385a">
+            <File Id="_41a4184222d410417421.runtimeconfig.json_1697280788" Source="КИТ-АЗС.runtimeconfig.json" />
+          </Component>
+
+          <Directory Id="de" Name="de">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_2887795580" Guid="9098e750-40c2-4f53-ae3d-fdbb9ba4dbf6">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_2887795580" Source="de\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="es" Name="es">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_861032919" Guid="9098e750-40c2-4f53-ae3d-fdbb0a49557c">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_861032919" Source="es\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="fr" Name="fr">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_3155324464" Guid="9098e750-40c2-4f53-ae3d-fdbbbea2127d">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_3155324464" Source="fr\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="it" Name="it">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_1871529740" Guid="9098e750-40c2-4f53-ae3d-fdbb187af195">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_1871529740" Source="it\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="ja" Name="ja">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_3690436325" Guid="9098e750-40c2-4f53-ae3d-fdbbf1428ec4">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_3690436325" Source="ja\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="ko" Name="ko">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_3139323879" Guid="9098e750-40c2-4f53-ae3d-fdbb1455fde4">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_3139323879" Source="ko\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="pt2dBR" Name="pt-BR">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_3128211860" Guid="9098e750-40c2-4f53-ae3d-fdbba4b1c58d">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_3128211860" Source="pt-BR\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="ru" Name="ru">
+
+            <Component Id="Component.DevExpress.Charts.Designer.v21.2.resources.dll_3172938856" Guid="9098e750-40c2-4f53-ae3d-fdbbf54f4acb">
+              <File Id="DevExpress.Charts.Designer.v21.2.resources.dll_3172938856" Source="ru\DevExpress.Charts.Designer.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Dashboard.v21.2.Core.resources.dll_206782774" Guid="9098e750-40c2-4f53-ae3d-fdbb1706d240">
+              <File Id="DevExpress.Dashboard.v21.2.Core.resources.dll_206782774" Source="ru\DevExpress.Dashboard.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Data.v21.2.resources.dll_639594812" Guid="9098e750-40c2-4f53-ae3d-fdbb644862b0">
+              <File Id="DevExpress.Data.v21.2.resources.dll_639594812" Source="ru\DevExpress.Data.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.DataAccess.v21.2.resources.dll_122583703" Guid="9098e750-40c2-4f53-ae3d-fdbba356313c">
+              <File Id="DevExpress.DataAccess.v21.2.resources.dll_122583703" Source="ru\DevExpress.DataAccess.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.DataAccess.v21.2.UI.resources.dll_906592386" Guid="9098e750-40c2-4f53-ae3d-fdbb8b9b1ab9">
+              <File Id="DevExpress.DataAccess.v21.2.UI.resources.dll_906592386" Source="ru\DevExpress.DataAccess.v21.2.UI.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Diagram.v21.2.Core.resources.dll_596645471" Guid="9098e750-40c2-4f53-ae3d-fdbb9876569e">
+              <File Id="DevExpress.Diagram.v21.2.Core.resources.dll_596645471" Source="ru\DevExpress.Diagram.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Map.v21.2.Core.resources.dll_3954367759" Guid="9098e750-40c2-4f53-ae3d-fdbb54df93c0">
+              <File Id="DevExpress.Map.v21.2.Core.resources.dll_3954367759" Source="ru\DevExpress.Map.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Office.v21.2.Core.resources.dll_2336776351" Guid="9098e750-40c2-4f53-ae3d-fdbbf8849b87">
+              <File Id="DevExpress.Office.v21.2.Core.resources.dll_2336776351" Source="ru\DevExpress.Office.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Pdf.v21.2.Core.resources.dll_1800160299" Guid="9098e750-40c2-4f53-ae3d-fdbbe74f1a04">
+              <File Id="DevExpress.Pdf.v21.2.Core.resources.dll_1800160299" Source="ru\DevExpress.Pdf.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.PivotGrid.v21.2.Core.resources.dll_4137237318" Guid="9098e750-40c2-4f53-ae3d-fdbb81065b6c">
+              <File Id="DevExpress.PivotGrid.v21.2.Core.resources.dll_4137237318" Source="ru\DevExpress.PivotGrid.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Printing.v21.2.Core.resources.dll_56445008" Guid="9098e750-40c2-4f53-ae3d-fdbbea0d404d">
+              <File Id="DevExpress.Printing.v21.2.Core.resources.dll_56445008" Source="ru\DevExpress.Printing.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.RichEdit.v21.2.Core.resources.dll_2632056655" Guid="9098e750-40c2-4f53-ae3d-fdbbcea8a69f">
+              <File Id="DevExpress.RichEdit.v21.2.Core.resources.dll_2632056655" Source="ru\DevExpress.RichEdit.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Sparkline.v21.2.Core.resources.dll_2071775132" Guid="9098e750-40c2-4f53-ae3d-fdbb68b8a994">
+              <File Id="DevExpress.Sparkline.v21.2.Core.resources.dll_2071775132" Source="ru\DevExpress.Sparkline.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Utils.v21.2.resources.dll_1433393912" Guid="9098e750-40c2-4f53-ae3d-fdbb4b67c7ae">
+              <File Id="DevExpress.Utils.v21.2.resources.dll_1433393912" Source="ru\DevExpress.Utils.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Utils.v21.2.UI.resources.dll_3884645075" Guid="9098e750-40c2-4f53-ae3d-fdbb06bf9979">
+              <File Id="DevExpress.Utils.v21.2.UI.resources.dll_3884645075" Source="ru\DevExpress.Utils.v21.2.UI.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.Charts.v21.2.resources.dll_761471818" Guid="9098e750-40c2-4f53-ae3d-fdbb9db256c7">
+              <File Id="DevExpress.Xpf.Charts.v21.2.resources.dll_761471818" Source="ru\DevExpress.Xpf.Charts.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.Controls.v21.2.resources.dll_2647651040" Guid="9098e750-40c2-4f53-ae3d-fdbb2932dbb5">
+              <File Id="DevExpress.Xpf.Controls.v21.2.resources.dll_2647651040" Source="ru\DevExpress.Xpf.Controls.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.Core.v21.2.resources.dll_1623828919" Guid="9098e750-40c2-4f53-ae3d-fdbb0dcf9457">
+              <File Id="DevExpress.Xpf.Core.v21.2.resources.dll_1623828919" Source="ru\DevExpress.Xpf.Core.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.Docking.v21.2.resources.dll_339409621" Guid="9098e750-40c2-4f53-ae3d-fdbb5dec547a">
+              <File Id="DevExpress.Xpf.Docking.v21.2.resources.dll_339409621" Source="ru\DevExpress.Xpf.Docking.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.DocumentViewer.v21.2.Core.resources.dll_48608942" Guid="9098e750-40c2-4f53-ae3d-fdbbde137279">
+              <File Id="DevExpress.Xpf.DocumentViewer.v21.2.Core.resources.dll_48608942" Source="ru\DevExpress.Xpf.DocumentViewer.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.Gauges.v21.2.resources.dll_2924828442" Guid="9098e750-40c2-4f53-ae3d-fdbb6f51710c">
+              <File Id="DevExpress.Xpf.Gauges.v21.2.resources.dll_2924828442" Source="ru\DevExpress.Xpf.Gauges.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.Grid.v21.2.Core.resources.dll_3080858592" Guid="9098e750-40c2-4f53-ae3d-fdbb370bebc1">
+              <File Id="DevExpress.Xpf.Grid.v21.2.Core.resources.dll_3080858592" Source="ru\DevExpress.Xpf.Grid.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.LayoutControl.v21.2.resources.dll_3815257971" Guid="9098e750-40c2-4f53-ae3d-fdbbbdee1010">
+              <File Id="DevExpress.Xpf.LayoutControl.v21.2.resources.dll_3815257971" Source="ru\DevExpress.Xpf.LayoutControl.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.Printing.v21.2.resources.dll_964839698" Guid="9098e750-40c2-4f53-ae3d-fdbb1f06166b">
+              <File Id="DevExpress.Xpf.Printing.v21.2.resources.dll_964839698" Source="ru\DevExpress.Xpf.Printing.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.PropertyGrid.v21.2.resources.dll_2738491598" Guid="9098e750-40c2-4f53-ae3d-fdbb7d288253">
+              <File Id="DevExpress.Xpf.PropertyGrid.v21.2.resources.dll_2738491598" Source="ru\DevExpress.Xpf.PropertyGrid.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.Ribbon.v21.2.resources.dll_4142202591" Guid="9098e750-40c2-4f53-ae3d-fdbb04f677fc">
+              <File Id="DevExpress.Xpf.Ribbon.v21.2.resources.dll_4142202591" Source="ru\DevExpress.Xpf.Ribbon.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpf.RichEdit.v21.2.resources.dll_4076388848" Guid="9098e750-40c2-4f53-ae3d-fdbb3789d386">
+              <File Id="DevExpress.Xpf.RichEdit.v21.2.resources.dll_4076388848" Source="ru\DevExpress.Xpf.RichEdit.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.Xpo.v21.2.resources.dll_2129566029" Guid="9098e750-40c2-4f53-ae3d-fdbb9807a279">
+              <File Id="DevExpress.Xpo.v21.2.resources.dll_2129566029" Source="ru\DevExpress.Xpo.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraBars.v21.2.resources.dll_1865536276" Guid="9098e750-40c2-4f53-ae3d-fdbb40077225">
+              <File Id="DevExpress.XtraBars.v21.2.resources.dll_1865536276" Source="ru\DevExpress.XtraBars.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraCharts.v21.2.resources.dll_4164601943" Guid="9098e750-40c2-4f53-ae3d-fdbb2e7eb17e">
+              <File Id="DevExpress.XtraCharts.v21.2.resources.dll_4164601943" Source="ru\DevExpress.XtraCharts.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraEditors.v21.2.resources.dll_514242189" Guid="9098e750-40c2-4f53-ae3d-fdbb44b76105">
+              <File Id="DevExpress.XtraEditors.v21.2.resources.dll_514242189" Source="ru\DevExpress.XtraEditors.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraGauges.v21.2.Core.resources.dll_637638752" Guid="9098e750-40c2-4f53-ae3d-fdbb1a2dc67e">
+              <File Id="DevExpress.XtraGauges.v21.2.Core.resources.dll_637638752" Source="ru\DevExpress.XtraGauges.v21.2.Core.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraGrid.v21.2.resources.dll_2352607716" Guid="9098e750-40c2-4f53-ae3d-fdbb2f3074b8">
+              <File Id="DevExpress.XtraGrid.v21.2.resources.dll_2352607716" Source="ru\DevExpress.XtraGrid.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraLayout.v21.2.resources.dll_1793700814" Guid="9098e750-40c2-4f53-ae3d-fdbbf0fb02f9">
+              <File Id="DevExpress.XtraLayout.v21.2.resources.dll_1793700814" Source="ru\DevExpress.XtraLayout.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraPrinting.v21.2.resources.dll_509085188" Guid="9098e750-40c2-4f53-ae3d-fdbb3e9751e2">
+              <File Id="DevExpress.XtraPrinting.v21.2.resources.dll_509085188" Source="ru\DevExpress.XtraPrinting.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraReports.v21.2.resources.dll_4078472560" Guid="9098e750-40c2-4f53-ae3d-fdbb26d86cbc">
+              <File Id="DevExpress.XtraReports.v21.2.resources.dll_4078472560" Source="ru\DevExpress.XtraReports.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraRichEdit.v21.2.resources.dll_1669868379" Guid="9098e750-40c2-4f53-ae3d-fdbbd7319032">
+              <File Id="DevExpress.XtraRichEdit.v21.2.resources.dll_1669868379" Source="ru\DevExpress.XtraRichEdit.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraTreeList.v21.2.resources.dll_136173237" Guid="9098e750-40c2-4f53-ae3d-fdbb2273abd6">
+              <File Id="DevExpress.XtraTreeList.v21.2.resources.dll_136173237" Source="ru\DevExpress.XtraTreeList.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.DevExpress.XtraVerticalGrid.v21.2.resources.dll_1378239165" Guid="9098e750-40c2-4f53-ae3d-fdbb13e9367c">
+              <File Id="DevExpress.XtraVerticalGrid.v21.2.resources.dll_1378239165" Source="ru\DevExpress.XtraVerticalGrid.v21.2.resources.dll" />
+            </Component>
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_1749587326" Guid="9098e750-40c2-4f53-ae3d-fdbb7feaac76">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_1749587326" Source="ru\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="zh2dHans" Name="zh-Hans">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_505755543" Guid="9098e750-40c2-4f53-ae3d-fdbbd958a2b2">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_505755543" Source="zh-Hans\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
+
+          <Directory Id="zh2dHant" Name="zh-Hant">
+
+            <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_309253876" Guid="9098e750-40c2-4f53-ae3d-fdbb48a3e76a">
+              <File Id="Microsoft.Data.SqlClient.resources.dll_309253876" Source="zh-Hant\Microsoft.Data.SqlClient.resources.dll" />
+            </Component>
+
+          </Directory>
         </Directory>
       </Directory>
     </StandardDirectory>
 
     <UI />
 
+    <Icon Id="app_icon.ico" SourceFile="C:\Users\nooru\source\Nooruz\FuelEase\KIT.GasStation\logo.ico" />
+
     <WixUI Id="WixUI_Minimal" xmlns="http://wixtoolset.org/schemas/v4/wxs/ui" />
 
     <UI>
-      <EmbeddedUI Id="WixSharp_EmbeddedUI_Asm" SourceFile="WixSharp.UI.CA.dll" />
+      <EmbeddedUI Id="WixSharp_EmbeddedUI_Asm" SourceFile="..\publish\WixSharp.UI.CA.dll" />
     </UI>
+
+    <WixVariable Id="WixUILicenseRtf" Value="C:\Users\nooru\source\Nooruz\FuelEase\KIT.GasStation.Installer\Assets\License.rtf" />
+
+    <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="Невозможно установить более старую версию поверх установленной." />
 
     <CustomAction Id="WixSharp_InitRuntime_Action" BinaryRef="WixSharp_InitRuntime_Action_File" DllEntry="WixSharp_InitRuntime_Action" Return="check" Execute="immediate" />
     <CustomAction Id="Set_CancelRequestHandler_Props" Property="CancelRequestHandler" Value="UpgradeCode=[UpgradeCode];INSTALLDIR=[INSTALLDIR];UILevel=[UILevel];ProductCode=[ProductCode];ADDLOCAL=[ADDLOCAL];ADDFEATURES=[ADDFEATURES]" />
     <CustomAction Id="CancelRequestHandler" BinaryRef="WixSharp_InitRuntime_Action_File" DllEntry="CancelRequestHandler" Return="check" Impersonate="no" Execute="deferred" />
 
-    <Binary Id="WixSharp_InitRuntime_Action_File" SourceFile="WixSharp.CA.dll" />
-    <Binary Id="WixSharp_UIText" SourceFile="..\..\..\..\..\..\ProgramData\WixSharp\2.12.0.0\WixUI_en-US.wxl" />
-    <Binary Id="WixSharp_LicenceFile" SourceFile="MyProduct.licence.rtf" />
-    <Binary Id="WixSharpUI_Bmp_Dialog" SourceFile="MyProduct.dialog_bmp.png" />
-    <Binary Id="WixSharpUI_Bmp_Banner" SourceFile="MyProduct.dialog_banner.png" />
+    <Binary Id="WixSharp_InitRuntime_Action_File" SourceFile="..\publish\WixSharp.CA.dll" />
+    <Binary Id="WixSharp_UIText" SourceFile="C:\ProgramData\WixSharp\2.12.0.0\WixUI_ru-RU.wxl" />
+    <Binary Id="WixSharp_LicenceFile" SourceFile="C:\Users\nooru\source\Nooruz\FuelEase\KIT.GasStation.Installer\Assets\License.rtf" />
+    <Binary Id="WixSharpUI_Bmp_Dialog" SourceFile="..\publish\КИТ-АЗС.dialog_bmp.png" />
+    <Binary Id="WixSharpUI_Bmp_Banner" SourceFile="..\publish\КИТ-АЗС.dialog_banner.png" />
 
     <UIRef Id="WixUI_ErrorProgressText" />
 
@@ -46,9 +1063,254 @@
     <Property Id="UAC_WARNING" Value="Please wait for UAC prompt to appear.&#xD;&#xA;&#xD;&#xA;If it appears minimized then activate it from the taskbar." />
     <Property Id="WixSharp_InstallDialogs" Value="KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.WelcomeDialog&#xA;KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.LicenceDialog&#xA;KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.FeaturesDialog&#xA;KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.InstallDirDialog&#xA;KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.ProgressDialog&#xA;KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.ExitDialog" />
     <Property Id="WixSharp_ModifyDialogs" Value="KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.MaintenanceTypeDialog&#xA;KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.FeaturesDialog&#xA;KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.ProgressDialog&#xA;KIT.GasStation.Installer, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null|KIT.GasStation.Installer.ExitDialog" />
+    <Property Id="ARPPRODUCTICON" Value="app_icon.ico" />
+    <Property Id="REINSTALLMODE" Value="omus" />
 
     <Feature Id="Complete" Title="Complete" Level="1" AllowAbsent="yes">
-      <ComponentRef Id="Component.Program.cs_2198778745" />
+      <ComponentRef Id="Component.appsettings.json_1638537219" />
+      <ComponentRef Id="Component.Azure.Core.dll_2699202477" />
+      <ComponentRef Id="Component.Azure.Identity.dll_3211912176" />
+      <ComponentRef Id="Component.DevExpress.Charts.Designer.v21.2.dll_2638460693" />
+      <ComponentRef Id="Component.DevExpress.Charts.v21.2.Core.dll_2756705481" />
+      <ComponentRef Id="Component.DevExpress.CodeParser.v21.2.dll_669449811" />
+      <ComponentRef Id="Component.DevExpress.Dashboard.v21.2.Core.dll_147259860" />
+      <ComponentRef Id="Component.DevExpress.Dashboard.v21.2.Wpf.dll_815936359" />
+      <ComponentRef Id="Component.DevExpress.Data.Desktop.v21.2.dll_1741148463" />
+      <ComponentRef Id="Component.DevExpress.Data.v21.2.dll_657925727" />
+      <ComponentRef Id="Component.DevExpress.DataAccess.v21.2.dll_1292070117" />
+      <ComponentRef Id="Component.DevExpress.DataAccess.v21.2.UI.dll_131092581" />
+      <ComponentRef Id="Component.DevExpress.DataVisualization.v21.2.Core.dll_2332522779" />
+      <ComponentRef Id="Component.DevExpress.Diagram.v21.2.Core.dll_541773887" />
+      <ComponentRef Id="Component.DevExpress.Images.v21.2.dll_1871291144" />
+      <ComponentRef Id="Component.DevExpress.Map.v21.2.Core.dll_3877364209" />
+      <ComponentRef Id="Component.DevExpress.Mvvm.v21.2.dll_3482035657" />
+      <ComponentRef Id="Component.DevExpress.Office.v21.2.Core.dll_4175954857" />
+      <ComponentRef Id="Component.DevExpress.Pdf.v21.2.Core.dll_1753027789" />
+      <ComponentRef Id="Component.DevExpress.Pdf.v21.2.Drawing.dll_2977707966" />
+      <ComponentRef Id="Component.DevExpress.PivotGrid.v21.2.Core.dll_2080821903" />
+      <ComponentRef Id="Component.DevExpress.Printing.v21.2.Core.dll_319896822" />
+      <ComponentRef Id="Component.DevExpress.RichEdit.v21.2.Core.dll_630893766" />
+      <ComponentRef Id="Component.DevExpress.RichEdit.v21.2.Export.dll_1228176519" />
+      <ComponentRef Id="Component.DevExpress.Sparkline.v21.2.Core.dll_3040520962" />
+      <ComponentRef Id="Component.DevExpress.TreeMap.v21.2.Core.dll_179852542" />
+      <ComponentRef Id="Component.DevExpress.Utils.v21.2.dll_574534161" />
+      <ComponentRef Id="Component.DevExpress.Utils.v21.2.UI.dll_3113882879" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Accordion.v21.2.dll_1957037952" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Charts.v21.2.dll_1993036028" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Controls.v21.2.dll_2667905047" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Core.v21.2.dll_2647446792" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Dashboard.v21.2.dll_1396736689" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Docking.v21.2.dll_3171690656" />
+      <ComponentRef Id="Component.DevExpress.Xpf.DocumentViewer.v21.2.Core.dll_3448395378" />
+      <ComponentRef Id="Component.DevExpress.Xpf.ExpressionEditor.v21.2.dll_3403913394" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Gauges.v21.2.dll_3736654077" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Grid.v21.2.Core.dll_2206790796" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Grid.v21.2.dll_2923378427" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Grid.v21.2.Extensions.dll_2582634422" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Layout.v21.2.Core.dll_765892601" />
+      <ComponentRef Id="Component.DevExpress.Xpf.LayoutControl.v21.2.dll_3245590790" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Map.v21.2.dll_2281651992" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Office.v21.2.dll_795997769" />
+      <ComponentRef Id="Component.DevExpress.Xpf.PivotGrid.v21.2.dll_3838965216" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Printing.v21.2.dll_3542008394" />
+      <ComponentRef Id="Component.DevExpress.Xpf.PropertyGrid.v21.2.dll_951268358" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Ribbon.v21.2.dll_891257249" />
+      <ComponentRef Id="Component.DevExpress.Xpf.RichEdit.v21.2.dll_3298994848" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Themes.Office2019Colorful.v21.2.dll_1854810212" />
+      <ComponentRef Id="Component.DevExpress.Xpf.TreeMap.v21.2.dll_3560380776" />
+      <ComponentRef Id="Component.DevExpress.Xpo.v21.2.dll_3114688904" />
+      <ComponentRef Id="Component.DevExpress.XtraBars.v21.2.dll_922668024" />
+      <ComponentRef Id="Component.DevExpress.XtraCharts.v21.2.dll_4159041732" />
+      <ComponentRef Id="Component.DevExpress.XtraDiagram.v21.2.dll_3060516830" />
+      <ComponentRef Id="Component.DevExpress.XtraEditors.v21.2.dll_2986176683" />
+      <ComponentRef Id="Component.DevExpress.XtraGauges.v21.2.Core.dll_1356601117" />
+      <ComponentRef Id="Component.DevExpress.XtraGrid.v21.2.dll_1127893309" />
+      <ComponentRef Id="Component.DevExpress.XtraLayout.v21.2.dll_2813506273" />
+      <ComponentRef Id="Component.DevExpress.XtraPrinting.v21.2.dll_1820804708" />
+      <ComponentRef Id="Component.DevExpress.XtraReports.v21.2.dll_2678571051" />
+      <ComponentRef Id="Component.DevExpress.XtraRichEdit.v21.2.dll_741572263" />
+      <ComponentRef Id="Component.DevExpress.XtraTreeList.v21.2.dll_1779796777" />
+      <ComponentRef Id="Component.DevExpress.XtraTreeMap.v21.2.dll_1100426356" />
+      <ComponentRef Id="Component.DevExpress.XtraVerticalGrid.v21.2.dll_1302798107" />
+      <ComponentRef Id="Component.KIT.GasStation.CashRegisters.dll_507639518" />
+      <ComponentRef Id="Component.KIT.GasStation.CashRegisters.pdb_2802579158" />
+      <ComponentRef Id="Component.KIT.GasStation.Common.dll_3474946227" />
+      <ComponentRef Id="Component.KIT.GasStation.Common.pdb_343302653" />
+      <ComponentRef Id="Component.KIT.GasStation.Domain.dll_2795272247" />
+      <ComponentRef Id="Component.KIT.GasStation.Domain.pdb_3957547385" />
+      <ComponentRef Id="Component.KIT.GasStation.EKassa.dll_3170226816" />
+      <ComponentRef Id="Component.KIT.GasStation.EKassa.pdb_2363133462" />
+      <ComponentRef Id="Component.KIT.GasStation.EntityFramework.dll_120070921" />
+      <ComponentRef Id="Component.KIT.GasStation.EntityFramework.pdb_2438889009" />
+      <ComponentRef Id="Component.KIT.GasStation.FuelDispenser.dll_212384089" />
+      <ComponentRef Id="Component.KIT.GasStation.FuelDispenser.pdb_684112209" />
+      <ComponentRef Id="Component.KIT.GasStation.FuelDispenserEmulator.dll_326382487" />
+      <ComponentRef Id="Component.KIT.GasStation.FuelDispenserEmulator.pdb_2619749263" />
+      <ComponentRef Id="Component.KIT.GasStation.HardwareConfigurations.dll_1630021809" />
+      <ComponentRef Id="Component.KIT.GasStation.HardwareConfigurations.pdb_2437115163" />
+      <ComponentRef Id="Component.KIT.GasStation.NewCas.dll_1575488456" />
+      <ComponentRef Id="Component.KIT.GasStation.NewCas.pdb_55934414" />
+      <ComponentRef Id="Component.KIT.GasStation.PKElectronics.dll_3510751322" />
+      <ComponentRef Id="Component.KIT.GasStation.PKElectronics.pdb_1510461522" />
+      <ComponentRef Id="Component.KIT.GasStation.TechnoProjekt.dll_2082482622" />
+      <ComponentRef Id="Component.KIT.GasStation.TechnoProjekt.pdb_81406390" />
+      <ComponentRef Id="Component.KIT.GasStationLanfeng.dll_3771163336" />
+      <ComponentRef Id="Component.KIT.GasStationLanfeng.pdb_4222026338" />
+      <ComponentRef Id="Component.layout.xml_597231030" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.Authorization.dll_3664923113" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.Connections.Abstractions.dll_901993842" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.Hosting.Abstractions.dll_106308506" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.Hosting.Server.Abstractions.dll_2721251922" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.Http.Abstractions.dll_3634984118" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.Http.Connections.Client.dll_115721637" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.Http.Connections.Common.dll_2932162776" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.Http.Features.dll_652208804" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.SignalR.Client.Core.dll_1216497459" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.SignalR.Client.dll_990522232" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.SignalR.Common.dll_1803776761" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.SignalR.Core.dll_1424891039" />
+      <ComponentRef Id="Component.Microsoft.AspNetCore.SignalR.Protocols.Json.dll_1384471480" />
+      <ComponentRef Id="Component.Microsoft.Bcl.AsyncInterfaces.dll_1393209501" />
+      <ComponentRef Id="Component.Microsoft.Bcl.TimeProvider.dll_2127186724" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.dll_2834983071" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.SNI.dll_4099252231" />
+      <ComponentRef Id="Component.Microsoft.EntityFrameworkCore.Abstractions.dll_2144290212" />
+      <ComponentRef Id="Component.Microsoft.EntityFrameworkCore.dll_864925329" />
+      <ComponentRef Id="Component.Microsoft.EntityFrameworkCore.Relational.dll_55569969" />
+      <ComponentRef Id="Component.Microsoft.EntityFrameworkCore.SqlServer.dll_3391374314" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Caching.Abstractions.dll_1277258629" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Caching.Memory.dll_374459971" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Configuration.Abstractions.dll_105463729" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Configuration.Binder.dll_2015484796" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Configuration.CommandLine.dll_3059807083" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Configuration.dll_3220628731" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Configuration.EnvironmentVariables.dll_2993482708" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Configuration.FileExtensions.dll_11322310" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Configuration.Json.dll_3308731753" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Configuration.UserSecrets.dll_1487624923" />
+      <ComponentRef Id="Component.Microsoft.Extensions.DependencyInjection.Abstractions.dll_1003367414" />
+      <ComponentRef Id="Component.Microsoft.Extensions.DependencyInjection.dll_3374023300" />
+      <ComponentRef Id="Component.Microsoft.Extensions.DependencyModel.dll_2849169862" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Diagnostics.Abstractions.dll_76709591" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Diagnostics.dll_2737537590" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Features.dll_4094596868" />
+      <ComponentRef Id="Component.Microsoft.Extensions.FileProviders.Abstractions.dll_22054048" />
+      <ComponentRef Id="Component.Microsoft.Extensions.FileProviders.Physical.dll_2641210762" />
+      <ComponentRef Id="Component.Microsoft.Extensions.FileSystemGlobbing.dll_216848901" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Hosting.Abstractions.dll_3226303412" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Hosting.dll_1169355275" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Logging.Abstractions.dll_1085504863" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Logging.Configuration.dll_2277720233" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Logging.Console.dll_1005420722" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Logging.Debug.dll_3837431634" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Logging.dll_805243796" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Logging.EventLog.dll_3855875391" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Logging.EventSource.dll_3991573445" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Options.ConfigurationExtensions.dll_4096498745" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Options.dll_2644928207" />
+      <ComponentRef Id="Component.Microsoft.Extensions.Primitives.dll_3222557782" />
+      <ComponentRef Id="Component.Microsoft.Identity.Client.dll_4162822640" />
+      <ComponentRef Id="Component.Microsoft.Identity.Client.Extensions.Msal.dll_2964518141" />
+      <ComponentRef Id="Component.Microsoft.IdentityModel.Abstractions.dll_378078404" />
+      <ComponentRef Id="Component.Microsoft.IdentityModel.JsonWebTokens.dll_4059437371" />
+      <ComponentRef Id="Component.Microsoft.IdentityModel.Logging.dll_2675689909" />
+      <ComponentRef Id="Component.Microsoft.IdentityModel.Protocols.dll_4272317334" />
+      <ComponentRef Id="Component.Microsoft.IdentityModel.Protocols.OpenIdConnect.dll_2636130900" />
+      <ComponentRef Id="Component.Microsoft.IdentityModel.Tokens.dll_4155908248" />
+      <ComponentRef Id="Component.Microsoft.SqlServer.Server.dll_2953482421" />
+      <ComponentRef Id="Component.Newtonsoft.Json.dll_2276759577" />
+      <ComponentRef Id="Component.QRCoder.dll_1138790007" />
+      <ComponentRef Id="Component.SerialPortStreamCore.dll_4152865200" />
+      <ComponentRef Id="Component.Serilog.AspNetCore.dll_2180430580" />
+      <ComponentRef Id="Component.Serilog.dll_2881967997" />
+      <ComponentRef Id="Component.Serilog.Extensions.Hosting.dll_2128972913" />
+      <ComponentRef Id="Component.Serilog.Extensions.Logging.dll_4069886590" />
+      <ComponentRef Id="Component.Serilog.Formatting.Compact.dll_3960388796" />
+      <ComponentRef Id="Component.Serilog.Settings.Configuration.dll_915762919" />
+      <ComponentRef Id="Component.Serilog.Sinks.Console.dll_945296204" />
+      <ComponentRef Id="Component.Serilog.Sinks.Debug.dll_3908041990" />
+      <ComponentRef Id="Component.Serilog.Sinks.File.dll_1205186265" />
+      <ComponentRef Id="Component.Serilog.Sinks.MSSqlServer.dll_1713122323" />
+      <ComponentRef Id="Component.sni.dll_113794710" />
+      <ComponentRef Id="Component.System.ClientModel.dll_876517806" />
+      <ComponentRef Id="Component.System.CodeDom.dll_4051139242" />
+      <ComponentRef Id="Component.System.Configuration.ConfigurationManager.dll_1732004667" />
+      <ComponentRef Id="Component.System.Data.SqlClient.dll_3144787247" />
+      <ComponentRef Id="Component.System.Diagnostics.DiagnosticSource.dll_1369107109" />
+      <ComponentRef Id="Component.System.Diagnostics.EventLog.dll_1458837386" />
+      <ComponentRef Id="Component.System.Diagnostics.EventLog.Messages.dll_950459315" />
+      <ComponentRef Id="Component.System.IdentityModel.Tokens.Jwt.dll_695936541" />
+      <ComponentRef Id="Component.System.IO.Pipelines.dll_2421627427" />
+      <ComponentRef Id="Component.System.IO.Ports.dll_2650010505" />
+      <ComponentRef Id="Component.System.Management.dll_619285291" />
+      <ComponentRef Id="Component.System.Memory.Data.dll_1483088017" />
+      <ComponentRef Id="Component.System.Net.ServerSentEvents.dll_1319568897" />
+      <ComponentRef Id="Component.System.Private.ServiceModel.dll_4257781002" />
+      <ComponentRef Id="Component.System.Runtime.Caching.dll_2437587115" />
+      <ComponentRef Id="Component.System.ServiceModel.dll_2040437422" />
+      <ComponentRef Id="Component.System.ServiceModel.Http.dll_2585212641" />
+      <ComponentRef Id="Component.System.ServiceModel.NetTcp.dll_3607009297" />
+      <ComponentRef Id="Component.System.ServiceModel.Primitives.dll_2769418801" />
+      <ComponentRef Id="Component.System.ServiceModel.Security.dll_662200308" />
+      <ComponentRef Id="Component.System.ServiceProcess.ServiceController.dll_594698157" />
+      <ComponentRef Id="Component.System.Text.Encodings.Web.dll_3016713555" />
+      <ComponentRef Id="Component.System.Text.Json.dll_4029377442" />
+      <ComponentRef Id="Component.System.Threading.Channels.dll_563935035" />
+      <ComponentRef Id="Component._41a4184222d410417421.deps.json_3466657611" />
+      <ComponentRef Id="Component._41a4184222d410417421.dll_1424096629" />
+      <ComponentRef Id="Component._41a4184222d410417421.dll.config_4159974086" />
+      <ComponentRef Id="Component._41a4184222d410417421.exe_989235425" />
+      <ComponentRef Id="Component._41a4184222d410417421.pdb_2932808083" />
+      <ComponentRef Id="Component._41a4184222d410417421.runtimeconfig.json_1697280788" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_2887795580" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_861032919" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_3155324464" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_1871529740" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_3690436325" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_3139323879" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_3128211860" />
+      <ComponentRef Id="Component.DevExpress.Charts.Designer.v21.2.resources.dll_3172938856" />
+      <ComponentRef Id="Component.DevExpress.Dashboard.v21.2.Core.resources.dll_206782774" />
+      <ComponentRef Id="Component.DevExpress.Data.v21.2.resources.dll_639594812" />
+      <ComponentRef Id="Component.DevExpress.DataAccess.v21.2.resources.dll_122583703" />
+      <ComponentRef Id="Component.DevExpress.DataAccess.v21.2.UI.resources.dll_906592386" />
+      <ComponentRef Id="Component.DevExpress.Diagram.v21.2.Core.resources.dll_596645471" />
+      <ComponentRef Id="Component.DevExpress.Map.v21.2.Core.resources.dll_3954367759" />
+      <ComponentRef Id="Component.DevExpress.Office.v21.2.Core.resources.dll_2336776351" />
+      <ComponentRef Id="Component.DevExpress.Pdf.v21.2.Core.resources.dll_1800160299" />
+      <ComponentRef Id="Component.DevExpress.PivotGrid.v21.2.Core.resources.dll_4137237318" />
+      <ComponentRef Id="Component.DevExpress.Printing.v21.2.Core.resources.dll_56445008" />
+      <ComponentRef Id="Component.DevExpress.RichEdit.v21.2.Core.resources.dll_2632056655" />
+      <ComponentRef Id="Component.DevExpress.Sparkline.v21.2.Core.resources.dll_2071775132" />
+      <ComponentRef Id="Component.DevExpress.Utils.v21.2.resources.dll_1433393912" />
+      <ComponentRef Id="Component.DevExpress.Utils.v21.2.UI.resources.dll_3884645075" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Charts.v21.2.resources.dll_761471818" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Controls.v21.2.resources.dll_2647651040" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Core.v21.2.resources.dll_1623828919" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Docking.v21.2.resources.dll_339409621" />
+      <ComponentRef Id="Component.DevExpress.Xpf.DocumentViewer.v21.2.Core.resources.dll_48608942" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Gauges.v21.2.resources.dll_2924828442" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Grid.v21.2.Core.resources.dll_3080858592" />
+      <ComponentRef Id="Component.DevExpress.Xpf.LayoutControl.v21.2.resources.dll_3815257971" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Printing.v21.2.resources.dll_964839698" />
+      <ComponentRef Id="Component.DevExpress.Xpf.PropertyGrid.v21.2.resources.dll_2738491598" />
+      <ComponentRef Id="Component.DevExpress.Xpf.Ribbon.v21.2.resources.dll_4142202591" />
+      <ComponentRef Id="Component.DevExpress.Xpf.RichEdit.v21.2.resources.dll_4076388848" />
+      <ComponentRef Id="Component.DevExpress.Xpo.v21.2.resources.dll_2129566029" />
+      <ComponentRef Id="Component.DevExpress.XtraBars.v21.2.resources.dll_1865536276" />
+      <ComponentRef Id="Component.DevExpress.XtraCharts.v21.2.resources.dll_4164601943" />
+      <ComponentRef Id="Component.DevExpress.XtraEditors.v21.2.resources.dll_514242189" />
+      <ComponentRef Id="Component.DevExpress.XtraGauges.v21.2.Core.resources.dll_637638752" />
+      <ComponentRef Id="Component.DevExpress.XtraGrid.v21.2.resources.dll_2352607716" />
+      <ComponentRef Id="Component.DevExpress.XtraLayout.v21.2.resources.dll_1793700814" />
+      <ComponentRef Id="Component.DevExpress.XtraPrinting.v21.2.resources.dll_509085188" />
+      <ComponentRef Id="Component.DevExpress.XtraReports.v21.2.resources.dll_4078472560" />
+      <ComponentRef Id="Component.DevExpress.XtraRichEdit.v21.2.resources.dll_1669868379" />
+      <ComponentRef Id="Component.DevExpress.XtraTreeList.v21.2.resources.dll_136173237" />
+      <ComponentRef Id="Component.DevExpress.XtraVerticalGrid.v21.2.resources.dll_1378239165" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_1749587326" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_505755543" />
+      <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_309253876" />
     </Feature>
 
     <InstallExecuteSequence>

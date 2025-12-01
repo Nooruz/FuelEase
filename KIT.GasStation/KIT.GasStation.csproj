@@ -16,6 +16,9 @@
 	<Copyright>© 2024 ОсОО "КИТ" Все права защищены.</Copyright>
 	<PackageIcon>logo.png</PackageIcon>
 	<PackageLicenseFile>License.rtf</PackageLicenseFile>
+	<AssemblyName>КИТ-АЗС</AssemblyName>
+	<AssemblyTitle>КИТ-АЗС</AssemblyTitle>
+	<Product>КИТ-АЗС</Product>
   </PropertyGroup>
 
   <ItemGroup>

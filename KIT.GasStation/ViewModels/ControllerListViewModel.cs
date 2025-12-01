@@ -249,7 +249,9 @@ namespace KIT.GasStation.ViewModels
 
         private void EnsureXmlFileExists()
         {
-            if (!File.Exists(_documentPanelPositionPath))
+            var path = GetDocumentPanelPositionPath();
+
+            if (!File.Exists(path))
             {
                 SerializePositions(new List<DocumentPanelPosition>());
             }
@@ -265,9 +267,21 @@ namespace KIT.GasStation.ViewModels
 
         private void SerializePositions(List<DocumentPanelPosition> positions)
         {
-            using FileStream fs = File.Create(_documentPanelPositionPath);
+            var path = GetDocumentPanelPositionPath();
+
+            using FileStream fs = File.Create(path);
             var serializer = new XmlSerializer(typeof(List<DocumentPanelPosition>));
             serializer.Serialize(fs, positions);
+        }
+
+        private string GetDocumentPanelPositionPath()
+        {
+            var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var appDir = Path.Combine(baseDir, "KIT", "GasStation");
+
+            Directory.CreateDirectory(appDir); // гарантируем, что папка существует
+
+            return Path.Combine(appDir, "DocumentPanelPosition.xml");
         }
 
         private async Task GetData()
