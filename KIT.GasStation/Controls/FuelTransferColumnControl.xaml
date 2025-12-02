@@ -16,35 +16,35 @@
         <dxb:PopupMenu x:Key="Menu">
              <dxb:PopupMenu.Items>
                  <dxb:BarButtonItem Content="Остановить" 
-                                    IsEnabled="{Binding Status, Converter={StaticResource IsFuelTransperControllerContextMenuEnabledConverter}, ConverterParameter=StopFilling, UpdateSourceTrigger=PropertyChanged}"
+                                    IsEnabled="{Binding Status, Converter={StaticResource NozzleStatusToEnableConverter}, ConverterParameter=StopFilling, UpdateSourceTrigger=PropertyChanged}"
                                     Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}, Mode=FindAncestor}, Path=DataContext.StopFillingCommand}"/>
                  <dxb:BarItemSeparator/>
                  <dxb:BarButtonItem Content="Продолжить" 
-                                    IsEnabled="{Binding Status, Converter={StaticResource IsFuelTransperControllerContextMenuEnabledConverter}, ConverterParameter=ContinueFilling, UpdateSourceTrigger=PropertyChanged}"
+                                    IsEnabled="{Binding Status, Converter={StaticResource NozzleStatusToEnableConverter}, ConverterParameter=ContinueFilling, UpdateSourceTrigger=PropertyChanged}"
                                     Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}, Mode=FindAncestor}, Path=DataContext.ContinueFillingCommand}"/>
                  <dxb:BarButtonItem Content="Завершить" 
-                                    IsEnabled="{Binding Status, Converter={StaticResource IsFuelTransperControllerContextMenuEnabledConverter}, ConverterParameter=ContinueFilling, UpdateSourceTrigger=PropertyChanged}"
+                                    IsEnabled="{Binding Status, Converter={StaticResource NozzleStatusToEnableConverter}, ConverterParameter=ContinueFilling, UpdateSourceTrigger=PropertyChanged}"
                                     Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type UserControl}, Mode=FindAncestor}, Path=DataContext.CompleteFillingCommand}"/>
                  <dxb:BarButtonItem Content="Освободить"
-                                    IsEnabled="{Binding Status, Converter={StaticResource IsFuelTransperControllerContextMenuEnabledConverter}, ConverterParameter=CompleteFilling, UpdateSourceTrigger=PropertyChanged}"
-                                    Command="{Binding ReleaseFuelNozzleCommand}"/>
+                                    IsEnabled="{Binding Status, Converter={StaticResource NozzleStatusToEnableConverter}, ConverterParameter=CompleteFilling, UpdateSourceTrigger=PropertyChanged}"
+                                    Command="{Binding Path=DataContext.ReleaseFuelNozzleCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"/>
                  <dxb:BarItemSeparator/>
                  <dxb:BarButtonItem Content="Принудительный пуск"/>
                  <dxb:BarItemSeparator/>
                  <dxb:BarButtonItem Content="Перекачка"
-                                    IsEnabled="{Binding Status, Converter={StaticResource IsFuelTransperControllerContextMenuEnabledConverter}, ConverterParameter=Pumping, UpdateSourceTrigger=PropertyChanged}"
-                                    Command="{Binding PumpingCommand}"/>
+                                    IsEnabled="{Binding Status, Converter={StaticResource NozzleStatusToEnableConverter}, ConverterParameter=Pumping, UpdateSourceTrigger=PropertyChanged}"
+                                    Command="{Binding Path=DataContext.PumpingCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"/>
                  <dxb:BarButtonItem Content="Отпуск до полного бака"
-                                    IsEnabled="{Binding Status, Converter={StaticResource IsFuelTransperControllerContextMenuEnabledConverter}, ConverterParameter=Pumping, UpdateSourceTrigger=PropertyChanged}"
-                                    Command="{Binding FillingToFullCommand}"/>
+                                    IsEnabled="{Binding Status, Converter={StaticResource NozzleStatusToEnableConverter}, ConverterParameter=Pumping, UpdateSourceTrigger=PropertyChanged}"
+                                    Command="{Binding Path=DataContext.StartFullRefuelingCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"/>
                  <dxb:BarItemSeparator/>
                  <dxb:BarButtonItem Content="Чек на последнюю продажу"
                                     Command="{Binding ElementName=FuelTransferColumn, Path=DataContext.PrintLastReceiptCommand}"/>
                  <dxb:BarItemSeparator/>
                  <dxb:BarSubItem Content="Состояние устройства">
                  <dxb:BarButtonItem Content="Запросить счетчик"
-                                    IsEnabled="{Binding Status, Converter={StaticResource IsFuelTransperControllerContextMenuEnabledConverter}, ConverterParameter=Pumping, UpdateSourceTrigger=PropertyChanged}"
-                                    Command="{Binding GetMeterValueCommand}"/>
+                                    IsEnabled="{Binding Status, Converter={StaticResource NozzleStatusToEnableConverter}, ConverterParameter=Pumping, UpdateSourceTrigger=PropertyChanged}"
+                                    Command="{Binding Path=DataContext.GetMeterValueCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"/>
                      
                  <!--Блокировать ТРК-->
                  <dxb:BarButtonItem Content="{Binding Status, Converter={StaticResource BarButtonItemContentConverter}, UpdateSourceTrigger=PropertyChanged, ConverterParameter=Block}"
@@ -141,7 +141,7 @@
                                               Height="30"
                                               HorizontalAlignment="Right"
                                               VerticalAlignment="Top"
-                                              Text="{Binding ReceivedSum, StringFormat=F2, FallbackValue=0.00}"
+                                              Text="{Binding SelectedNozzle.FuelSale.ReceivedSum, StringFormat=F2, FallbackValue=0.00}"
                                               Style="{StaticResource DefaultDigitalScreenStyle}"
                                               Margin="0 0 0 2"/>
 
@@ -150,7 +150,7 @@
                                               HorizontalAlignment="Right"
                                               VerticalAlignment="Top"
                                               Style="{StaticResource DefaultDigitalScreenStyle}"
-                                              Text="{Binding ReceivedQuantity, StringFormat=F2, FallbackValue=0.00}"
+                                              Text="{Binding SelectedNozzle.FuelSale.ReceivedQuantity, StringFormat=F2, FallbackValue=0.00}"
                                               Margin="0 0 0 2"/>
 
 

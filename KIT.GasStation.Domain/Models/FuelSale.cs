@@ -12,8 +12,8 @@ namespace KIT.GasStation.Domain.Models
         private int _tankId;
         private int _shiftId;
         private int _nozzleId;
-        private int? _discountSaleId;
         private PaymentType _paymentType;
+        private OperationType _operationType;
         private DateTime _createDate;
         private decimal _price;
         private decimal _sum;
@@ -57,19 +57,6 @@ namespace KIT.GasStation.Domain.Models
         }
 
         /// <summary>
-        /// Id скидки
-        /// </summary>
-        public int? DiscountSaleId
-        {
-            get => _discountSaleId;
-            set
-            {
-                _discountSaleId = value;
-                OnPropertyChanged(nameof(DiscountSaleId));
-            }
-        }
-
-        /// <summary>
         /// Тип оплаты
         /// </summary>
         public PaymentType PaymentType
@@ -79,6 +66,19 @@ namespace KIT.GasStation.Domain.Models
             {
                 _paymentType = value;
                 OnPropertyChanged(nameof(PaymentType));
+            }
+        }
+
+        /// <summary>
+        /// Тип операции
+        /// </summary>
+        public OperationType OperationType
+        {
+            get => _operationType;
+            set
+            {
+                _operationType = value;
+                OnPropertyChanged(nameof(OperationType));
             }
         }
 
@@ -286,10 +286,16 @@ namespace KIT.GasStation.Domain.Models
         None,
 
         /// <summary>
-        /// В процессе
+        /// Обрабатывается
         /// </summary>
-        [Display(Name = "В процессе")]
-        InProgress,
+        [Display(Name = "Обрабатывается")]
+        InProcessed,
+
+        /// <summary>
+        /// Обработанный
+        /// </summary>
+        [Display(Name = "Обработана")]
+        Processed,
 
         /// <summary>
         /// Завершенный
@@ -334,5 +340,26 @@ namespace KIT.GasStation.Domain.Models
         /// </summary>
         [Display(Name = "Талон")]
         Ticket
+    }
+
+    public enum OperationType
+    {
+        /// <summary>
+        /// Продажа
+        /// </summary>
+        [Display(Name = "Продажа")]
+        Sale,
+
+        /// <summary>
+        /// Возврат
+        /// </summary>
+        [Display(Name = "Возврат")]
+        Return,
+
+        /// <summary>
+        /// Корректировка
+        /// </summary>
+        [Display(Name = "Корректировка")]
+        Correction
     }
 }

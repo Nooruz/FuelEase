@@ -20,10 +20,6 @@ namespace KIT.GasStation.Domain.Models
         private bool _isProgramControl;
         private decimal _lastCounter;
         private decimal _salesSum;
-        private decimal _receivedSum;
-        private decimal _receivedQuantity;
-        private decimal _sum;
-        private decimal _quantity;
         private bool _lifted;
         private FuelSale _fuelSale;
         private int _number;
@@ -198,50 +194,6 @@ namespace KIT.GasStation.Domain.Models
             {
                 _lifted = value;
                 OnPropertyChanged(nameof(Lifted));
-            }
-        }
-
-        [NotMapped]
-        public decimal ReceivedQuantity
-        {
-            get => _receivedQuantity;
-            set
-            {
-                _receivedQuantity = value;
-                OnPropertyChanged(nameof(ReceivedQuantity));
-            }
-        }
-
-        [NotMapped]
-        public decimal ReceivedSum
-        {
-            get => _receivedSum;
-            set
-            {
-                _receivedSum = value;
-                OnPropertyChanged(nameof(ReceivedSum));
-            }
-        }
-
-        [NotMapped]
-        public decimal Sum
-        {
-            get => _sum;
-            set
-            {
-                _sum = value;
-                OnPropertyChanged(nameof(Sum));
-            }
-        }
-
-        [NotMapped]
-        public decimal Quantity
-        {
-            get => _quantity;
-            set
-            {
-                _quantity = value;
-                OnPropertyChanged(nameof(Quantity));
             }
         }
 

@@ -49,7 +49,7 @@ namespace KIT.GasStation.CashRegisters.Services
         /// <summary>
         /// Возврат
         /// </summary>
-        Task ReturnAsync(FuelSale fuelSale, Fuel fuel);
+        Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel);
 
         /// <summary>
         /// Получение статуса ККМ
@@ -60,7 +60,7 @@ namespace KIT.GasStation.CashRegisters.Services
         /// <summary>
         /// Возврат и продажа по полученными суммами
         /// </summary>
-        Task ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel);
+        Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName);
 
         #endregion
     }

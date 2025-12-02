@@ -8,7 +8,7 @@ namespace KIT.GasStation.Converters
     /// <summary>
     /// Этот класс используется для преобразования значения свойства IsFuelTransperControllerContextMenuEnabled в логическое значение.
     /// </summary>
-    public class IsFuelTransperControllerContextMenuEnabledConverter : IValueConverter
+    public class NozzleStatusToEnableConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
@@ -16,8 +16,9 @@ namespace KIT.GasStation.Converters
             {
                 return parameter.ToString() switch
                 {
-                    "StopFilling" => status is NozzleStatus.WaitingRemoved or NozzleStatus.PumpWorking ? true : (object)false,
-                    "ContinueFilling" => status is NozzleStatus.WaitingStop or NozzleStatus.PumpStop ? true : (object)false,
+                    "StopFilling" => status is NozzleStatus.WaitingRemoved or NozzleStatus.PumpWorking,
+                    "ContinueFilling" => status is NozzleStatus.WaitingStop or NozzleStatus.PumpStop,
+                    "Pumping" => status is NozzleStatus.Ready,
                     _ => false
                 };
             }

@@ -5,6 +5,7 @@ using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Serilog;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.Tracing;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Text;
@@ -179,7 +180,7 @@ namespace KIT.GasStation.NewCas
         }
 
         /// <inheritdoc/>
-        public async Task ReturnAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel)
         {
             //Данные для отправки в запросе
             OpenAndCloseRec openAndCloseRec = new()
@@ -214,9 +215,9 @@ namespace KIT.GasStation.NewCas
 
             if (sale != null && sale.IsSuccessStatusCode)
             {
-                //await UpdateFuelSaleWhenReturn(fuelSale, sale);
+                return await UpdateFiscalData(fuelSale, sale);
             }
-
+            return null;
         }
 
         /// <inheritdoc/>
@@ -226,9 +227,53 @@ namespace KIT.GasStation.NewCas
         }
 
         /// <inheritdoc/>
-        public async Task ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
         {
+            var returnFiscalData = await ReturnAsync(fuelSale, fuel);
 
+            if (fuelSale.ReceivedQuantity > 0)
+            {
+                // Данные для отправки в запросе
+                OpenAndCloseRec openAndCloseRec = new()
+                {
+                    RecType = RecType.Coming,
+                    CashierName = cashierName,
+                    PrintToBitmaps = true,
+                    Goods = new[] 
+                    {
+                        new Goods() 
+                        {
+                            Count = Math.Round(fuelSale.ReceivedSum / fuelSale.Price, 6),
+                            Price = fuelSale.Price,
+                            ItemName = fuelSale.Tank.Fuel.Name,
+                            Article = "",
+                            Total = fuelSale.ReceivedSum.ToString(),
+                            Unit = fuelSale.Tank.Fuel.UnitOfMeasurement.Name,
+                            VatNum = fuelSale.Tank.Fuel.ValueAddedTax ? 1 : 0,
+                            StNum = (int)(fuelSale.Tank.Fuel.SalesTax * 100)
+                        }
+                    },
+                    PayItems = new[] 
+                    {
+                        new PayItems() 
+                        {
+                            PayType = GetPayType(fuelSale.PaymentType),
+                            Total = fuelSale.ReceivedSum.ToString()
+                        }
+                    }
+                };
+
+                HttpResponseMessage? sale = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
+
+                if (sale != null)
+                {
+                    if (sale.IsSuccessStatusCode)
+                    {
+                        var saleFiscalData = await CreateFiscalDataAsync(sale);
+                    }
+                }
+            }
+            return null;
         }
 
         #region Private Helpers
@@ -450,6 +495,43 @@ namespace KIT.GasStation.NewCas
                         await CreateJGP(saleResult.Bitmaps);
 
                         return fiscalData;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LogError(e);
+            }
+            return null;
+        }
+
+        private async Task<FiscalData?> UpdateFiscalData(FuelSale fuelSale, HttpResponseMessage? responseMessage)
+        {
+            try
+            {
+                if (responseMessage == null && fuelSale == null)
+                {
+                    return null;
+                }
+
+                OpenAndCloseRecResp? saleResult = JsonSerializer.Deserialize<OpenAndCloseRecResp>(await responseMessage.Content.ReadAsStringAsync());
+
+                if (saleResult != null)
+                {
+
+                    LogData(Newtonsoft.Json.JsonConvert.SerializeObject(saleResult, new Newtonsoft.Json.JsonSerializerSettings
+                    {
+                        StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling.Default,
+                        NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+                    }));
+
+                    if (saleResult.Status == OpenAndCloseRecRespStatus.Success)
+                    {
+                        fuelSale.FiscalData.ReturnCheck = saleResult.QRCode;
+
+                        await CreateJGP(saleResult.Bitmaps);
+
+                        return fuelSale.FiscalData;
                     }
                 }
             }

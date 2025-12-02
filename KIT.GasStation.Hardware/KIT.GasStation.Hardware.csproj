@@ -15,6 +15,9 @@
 	<OutputPath>C:\Users\nooru\source\Nooruz\FuelEase\KIT.GasStation.Hardware\bin</OutputPath>
     <AssemblyName>HardwareConfiguration</AssemblyName>
     <ApplicationIcon>computer.ico</ApplicationIcon>
+	<AssemblyName>Hardware</AssemblyName>
+	<AssemblyTitle>Hardware</AssemblyTitle>
+	<Product>Hardware</Product>
   </PropertyGroup>
 
   <ItemGroup>

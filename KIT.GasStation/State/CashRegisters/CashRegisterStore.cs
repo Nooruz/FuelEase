@@ -108,14 +108,14 @@ namespace KIT.GasStation.State.CashRegisters
             return await _cashRegisterService.SaleAsync(fuelSale, fuel, _userStore.CurrentUser.FullName);
         }
 
-        public async Task ReturnAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel)
         {
-            await _cashRegisterService.ReturnAsync(fuelSale, fuel);
+            return await _cashRegisterService.ReturnAsync(fuelSale, fuel);
         }
 
-        public async Task ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
         {
-            await _cashRegisterService.ReturnAndReceivedSaleAsync(fuelSale, fuel);
+            return await _cashRegisterService.ReturnAndReceivedSaleAsync(fuelSale, fuel, cashierName);
         }
 
         #endregion

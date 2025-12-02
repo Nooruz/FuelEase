@@ -796,6 +796,11 @@
 
           <Directory Id="de" Name="de">
 
+            <Component Id="Component.de" Guid="9098e750-40c2-4f53-ae3d-fdbb77e7bdb5" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="de" On="uninstall" />
+            </Component>
+
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_2887795580" Guid="9098e750-40c2-4f53-ae3d-fdbb9ba4dbf6">
               <File Id="Microsoft.Data.SqlClient.resources.dll_2887795580" Source="de\Microsoft.Data.SqlClient.resources.dll" />
             </Component>
@@ -803,6 +808,11 @@
           </Directory>
 
           <Directory Id="es" Name="es">
+
+            <Component Id="Component.es" Guid="9098e750-40c2-4f53-ae3d-fdbbe7a93250" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="es" On="uninstall" />
+            </Component>
 
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_861032919" Guid="9098e750-40c2-4f53-ae3d-fdbb0a49557c">
               <File Id="Microsoft.Data.SqlClient.resources.dll_861032919" Source="es\Microsoft.Data.SqlClient.resources.dll" />
@@ -812,6 +822,11 @@
 
           <Directory Id="fr" Name="fr">
 
+            <Component Id="Component.fr" Guid="9098e750-40c2-4f53-ae3d-fdbbfeeba6eb" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="fr" On="uninstall" />
+            </Component>
+
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_3155324464" Guid="9098e750-40c2-4f53-ae3d-fdbbbea2127d">
               <File Id="Microsoft.Data.SqlClient.resources.dll_3155324464" Source="fr\Microsoft.Data.SqlClient.resources.dll" />
             </Component>
@@ -819,6 +834,11 @@
           </Directory>
 
           <Directory Id="it" Name="it">
+
+            <Component Id="Component.it" Guid="9098e750-40c2-4f53-ae3d-fdbbbadc5fe4" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="it" On="uninstall" />
+            </Component>
 
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_1871529740" Guid="9098e750-40c2-4f53-ae3d-fdbb187af195">
               <File Id="Microsoft.Data.SqlClient.resources.dll_1871529740" Source="it\Microsoft.Data.SqlClient.resources.dll" />
@@ -828,6 +848,11 @@
 
           <Directory Id="ja" Name="ja">
 
+            <Component Id="Component.ja" Guid="9098e750-40c2-4f53-ae3d-fdbb5f2cd47f" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="ja" On="uninstall" />
+            </Component>
+
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_3690436325" Guid="9098e750-40c2-4f53-ae3d-fdbbf1428ec4">
               <File Id="Microsoft.Data.SqlClient.resources.dll_3690436325" Source="ja\Microsoft.Data.SqlClient.resources.dll" />
             </Component>
@@ -835,6 +860,11 @@
           </Directory>
 
           <Directory Id="ko" Name="ko">
+
+            <Component Id="Component.ko" Guid="9098e750-40c2-4f53-ae3d-fdbb624e481a" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="ko" On="uninstall" />
+            </Component>
 
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_3139323879" Guid="9098e750-40c2-4f53-ae3d-fdbb1455fde4">
               <File Id="Microsoft.Data.SqlClient.resources.dll_3139323879" Source="ko\Microsoft.Data.SqlClient.resources.dll" />
@@ -844,6 +874,11 @@
 
           <Directory Id="pt2dBR" Name="pt-BR">
 
+            <Component Id="Component.pt2dBR" Guid="9098e750-40c2-4f53-ae3d-fdbbcc8c7aad" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="pt2dBR" On="uninstall" />
+            </Component>
+
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_3128211860" Guid="9098e750-40c2-4f53-ae3d-fdbba4b1c58d">
               <File Id="Microsoft.Data.SqlClient.resources.dll_3128211860" Source="pt-BR\Microsoft.Data.SqlClient.resources.dll" />
             </Component>
@@ -851,6 +886,11 @@
           </Directory>
 
           <Directory Id="ru" Name="ru">
+
+            <Component Id="Component.ru" Guid="9098e750-40c2-4f53-ae3d-fdbb279bc207" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="ru" On="uninstall" />
+            </Component>
 
             <Component Id="Component.DevExpress.Charts.Designer.v21.2.resources.dll_3172938856" Guid="9098e750-40c2-4f53-ae3d-fdbbf54f4acb">
               <File Id="DevExpress.Charts.Designer.v21.2.resources.dll_3172938856" Source="ru\DevExpress.Charts.Designer.v21.2.resources.dll" />
@@ -1016,6 +1056,11 @@
 
           <Directory Id="zh2dHans" Name="zh-Hans">
 
+            <Component Id="Component.zh2dHans" Guid="9098e750-40c2-4f53-ae3d-fdbb40b4c007" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="zh2dHans" On="uninstall" />
+            </Component>
+
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_505755543" Guid="9098e750-40c2-4f53-ae3d-fdbbd958a2b2">
               <File Id="Microsoft.Data.SqlClient.resources.dll_505755543" Source="zh-Hans\Microsoft.Data.SqlClient.resources.dll" />
             </Component>
@@ -1024,12 +1069,22 @@
 
           <Directory Id="zh2dHant" Name="zh-Hant">
 
+            <Component Id="Component.zh2dHant" Guid="9098e750-40c2-4f53-ae3d-fdbb40b1c007" KeyPath="yes">
+              <CreateFolder />
+              <RemoveFolder Id="zh2dHant" On="uninstall" />
+            </Component>
+
             <Component Id="Component.Microsoft.Data.SqlClient.resources.dll_309253876" Guid="9098e750-40c2-4f53-ae3d-fdbb48a3e76a">
               <File Id="Microsoft.Data.SqlClient.resources.dll_309253876" Source="zh-Hant\Microsoft.Data.SqlClient.resources.dll" />
             </Component>
 
           </Directory>
         </Directory>
+
+        <Component Id="KIT" Guid="9098e750-40c2-4f53-ae3d-fdbba20a5cf7" KeyPath="yes">
+          <RemoveFolder Id="KIT" On="uninstall" />
+        </Component>
+
       </Directory>
     </StandardDirectory>
 
@@ -1066,7 +1121,7 @@
     <Property Id="ARPPRODUCTICON" Value="app_icon.ico" />
     <Property Id="REINSTALLMODE" Value="omus" />
 
-    <Feature Id="Complete" Title="Complete" Level="1" AllowAbsent="yes">
+    <Feature Id="_41a4184222d410417421__" Title="КИТ-АЗС" Level="1" AllowAbsent="yes">
       <ComponentRef Id="Component.appsettings.json_1638537219" />
       <ComponentRef Id="Component.Azure.Core.dll_2699202477" />
       <ComponentRef Id="Component.Azure.Identity.dll_3211912176" />
@@ -1262,13 +1317,21 @@
       <ComponentRef Id="Component._41a4184222d410417421.exe_989235425" />
       <ComponentRef Id="Component._41a4184222d410417421.pdb_2932808083" />
       <ComponentRef Id="Component._41a4184222d410417421.runtimeconfig.json_1697280788" />
+      <ComponentRef Id="Component.de" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_2887795580" />
+      <ComponentRef Id="Component.es" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_861032919" />
+      <ComponentRef Id="Component.fr" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_3155324464" />
+      <ComponentRef Id="Component.it" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_1871529740" />
+      <ComponentRef Id="Component.ja" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_3690436325" />
+      <ComponentRef Id="Component.ko" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_3139323879" />
+      <ComponentRef Id="Component.pt2dBR" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_3128211860" />
+      <ComponentRef Id="Component.ru" />
       <ComponentRef Id="Component.DevExpress.Charts.Designer.v21.2.resources.dll_3172938856" />
       <ComponentRef Id="Component.DevExpress.Dashboard.v21.2.Core.resources.dll_206782774" />
       <ComponentRef Id="Component.DevExpress.Data.v21.2.resources.dll_639594812" />
@@ -1309,8 +1372,11 @@
       <ComponentRef Id="Component.DevExpress.XtraTreeList.v21.2.resources.dll_136173237" />
       <ComponentRef Id="Component.DevExpress.XtraVerticalGrid.v21.2.resources.dll_1378239165" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_1749587326" />
+      <ComponentRef Id="Component.zh2dHans" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_505755543" />
+      <ComponentRef Id="Component.zh2dHant" />
       <ComponentRef Id="Component.Microsoft.Data.SqlClient.resources.dll_309253876" />
+      <ComponentRef Id="KIT" />
     </Feature>
 
     <InstallExecuteSequence>

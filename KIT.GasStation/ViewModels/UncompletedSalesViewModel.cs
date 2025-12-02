@@ -5,6 +5,7 @@ using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Shifts;
+using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
 using Microsoft.Extensions.Logging;
@@ -25,6 +26,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IShiftStore _shiftStore;
         private readonly IFuelSaleService _fuelSaleService;
         private readonly ICashRegisterStore _cashRegisterStore;
+        private readonly IUserStore _userStore;
         private ObservableCollection<FuelSale> _fuelSales = new();
         private FuelSale _selectedFuelSale;
 
@@ -60,12 +62,14 @@ namespace KIT.GasStation.ViewModels
         public UncompletedSalesViewModel(ILogger<UncompletedSalesViewModel> logger,
             IShiftStore shiftStore,
             IFuelSaleService fuelSaleService,
-            ICashRegisterStore cashRegisterStore)
+            ICashRegisterStore cashRegisterStore,
+            IUserStore userStore)
         {
             _logger = logger;
             _shiftStore = shiftStore;
             _fuelSaleService = fuelSaleService;
             _cashRegisterStore = cashRegisterStore;
+            _userStore = userStore;
 
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
             _fuelSaleService.OnDeleted += DeleteFuelSale;
@@ -92,7 +96,8 @@ namespace KIT.GasStation.ViewModels
                 }
                 if (result == MessageResult.Yes)
                 {
-                    await _cashRegisterStore.ReturnAndReceivedSaleAsync(SelectedFuelSale, SelectedFuelSale.Tank.Fuel);
+                    await _cashRegisterStore
+                        .ReturnAndReceivedSaleAsync(SelectedFuelSale, SelectedFuelSale.Tank.Fuel, _userStore.CurrentUser.FullName);
                 }
                 else 
                 {
@@ -151,7 +156,7 @@ namespace KIT.GasStation.ViewModels
             {
                 case FuelSaleStatus.None:
                     break;
-                case FuelSaleStatus.InProgress:
+                case FuelSaleStatus.InProcessed:
                     break;
                 case FuelSaleStatus.Completed:
                     DeleteFuelSale(updatedFuelSale.Id);

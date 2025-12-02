@@ -218,12 +218,12 @@ namespace KIT.GasStation.EntityFramework.Services
             }
         }
 
-        public async Task<FuelSale?> GetLastFuelSale(int nozzleId, int shiftId)
+        public async Task<FuelSale?> GetLastFuelSale(int nozzleId)
         {
             try
             {
                 await using var context = _contextFactory.CreateDbContext();
-                return await context.FuelSales.Where(f => f.NozzleId == nozzleId && f.ShiftId == shiftId)
+                return await context.FuelSales.Where(f => f.NozzleId == nozzleId)
                     .OrderByDescending(f => f.Id)
                     .FirstOrDefaultAsync();
             }

@@ -16,7 +16,7 @@
         <ResourceDictionary>
 
             <converters:StringToBrushConverter x:Key="StringToBrushConverter"/>
-            <converters:IsFuelTransperControllerContextMenuEnabledConverter x:Key="IsFuelTransperControllerContextMenuEnabledConverter"/>
+            <converters:NozzleStatusToEnableConverter x:Key="NozzleStatusToEnableConverter"/>
             <converters:BarButtonItemContentConverter x:Key="BarButtonItemContentConverter"/>
             <converters:ControlModeToIsEnabledConverter x:Key="ControlModeToIsEnabledConverter"/>
             <converters:UnregisteredSaleStateToStringConverter x:Key="UnregisteredSaleStateToStringConverter"/>

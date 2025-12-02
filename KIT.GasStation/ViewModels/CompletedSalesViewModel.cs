@@ -18,6 +18,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IShiftStore _shiftStore;
         private readonly IFuelSaleService _fuelSaleService;
         private readonly ICashRegisterStore _cashRegisterStore;
+        private readonly IFiscalDataService _fiscalDataService;
         private ObservableCollection<FuelSale> _fuelSales = new();
         private ObservableCollection<FuelSale> _selectedFuelSales = new();
         private FuelSale _selectedFuelSale;
@@ -62,11 +63,13 @@ namespace KIT.GasStation.ViewModels
 
         public CompletedSalesViewModel(IShiftStore shiftStore,
             IFuelSaleService fuelSaleService,
-            ICashRegisterStore cashRegisterStore)
+            ICashRegisterStore cashRegisterStore,
+            IFiscalDataService fiscalDataService)
         {
             _shiftStore = shiftStore;
             _fuelSaleService = fuelSaleService;
             _cashRegisterStore = cashRegisterStore;
+            _fiscalDataService = fiscalDataService;
         }
 
         #endregion
@@ -113,7 +116,13 @@ namespace KIT.GasStation.ViewModels
                 return;
             }
 
-            await _cashRegisterStore.ReturnAsync(SelectedFuelSale, SelectedFuelSale.Tank.Fuel);
+            var fiscalData = await _cashRegisterStore.ReturnAsync(SelectedFuelSale, SelectedFuelSale.Tank.Fuel);
+
+            if (fiscalData != null)
+            {
+                await _fiscalDataService.UpdateAsync(fiscalData.Id, fiscalData);
+            }
+
         }
 
         #endregion

@@ -222,7 +222,7 @@ namespace KIT.GasStation.EKassa
         }
 
         /// <inheritdoc/>
-        public async Task ReturnAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel)
         {
             try
             {
@@ -239,7 +239,7 @@ namespace KIT.GasStation.EKassa
 
                 if (fuelSale.FiscalData == null)
                 {
-                    return;
+                    return null;
                 }
 
                 dynamic fiscalNumber = new ExpandoObject();
@@ -282,11 +282,13 @@ namespace KIT.GasStation.EKassa
                 {
                     OnReturning?.Invoke(fuelSale);
                 }
+                return null;
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "Ошибка при возврате через ККМ");
             }
+            return null;
         }
 
         /// <inheritdoc/>
@@ -314,14 +316,14 @@ namespace KIT.GasStation.EKassa
         }
 
         /// <inheritdoc/>
-        public async Task ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
         {
             try
             {
                 await ReturnAsync(fuelSale, fuel);
 
                 if (fuelSale.ReceivedSum == 0)
-                    return;
+                    return null;
 
                 _logger.Information("Начало продажи через ККМ. Сумма: {Sum}, Топливо: {Fuel}", fuelSale.Sum, fuel.Name);
 
@@ -386,6 +388,7 @@ namespace KIT.GasStation.EKassa
             {
                 _logger.Error(ex, "Ошибка при возврате и продаже полученных суммам через ККМ");
             }
+            return null;
         }
 
         #endregion

@@ -26,14 +26,17 @@ namespace KIT.GasStation.Installer
                 var publishDir = Path.Combine(installerPublishRoot, architecture);
                 var solutionRoot = Path.Combine(projectRoot, "..");
                 var gasStationProject = Path.Combine(solutionRoot, "KIT.GasStation", "KIT.GasStation.csproj");
+                var hardwareProject = Path.Combine(solutionRoot, "KIT.GasStation.Hardware", "KIT.GasStation.Hardware.csproj");
+                var webProject = Path.Combine(solutionRoot, "KIT.GasStation.Web", "KIT.GasStation.Web.csproj");
+                var workerProject = Path.Combine(solutionRoot, "KIT.GasStation.Worker", "KIT.GasStation.Worker.csproj");
                 var licensePath = Path.Combine(projectRoot, "Assets", "License.rtf");
                 var mainExecutable = Path.Combine(publishDir, "КИТ-АЗС.exe");
 
                 Directory.CreateDirectory(publishDir);
                 PublishApplication(gasStationProject, runtimeIdentifier, publishDir);
-
-                if (!System.IO.File.Exists(licensePath))
-                    throw new FileNotFoundException("Не найден файл лицензии для установщика.", licensePath);
+                PublishHardwareApplication(hardwareProject, runtimeIdentifier, publishDir);
+                PublishWebApplication(webProject, runtimeIdentifier, publishDir);
+                PublishWorkerApplication(workerProject, runtimeIdentifier, publishDir);
 
                 //custom set of UI WPF dialogs
 
@@ -43,11 +46,47 @@ namespace KIT.GasStation.Installer
                     : new Version(1, 0, 0, 0);
 
                 var mainFeature = new Feature("КИТ-АЗС");
+                var hardwareFeature = new Feature("Конфигуратор оборудования");
+                var workerFeature = new Feature("Служба");
+                var webFeature = new Feature("API");
 
                 var project = new ManagedProject("КИТ-АЗС",
-                    mainFeature,
-                    new Dir(@"%ProgramFiles%\KIT\GasStation",
-                        new Files(Path.Combine(publishDir, "*.*"))));
+                    new Dir(@"%ProgramFiles%\KIT.GasStation",
+                        //new Dir("Hardware", 
+                        //    new Files(hardwareFeature, Path.Combine(publishDir, "Hardware"))),
+                        //new Dir("Web",
+                        //    new WixSharp.File(webFeature, Path.Combine(publishDir, "Web"), 
+                        //    new ServiceInstaller
+                        //    {
+                        //        Name = "KITWeb",
+                        //        DisplayName = "КИТ-АЗС Web",
+                        //        Description = "Веб API сервис для КИТ-АЗС",
+                        //        Start = SvcStartType.auto,
+                        //        StartOn = SvcEvent.Install,
+                        //        StopOn = SvcEvent.InstallUninstall,
+                        //        RemoveOn = SvcEvent.Uninstall,
+                        //        DelayedAutoStart = true,
+                        //        Account = "LocalSystem"
+                        //    }),
+                        //    new Files(webFeature, Path.Combine(publishDir, "Web", "*.*"))),
+                        //new Dir("Worker",
+                        //    new WixSharp.File(workerFeature, Path.Combine(publishDir, "Worker"),
+                        //    new ServiceInstaller
+                        //    {
+                        //        Name = "KITWorker",
+                        //        DisplayName = "КИТ-АЗС Worker",
+                        //        Description = "Служба для КИТ-АЗС",
+                        //        Start = SvcStartType.auto,
+                        //        StartOn = SvcEvent.Install,
+                        //        StopOn = SvcEvent.InstallUninstall,
+                        //        RemoveOn = SvcEvent.Uninstall,
+                        //        DelayedAutoStart = true,
+                        //        Account = "LocalSystem"
+                        //    }),
+                        //    new Files(workerFeature, Path.Combine(publishDir, "Worker", "*.*"))),
+                        new Files(mainFeature, Path.Combine(publishDir, "*.*"))));
+
+                //project.DefaultFeature = mainFeature;
 
                 project.GUID = new Guid("9098e750-40c2-4f53-ae3d-fdbb5f9eed2c");
                 project.LicenceFile = licensePath;
@@ -117,6 +156,99 @@ namespace KIT.GasStation.Installer
                 {
                     var message = string.IsNullOrWhiteSpace(error) ? output : error;
                     throw new InvalidOperationException($"Публикация приложения завершилась с ошибкой ({process.ExitCode}). {message}");
+                }
+            }
+        }
+
+        private static void PublishHardwareApplication(string projectPath, string runtime, string outputDirectory)
+        {
+            var publishArguments = $"publish \"{projectPath}\" -c Release -r {runtime} " +
+                $"/p:PublishSingleFile=true " +
+                $"/p:IncludeNativeLibrariesForSelfExtract=true " +
+                $"/p:EnableCompressionInSingleFile=true " +
+                $"--self-contained false " +
+                $"-o \"{Path.Combine(outputDirectory, "Hardware")}\"";
+
+            using (var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = publishArguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            }))
+            {
+                if (process == null)
+                    throw new InvalidOperationException("Не удалось запустить процесс публикации приложения Hardware.");
+
+                var output = process.StandardOutput.ReadToEnd();
+                var error = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    var message = string.IsNullOrWhiteSpace(error) ? output : error;
+                    throw new InvalidOperationException($"Публикация приложения Hardware завершилась с ошибкой ({process.ExitCode}). {message}");
+                }
+            }
+        }
+
+        private static void PublishWebApplication(string projectPath, string runtime, string outputDirectory)
+        {
+            var publishArguments = $"publish \"{projectPath}\" -c Release -r {runtime} --self-contained false -o \"{Path.Combine(outputDirectory, "Web")}\"";
+            using (var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = publishArguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            }))
+            {
+                if (process == null)
+                    throw new InvalidOperationException("Не удалось запустить процесс публикации приложения Web.");
+
+                var output = process.StandardOutput.ReadToEnd();
+                var error = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    var message = string.IsNullOrWhiteSpace(error) ? output : error;
+                    throw new InvalidOperationException($"Публикация приложения Web завершилась с ошибкой ({process.ExitCode}). {message}");
+                }
+            }
+        }
+
+        private static void PublishWorkerApplication(string projectPath, string runtime, string outputDirectory)
+        {
+            var publishArguments = $"publish \"{projectPath}\" -c Release -r {runtime} --self-contained false -o \"{Path.Combine(outputDirectory, "Worker")}\"";
+            using (var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = publishArguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            }))
+            {
+                if (process == null)
+                    throw new InvalidOperationException("Не удалось запустить процесс публикации приложения Worker.");
+
+                var output = process.StandardOutput.ReadToEnd();
+                var error = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    var message = string.IsNullOrWhiteSpace(error) ? output : error;
+                    throw new InvalidOperationException($"Публикация приложения Worker завершилась с ошибкой ({process.ExitCode}). {message}");
                 }
             }
         }

@@ -1,6 +1,8 @@
-﻿using DevExpress.Mvvm.DataAnnotations;
+﻿using DevExpress.Mvvm;
+using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.Domain.Views;
 using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
@@ -21,6 +23,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace KIT.GasStation.ViewModels
 {
@@ -37,8 +40,8 @@ namespace KIT.GasStation.ViewModels
         private readonly IUnregisteredSaleService _unregisteredSaleService;
         private readonly IUserStore _userStore;
         private readonly IHubClient _hubClient;
+        private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
         private HubConnection _hub;
-        private bool _canSelectedNozzle = true;
         private int _side;
         private NozzleStatus _status;
         private ObservableCollection<Nozzle> _nozzle = new();
@@ -95,33 +98,6 @@ namespace KIT.GasStation.ViewModels
                 OnPropertyChanged(nameof(SelectedNozzle));
             }
         }
-        public decimal ReceivedQuantity
-        {
-            get => _receivedQuantity;
-            set
-            {
-                _receivedQuantity = value;
-                OnPropertyChanged(nameof(ReceivedQuantity));
-            }
-        }
-        public decimal ReceivedSum
-        {
-            get => _receivedSum;
-            set
-            {
-                _receivedSum = value;
-                OnPropertyChanged(nameof(ReceivedSum));
-            }
-        }
-        public bool CanSelectedNozzle
-        {
-            get => _canSelectedNozzle;
-            set
-            {
-                _canSelectedNozzle = value;
-                OnPropertyChanged(nameof(CanSelectedNozzle));
-            }
-        }
 
         #endregion
 
@@ -135,7 +111,8 @@ namespace KIT.GasStation.ViewModels
             IUnregisteredSaleService unregisteredSaleService,
             IFuelService fuelService,
             IUserStore userStore,
-            IHubClient hubClient)
+            IHubClient hubClient,
+            IViewService<TankFuelQuantityView> tankFuelQuantityView)
         {
             _nozzleStore = nozzleStore;
             _fuelSaleService = fuelSaleService;
@@ -146,7 +123,8 @@ namespace KIT.GasStation.ViewModels
             _fuelService = fuelService;
             _userStore = userStore;
             _hubClient = hubClient;
-            
+            _tankFuelQuantityView = tankFuelQuantityView;
+
             _shiftStore.OnLogin += ShiftStore_OnLogin;
             _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
@@ -187,6 +165,20 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
+                var isSelectionAllowed = Status switch
+                {
+                    NozzleStatus.PumpWorking => false,
+                    NozzleStatus.WaitingStop => false,
+                    NozzleStatus.WaitingRemoved => false,
+                    _ => true
+                };
+
+                if (!isSelectionAllowed)
+                {
+                    args.Handled = true;
+                    return;
+                }
+
                 var item = FindListBoxItemFromEvent(args);
                 if (item != null)
                 {
@@ -211,13 +203,7 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                //await _fuelDispenserService.CompleteFillingAsync(SelectedNozzle.Tube);
-
-                if (SelectedNozzle.Sum > SelectedNozzle.ReceivedSum)
-                {
-                    await _cashRegisterStore.ReturnAndReceivedSaleAsync(SelectedNozzle.FuelSale, SelectedNozzle.Tank.Fuel);
-                    await _fuelSaleService.UpdateAsync(SelectedNozzle.FuelSale.Id, SelectedNozzle.FuelSale);
-                }
+                await _hub.InvokeAsync("CompleteRefuelingAsync", SelectedNozzle.Group);
             }
             catch (Exception)
             {
@@ -231,7 +217,7 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public async Task StopFilling()
         {
-            //await _fuelDispenserService.StopRefuelingAsync(SelectedNozzle);
+            await _hub.InvokeAsync("StopRefuelingAsync", SelectedNozzle.Group);
         }
 
         [Command]
@@ -240,6 +226,46 @@ namespace KIT.GasStation.ViewModels
             if (SelectedNozzle != null)
             {
                 await ChangeControlModeAsync(SelectedNozzle);
+            }
+        }
+
+        [Command]
+        public async Task StartFullRefueling()
+        {
+            try
+            {
+                if (SelectedNozzle != null)
+                {
+                    FuelSale fuelSale = new()
+                    {
+                        TankId = SelectedNozzle.TankId,
+                        ShiftId = _shiftStore.CurrentShift.Id,
+                        NozzleId = SelectedNozzle.Id,
+                        Sum = 100 * SelectedNozzle.Tank.Fuel.Price,
+                        Quantity = 100,
+                        Price = SelectedNozzle.Tank.Fuel.Price,
+                        ReceivedCount = SelectedNozzle.LastCounter,
+                        IsForSum = false,
+                        CreateDate = DateTime.Now,
+                        PaymentType = PaymentType.Cash,
+                    };
+                    
+
+                    if (await CanFuelSale(fuelSale))
+                    {
+                        var fiscalData = _cashRegisterStore.SaleAsync(fuelSale, SelectedNozzle.Tank.Fuel);
+
+                        if (fiscalData != null)
+                        {
+                            fuelSale.FiscalData = await fiscalData;
+                            await _fuelSaleService.CreateAsync(fuelSale);
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+
             }
         }
 
@@ -252,6 +278,9 @@ namespace KIT.GasStation.ViewModels
             try
             {
                 if (Nozzles.Count == 0) return;
+
+                // Получаем информацию о последних продажах по пистолетам
+                await GetNozzleLastFuelSale();
 
                 _hub = _hubClient.Connection;
 
@@ -267,9 +296,6 @@ namespace KIT.GasStation.ViewModels
                 //_fuelDispenserService = await _fuelDispenserFactory.CreateAsync(Nozzles);
 
                 //if (_fuelDispenserService == null) return;
-
-                // Получаем информацию о последних продажах по пистолетам
-                await GetNozzleLastFuelSale();
 
                 //_fuelDispenserService.OnStatusChanged += OnStatusChanged;
                 //_fuelDispenserService.OnCounterReceived += OnCounterReceived;
@@ -362,8 +388,20 @@ namespace KIT.GasStation.ViewModels
 
                 SelectedNozzle.FuelSale.ReceivedQuantity = quantity;
                 SelectedNozzle.FuelSale.ReceivedSum = sum;
-                ReceivedQuantity = quantity;
-                ReceivedSum = sum;
+
+                if (SelectedNozzle.FuelSale.ReceivedQuantity > SelectedNozzle.FuelSale.Quantity)
+                {
+                    SelectedNozzle.FuelSale.OperationType = OperationType.Return;
+
+                    await _fuelSaleService.UpdateAsync(SelectedNozzle.FuelSale.Id, SelectedNozzle.FuelSale);
+
+                    if (SelectedNozzle.FuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
+                    {
+                        var fiscalData = await _cashRegisterStore
+                            .ReturnAndReceivedSaleAsync(SelectedNozzle.FuelSale, SelectedNozzle.Tank.Fuel, _userStore.CurrentUser.FullName);
+                    }
+                }
+
                 nozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.Completed;
                 await _fuelSaleService.UpdateAsync(nozzle.FuelSale.Id, nozzle.FuelSale);
                 await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
@@ -411,7 +449,18 @@ namespace KIT.GasStation.ViewModels
         {
             if (nozzle.FuelSale == null) return;
 
-            nozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.InProgress;
+            nozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.InProcessed;
+            await _fuelSaleService.UpdateAsync(nozzle.FuelSale.Id, nozzle.FuelSale);
+        }
+
+        /// <summary>
+        /// Обработчик события ожидания остановки заправки
+        /// </summary>
+        private async Task OnWaitingStop(Nozzle nozzle)
+        {
+            if (nozzle.FuelSale == null) return;
+
+            nozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.Processed;
             await _fuelSaleService.UpdateAsync(nozzle.FuelSale.Id, nozzle.FuelSale);
         }
 
@@ -425,31 +474,15 @@ namespace KIT.GasStation.ViewModels
 
             if (quantity == 0) return;
 
-            var nozzle = Nozzles.FirstOrDefault(n => n.Group == deviceResponse.Group);
-
-            if (nozzle is null) return;
-
             if (SelectedNozzle == null) return;
 
             if (SelectedNozzle.FuelSale == null) return;
 
-            if (SelectedNozzle.FuelSale.FuelSaleStatus == FuelSaleStatus.None)
-            {
-                SelectedNozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.InProgress;
-            }
-
-            if (SelectedNozzle.FuelSale.FuelSaleStatus == FuelSaleStatus.InProgress)
+            await Application.Current.Dispatcher.InvokeAsync(() => 
             {
                 SelectedNozzle.FuelSale.ReceivedQuantity = quantity;
                 SelectedNozzle.FuelSale.ReceivedSum = sum;
-                ReceivedQuantity = quantity;
-                ReceivedSum = sum;
-            }
-
-            await _fuelSaleService.UpdateAsync(SelectedNozzle.FuelSale.Id, SelectedNozzle.FuelSale);
-
-            SelectedNozzle.FuelSale.FuelSaleStatus = FuelSaleStatus.InProgress;
-            await _fuelSaleService.UpdateAsync(SelectedNozzle.FuelSale.Id, SelectedNozzle.FuelSale);
+            }, DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -478,7 +511,7 @@ namespace KIT.GasStation.ViewModels
                     await _hub.InvokeAsync("CompleteRefuelingAsync", nozzle.Group);
                     break;
                 case NozzleStatus.WaitingStop:
-                    await _hub.InvokeAsync("CompleteRefuelingAsync", nozzle.Group);
+                    await OnWaitingStop(nozzle);
                     break;
                 case NozzleStatus.Blocking:
                     break;
@@ -765,6 +798,8 @@ namespace KIT.GasStation.ViewModels
         /// </summary>
         private void FuelSaleService_OnCreated(FuelSale fuelSale)
         {
+            if (fuelSale.OperationType is not OperationType.Sale) return;
+
             var nozzle = Nozzles.FirstOrDefault(n => n.Id == fuelSale.NozzleId);
 
             if (nozzle is null) return;
@@ -798,8 +833,6 @@ namespace KIT.GasStation.ViewModels
                     }
                 }
             });
-
-            CanSelectedNozzle = false;
         }
 
         private void FuelSaleService_OnUpdated(FuelSale fuelSale)
@@ -816,8 +849,6 @@ namespace KIT.GasStation.ViewModels
             {
                 nozzle.SalesSum = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, _shiftStore.CurrentShift.Id);
             });
-
-            CanSelectedNozzle = true;
         }
 
         private async void UserStore_OnLogout()
@@ -1016,13 +1047,121 @@ namespace KIT.GasStation.ViewModels
                 {
                     nozzle.SalesSum = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, _shiftStore.CurrentShift.Id);
 
-                    FuelSale? fuelSale = await _fuelSaleService.GetLastFuelSale(nozzle.Id, _shiftStore.CurrentShift.Id);
+                    FuelSale? fuelSale = await _fuelSaleService.GetLastFuelSale(nozzle.Id);
                     if (fuelSale != null)
                     {
                         nozzle.FuelSale = fuelSale;
                     }
                 }
             }
+        }
+
+        #endregion
+
+        #region ККМ
+
+        private async Task<bool> CanFuelSale(FuelSale fuelSale)
+        {
+            if (!ValidateNozzleSelection() || !await ValidateShift() || !ValidateCashRegisterShift()
+                || !await ValidateFuelQuantity(fuelSale))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private async Task<bool> ValidateShift()
+        {
+            MessageResult result = MessageResult.None;
+            if (_shiftStore.CurrentShift == null)
+            {
+                result = MessageBoxService.ShowMessage("Смена не открыта. Открыть новую смену?", "Внимание", MessageButton.YesNo, MessageIcon.Question);
+            }
+            else
+            {
+                switch (_shiftStore.CurrentShiftState)
+                {
+                    case ShiftState.Closed:
+                        result = MessageBoxService.ShowMessage("Смена закрыта. Открыть новую смену?", "Внимание", MessageButton.YesNo, MessageIcon.Question);
+                        break;
+                    case ShiftState.Exceeded24Hours:
+                        result = MessageBoxService.ShowMessage("Смена работает более 24 часов. Закрыть текущую смену и открыть новую?", "Внимание", MessageButton.YesNo, MessageIcon.Question);
+                        if (result == MessageResult.Yes)
+                        {
+                            await _shiftStore.CloseShiftAsync();
+                        }
+                        break;
+                }
+            }
+            if (result == MessageResult.Yes)
+            {
+                return await _shiftStore.OpenShiftAsync();
+            }
+
+            if (result == MessageResult.No)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidateCashRegisterShift()
+        {
+            //Проверяем, настроено ли ККМ в Конфигураторе оборудования
+            if (_cashRegisterStore.CashRegister == null)
+            {
+                MessageBoxService.ShowMessage(
+                        "Ошибка конфигурации!",
+                        "ККМ не настроено. Проверьте настройки в Конфигураторе оборудования.",
+                        MessageButton.OK,
+                        MessageIcon.Error
+                    );
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ValidateNozzleSelection()
+        {
+            if (SelectedNozzle == null)
+            {
+                MessageBoxService.ShowMessage("Выберите ТРК!", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
+                return false;
+            }
+
+            if (SelectedNozzle.Status != NozzleStatus.Ready)
+            {
+                MessageBoxService.ShowMessage($"{SelectedNozzle.Name} занята или заблокирована.", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
+                return false;
+            }
+
+            return true;
+        }
+
+        private async Task<bool> ValidateFuelQuantity(FuelSale fuelSale)
+        {
+            IEnumerable<TankFuelQuantityView> tanks = await _tankFuelQuantityView.GetAllAsync();
+            TankFuelQuantityView tank = tanks.First(t => t.Id == SelectedNozzle.TankId);
+
+            if (tank.MinimumSize > 0)
+            {
+                if ((tank.CurrentFuelQuantity - fuelSale.Quantity) <= tank.MinimumSize)
+                {
+                    MessageBoxService.ShowMessage("Недостаточно топлива в резервуаре с учетом мертвого остатка", "Внимание!", MessageButton.OK, MessageIcon.Exclamation);
+                    return false;
+                }
+            }
+            else
+            {
+                if ((tank.CurrentFuelQuantity - fuelSale.Quantity) < 0)
+                {
+                    MessageBoxService.ShowMessage("Недостаточно топлива в резервуаре!", "Внимание!", MessageButton.OK, MessageIcon.Exclamation);
+                    return false;
+                }
+            }
+            return true;
         }
 
         #endregion

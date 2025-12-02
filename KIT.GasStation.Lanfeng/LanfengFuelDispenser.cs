@@ -113,6 +113,11 @@ namespace KIT.GasStation.Lanfeng
                     await ChangeControlModeAsync(groupName, isProgramMode);
                 });
 
+                _hub.On<string>("StopRefuelingAsync", async (groupName) =>
+                {
+                    await StopRefuelingAsync(groupName);
+                });
+
                 _hub.On<string>("GetCountersAsync", async (groupName) =>
                 {
                     var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
@@ -367,6 +372,24 @@ namespace KIT.GasStation.Lanfeng
 
                 var cmd = bySum ? Command.StartFillingSum : Command.StartFillingQuantity;
                 await ExecuteCommandAsync(cmd, Address, column.LanfengAddress, sum);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
+            }
+        }
+
+        private async Task StopRefuelingAsync(string groupName)
+        {
+            try
+            {
+                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
+                if (column is null)
+                {
+                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.StopFilling, Address, column.LanfengAddress);
             }
             catch (Exception e)
             {

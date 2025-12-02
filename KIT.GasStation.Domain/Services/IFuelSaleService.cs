@@ -8,7 +8,7 @@ namespace KIT.GasStation.Domain.Services
 
         Task<FuelSale> GetFuelSaleWithPaymentType(int id);
         Task<decimal> GetReceivedQuantityAsync(int nozzleId, int shiftId);
-        Task<FuelSale?> GetLastFuelSale(int nozzleId, int shiftId);
+        Task<FuelSale?> GetLastFuelSale(int nozzleId);
         Task<IEnumerable<FuelSale>> GetAllAsync(int shiftId);
 
         /// <summary>

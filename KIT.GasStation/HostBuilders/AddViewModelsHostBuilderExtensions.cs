@@ -111,7 +111,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IUnregisteredSaleService>(),
                 services.GetRequiredService<IFuelService>(),
                 services.GetRequiredService<IUserStore>(),
-                services.GetRequiredService<IHubClient>());
+                services.GetRequiredService<IHubClient>(),
+                services.GetRequiredService<IViewService<TankFuelQuantityView>>());
         }
 
         private static DiscountViewModel CreateDiscountViewModel(IServiceProvider services)
@@ -190,14 +191,16 @@ namespace KIT.GasStation.HostBuilders
             return new UncompletedSalesViewModel(services.GetRequiredService<ILogger<UncompletedSalesViewModel>>(),
                 services.GetRequiredService<IShiftStore>(),
                 services.GetRequiredService<IFuelSaleService>(),
-                services.GetRequiredService<ICashRegisterStore>());
+                services.GetRequiredService<ICashRegisterStore>(),
+                services.GetRequiredService<IUserStore>());
         }
 
         private static CompletedSalesViewModel CreateCompletedSalesViewModel(IServiceProvider services)
         {
             return new CompletedSalesViewModel(services.GetRequiredService<IShiftStore>(),
                 services.GetRequiredService<IFuelSaleService>(),
-                services.GetRequiredService<ICashRegisterStore>());
+                services.GetRequiredService<ICashRegisterStore>(),
+                services.GetRequiredService<IFiscalDataService>());
         }
 
         private static FuelIntakeDetailViewModel CreateFuelIntakeDetailViewModel(IServiceProvider services)

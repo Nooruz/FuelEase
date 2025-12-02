@@ -25,6 +25,11 @@ namespace KIT.GasStation.Web.Hubs
         Task StartRefuelingAsync(string groupName, decimal sum, bool bySum);
 
         /// <summary>
+        /// Остановить заправку
+        /// </summary>
+        Task StopRefuelingAsync(string groupName);
+
+        /// <summary>
         /// Завершить заправку
         /// </summary>
         /// <param name="groupName">Название группы</param>

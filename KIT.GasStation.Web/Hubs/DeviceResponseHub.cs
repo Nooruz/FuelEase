@@ -82,6 +82,10 @@ namespace KIT.GasStation.Web.Hubs
 
         public Task StartRefuelingAsync(string groupName, decimal sum, bool bySum) =>
             Clients.Group(groupName).StartRefuelingAsync(groupName, sum, bySum);
+
+        public Task StopRefuelingAsync(string groupName) =>
+            Clients.Group(groupName).StopRefuelingAsync(groupName);
+
         public Task ColumnLiftedChanged(string groupName, bool isLifted) =>
             Clients.Group(groupName).ColumnLiftedChanged(groupName, isLifted);
         public Task CompleteRefuelingAsync(string groupName) =>

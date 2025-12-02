@@ -4,6 +4,7 @@ using DevExpress.Xpf.Editors;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
+using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
@@ -279,12 +280,12 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                //Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.Id == fuelSale.NozzleId);
+                Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.Id == fuelSale.NozzleId);
 
-                //if (nozzle != null && nozzle.FuelSale != null)
-                //{
-                //    nozzle.FuelSale = fuelSale;
-                //}
+                if (nozzle != null && nozzle.FuelSale != null)
+                {
+                    nozzle.FuelSale = fuelSale;
+                }
             }
             catch (Exception e)
             {
@@ -346,17 +347,17 @@ namespace KIT.GasStation.ViewModels
                 return true;
             }
 
-            // Проверяем, настроено ли ККМ в Конфигураторе оборудования
-            //if (_cashRegisterStore.CashRegister == null)
-            //{
-            //    MessageBoxService.ShowMessage(
-            //            "Ошибка конфигурации!",
-            //            "ККМ не настроено. Проверьте настройки в Конфигураторе оборудования.",
-            //            MessageButton.OK,
-            //            MessageIcon.Error
-            //        );
-            //    return false;
-            //}
+            //Проверяем, настроено ли ККМ в Конфигураторе оборудования
+            if (_cashRegisterStore.CashRegister == null)
+            {
+                MessageBoxService.ShowMessage(
+                        "Ошибка конфигурации!",
+                        "ККМ не настроено. Проверьте настройки в Конфигураторе оборудования.",
+                        MessageButton.OK,
+                        MessageIcon.Error
+                    );
+                return false;
+            }
 
             // Определяем сообщение в зависимости от текущего статуса ККМ
             //string? message = _cashRegisterStore.CashRegister.Status switch
@@ -369,7 +370,7 @@ namespace KIT.GasStation.ViewModels
             //    _ => null
             //};
 
-            // Если сообщение определено, выводим его пользователю
+            //// Если сообщение определено, выводим его пользователю
             //if (message != null)
             //{
             //    _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
@@ -386,11 +387,11 @@ namespace KIT.GasStation.ViewModels
                 return false;
             }
 
-            //if (SelectedNozzle.Status != NozzleStatus.Ready)
-            //{
-            //    MessageBoxService.ShowMessage($"{SelectedNozzle.Name} занята или заблокирована.", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
-            //    return false;
-            //}
+            if (SelectedNozzle.Status != NozzleStatus.Ready)
+            {
+                MessageBoxService.ShowMessage($"{SelectedNozzle.Name} занята или заблокирована.", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
+                return false;
+            }
 
             return true;
         }
