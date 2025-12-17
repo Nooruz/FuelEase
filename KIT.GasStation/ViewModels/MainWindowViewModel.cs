@@ -1,7 +1,10 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
+using DevExpress.Xpf.Core;
+using KIT.GasStation.Domain.Models;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Navigators;
+using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -20,12 +23,27 @@ namespace KIT.GasStation.ViewModels
         private readonly ILogger<MainWindowViewModel> _logger;
         private readonly INavigator _navigator;
         private readonly ICustomSplashScreenService _splashScreenService;
+        private readonly IUserStore _userStore;
 
         #endregion
 
         #region Public Properties
 
         public BaseViewModel CurrentViewModel => _navigator.CurrentViewModel;
+        public string UserName
+        {
+            get
+            {
+                if (_userStore != null)
+                {
+                    if (_userStore.CurrentUser != null)
+                    {
+                        return $"{App.ProductName} Работает: {_userStore.CurrentUser.FullName}";
+                    }
+                }
+                return "";
+            }
+        }
         
         #endregion
 
@@ -33,16 +51,20 @@ namespace KIT.GasStation.ViewModels
 
         public MainWindowViewModel(INavigator navigator,
             ILogger<MainWindowViewModel> logger,
-            ICustomSplashScreenService splashScreenService)
+            ICustomSplashScreenService splashScreenService,
+            IUserStore userStore)
         {
             _logger = logger;
             _navigator = navigator;
             _splashScreenService = splashScreenService;
+            _userStore = userStore;
 
             _navigator.StateChanged += Navigator_StateChanged;
 
             _splashScreenService.OnShow += SplashScreenService_OnShow;
             _splashScreenService.OnClose += SplashScreenService_OnClose;
+
+            _userStore.OnLogin += UserStore_OnLogin;
         }
 
         #endregion
@@ -63,7 +85,7 @@ namespace KIT.GasStation.ViewModels
         }
 
         [Command]
-        public void Closing(CancelEventArgs args)
+        public async Task Closing(CancelEventArgs args)
         {
             if (MessageBoxService == null)
             {
@@ -76,6 +98,26 @@ namespace KIT.GasStation.ViewModels
             {
                 args.Cancel = true;
             }
+            else
+            {
+                //await Services.ServiceManager.StopWebAsync();
+                //await Services.ServiceManager.StopWorkerAsync();
+            }
+        }
+
+        [Command]
+        public void MainWindowLoaded(RoutedEventArgs args)
+        {
+            if (args.Source is ThemedWindow window)
+            {
+                window.IsVisibleChanged += (s, e) =>
+                {
+                    if ((bool)e.NewValue)
+                    {
+                        OnPropertyChanged(nameof(UserName));
+                    }
+                };
+            }
         }
 
         #endregion
@@ -85,6 +127,11 @@ namespace KIT.GasStation.ViewModels
         private void Navigator_StateChanged()
         {
             OnPropertyChanged(nameof(CurrentViewModel));
+        }
+
+        private void UserStore_OnLogin(User user)
+        {
+            OnPropertyChanged(nameof(UserName));
         }
 
         #endregion

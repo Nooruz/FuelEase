@@ -112,11 +112,11 @@ namespace KIT.GasStation.ViewModels
         /// </summary>
         /// <returns></returns>
         [Command]
-        public void ContinueFilling()
+        public void ContinueFueling()
         {
-            if (SelectedFuelSale != null && SelectedFuelSale.Nozzle != null)
+            if (SelectedFuelSale != null)
             {
-                _fuelSaleService.ContinueFilling(SelectedFuelSale.Nozzle);
+                _fuelSaleService.ResumeFueling(SelectedFuelSale);
             }
         }
 

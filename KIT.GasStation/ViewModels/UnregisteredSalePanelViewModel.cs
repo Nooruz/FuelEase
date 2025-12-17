@@ -26,7 +26,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IShiftStore _shiftStore;
         private readonly IDisсountStore _disсountStore;
         private readonly ICashRegisterStore _cashRegisterStore;
-        private readonly ICustomSplashScreenService _customSplashScreenService;
+        private readonly ICustomSplashScreenService _splashScreenService;
         private readonly ILogger<UnregisteredSalePanelViewModel> _logger;
         private readonly ILogger<SaleManagerViewModel> _saleManagerViewModelLoger;
         private readonly IUnregisteredSaleService _unregisteredSaleService;
@@ -79,7 +79,7 @@ namespace KIT.GasStation.ViewModels
             IUnregisteredSaleService unregisteredSaleService,
             IShiftStore shiftStore,
             INavigator navigation,
-            ICustomSplashScreenService customSplashScreenService,
+            ICustomSplashScreenService splashScreenService,
             IDisсountStore disсountStore,
             ICashRegisterStore cashRegisterStore,
             IFuelService fuelService)
@@ -90,7 +90,7 @@ namespace KIT.GasStation.ViewModels
             _fuelSaleService = fuelSaleService;
             _shiftStore = shiftStore;
             _navigation = navigation;
-            _customSplashScreenService = customSplashScreenService;
+            _splashScreenService = splashScreenService;
             _disсountStore = disсountStore;
             _cashRegisterStore = cashRegisterStore;
             _fuelService = fuelService;
@@ -109,9 +109,8 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                _customSplashScreenService.Show();
-
                 WindowService.Title = "Регистрация продаж";
+
                 PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore)
                 {
                     CreateFuelSale = CreateFuelSale(SelectedUnregisteredSale),
@@ -122,10 +121,6 @@ namespace KIT.GasStation.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError("Ошибка при открытии окна регистрации продаж", ex);
-            }
-            finally
-            {
-                _customSplashScreenService.Close();
             }
         }
 

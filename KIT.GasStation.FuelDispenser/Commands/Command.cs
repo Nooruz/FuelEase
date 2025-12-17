@@ -10,27 +10,27 @@
         /// <summary>
         /// Начать заливку топлива на сумму
         /// </summary>
-        StartFillingSum,
+        StartFuelingSum,
 
         /// <summary>
         /// Начать заливку топлива на количество
         /// </summary>
-        StartFillingQuantity,
+        StartFuelingQuantity,
 
         /// <summary>
         /// Остановить заливку топлива
         /// </summary>
-        StopFilling,
+        StopFueling,
 
         /// <summary>
         /// Завершить заливку
         /// </summary>
-        CompleteFilling,
+        CompleteFueling,
 
         /// <summary>
         /// Продолжить заливку
         /// </summary>
-        ContinueFilling,
+        ContinueFueling,
 
         /// <summary>
         /// Изменить цену

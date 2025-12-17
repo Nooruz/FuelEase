@@ -44,13 +44,13 @@
         //        public event Action OnColumnLowered;
 
         //        /// <inheritdoc/>
-        //        //public event Action<Guid, decimal, decimal> OnStartedFilling;
+        //        //public event Action<Guid, decimal, decimal> OnStartedFueling;
 
         //        /// <inheritdoc/>
         //        public event Action<int> OnWaitingRemoved;
 
         //        /// <inheritdoc/>
-        //        public event Action<int> OnCompletedFilling;
+        //        public event Action<int> OnCompletedFueling;
 
         //        /// <inheritdoc/>
         //        public event Action OnConnectionLost;
@@ -316,7 +316,7 @@
         //        }
 
         //        /// <inheritdoc/>
-        //        public async Task StartRefuelingQuantityAsync(Nozzle nozzle, decimal? quantity = null)
+        //        public async Task StartFuelingQuantityAsync(Nozzle nozzle, decimal? quantity = null)
         //        {
         //            try
         //            {
@@ -327,7 +327,7 @@
         //                var request = new byte[14];
         //                request[0] = 0xA5;
         //                request[1] = (byte)(GetNozzleAddress(_selectedNozzle) << 4 | _address);
-        //                request[2] = (byte)Command.StartFillingQuantity;
+        //                request[2] = (byte)Command.StartFuelingQuantity;
         //                request = AddSumBytes(request, quantity == null ? _selectedNozzle.Quantity : quantity.Value);
         //                request[13] = ChecksumHelper.CalculateChecksum(request);
 
@@ -345,7 +345,7 @@
         //        }
 
         //        /// <inheritdoc/>
-        //        public async Task StartRefuelingSumAsync(Nozzle nozzle, decimal? sum = null)
+        //        public async Task StartFuelingSumAsync(Nozzle nozzle, decimal? sum = null)
         //        {
         //            try
         //            {
@@ -356,7 +356,7 @@
         //                var request = new byte[14];
         //                request[0] = 0xA5;
         //                request[1] = (byte)(GetNozzleAddress(_selectedNozzle) << 4 | _address);
-        //                request[2] = (byte)Command.StartFillingSum;
+        //                request[2] = (byte)Command.StartFuelingSum;
         //                request = AddSumBytes(request, sum == null ? _selectedNozzle.FuelSale.Sum : sum.Value);
         //                request[13] = ChecksumHelper.CalculateChecksum(request);
 
@@ -374,7 +374,7 @@
         //        }
 
         //        /// <inheritdoc/>
-        //        public async Task StopRefuelingAsync(Nozzle nozzle)
+        //        public async Task StopFuelingAsync(Nozzle nozzle)
         //        {
         //            try
         //            {
@@ -385,7 +385,7 @@
         //                var request = new byte[14];
         //                request[0] = 0xA5;
         //                request[1] = (byte)(GetNozzleAddress(_selectedNozzle) << 4 | _address);
-        //                request[2] = (byte)Command.StopFilling;
+        //                request[2] = (byte)Command.StopFueling;
         //                request[13] = ChecksumHelper.CalculateChecksum(request);
         //                await SendAndParseAsync(request);
         //            }
@@ -401,7 +401,7 @@
         //        }
 
         //        /// <inheritdoc/>
-        //        public async Task ContinueFillingAsync(int tube)
+        //        public async Task ContinueFuelingAsync(int tube)
         //        {
         //            try
         //            {
@@ -420,7 +420,7 @@
         //                var request = new byte[14];
         //                request[0] = 0xA5;
         //                request[1] = (byte)(GetNozzleAddress(nozzle) << 4 | _address);
-        //                request[2] = (byte)Command.ContinueFilling;
+        //                request[2] = (byte)Command.ContinueFueling;
         //                request[13] = ChecksumHelper.CalculateChecksum(request);
 
         //                // Отправляем запрос и обрабатываем ответ
@@ -438,7 +438,7 @@
         //        }
 
         //        /// <inheritdoc/>
-        //        public async Task CompleteFillingAsync(int tube)
+        //        public async Task CompleteFuelingAsync(int tube)
         //        {
         //            try
         //            {
@@ -457,7 +457,7 @@
         //                var request = new byte[14];
         //                request[0] = 0xA5;
         //                request[1] = (byte)(GetNozzleAddress(nozzle) << 4 | _address);
-        //                request[2] = (byte)Command.CompleteFilling;
+        //                request[2] = (byte)Command.CompleteFueling;
         //                request[13] = ChecksumHelper.CalculateChecksum(request);
 
         //                // Отправляем запрос и обрабатываем ответ
@@ -879,13 +879,13 @@
         //                    HandleStatus(response);
         //                    break;
 
-        //                case Command.CompleteFilling:
-        //                    HandleFillingQuantity(response);
+        //                case Command.CompleteFueling:
+        //                    HandleFuelingQuantity(response);
         //                    int columnNumber = (response[11] & 0xF0) >> 4;
         //                    Nozzle? nozzle = GetNozzleByAddress(columnNumber);
         //                    if (nozzle is not null)
         //                    {
-        //                        OnCompletedFilling?.Invoke(nozzle.Id);
+        //                        OnCompletedFueling?.Invoke(nozzle.Id);
         //                    }
         //                    break;
 
@@ -899,11 +899,11 @@
         //            switch (status)
         //            {
         //                case NozzleStatus.PumpStop:
-        //                    await CompleteFilling(response);
+        //                    await CompleteFueling(response);
         //                    break;
 
         //                case NozzleStatus.PumpWorking:
-        //                    HandleFillingQuantity(response);
+        //                    HandleFuelingQuantity(response);
         //                    break;
 
         //                case NozzleStatus.WaitingRemoved:
@@ -973,9 +973,9 @@
         //        }
 
         //        /// <summary>
-        //        /// Обработка команды FillingQuantity
+        //        /// Обработка команды FuelingQuantity
         //        /// </summary>
-        //        private void HandleFillingQuantity(byte[] response)
+        //        private void HandleFuelingQuantity(byte[] response)
         //        {
         //            try
         //            {
@@ -996,7 +996,7 @@
         //            }
         //            catch (Exception e)
         //            {
-        //                _logger.Error("Ошибка в обработчике команды FillingQuantity", e);
+        //                _logger.Error("Ошибка в обработчике команды FuelingQuantity", e);
         //            }
         //        }
 
@@ -1019,7 +1019,7 @@
         //            }
         //        }
 
-        //        private async Task CompleteFilling(byte[] response)
+        //        private async Task CompleteFueling(byte[] response)
         //        {
         //            var columnAddress = (response[12] & 0x0F);
         //            Nozzle? nozzle = GetNozzleByAddress(columnAddress);
@@ -1032,7 +1032,7 @@
         //            var request = new byte[14];
         //            request[0] = 0xA5;
         //            request[1] = (byte)(GetNozzleAddress(nozzle) << 4 | _address);
-        //            request[2] = (byte)Command.CompleteFilling;
+        //            request[2] = (byte)Command.CompleteFueling;
         //            request[13] = ChecksumHelper.CalculateChecksum(request);
         //            await SendAndParseAsync(request);
         //        }

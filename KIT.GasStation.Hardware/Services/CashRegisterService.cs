@@ -33,6 +33,7 @@ namespace KIT.GasStation.Hardware.Services
                 case CashRegisterType.MF:
                     break;
                 case CashRegisterType.NewCas:
+                    cashRegister.Settings = new NewCasCashRegisterSettings();
                     break;
                 default:
                     break;

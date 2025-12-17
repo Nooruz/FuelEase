@@ -97,14 +97,14 @@ namespace KIT.GasStation.ViewModels
                 return;
             }
 
-            if (SelectedFuelSale.FiscalData.ReturnCheck != null)
-            {
-                MessageBoxService.ShowMessage("Возврат по данной продаже уже был произведен ранее.", 
-                    "Возврат невозможен",
-                    MessageButton.OK,
-                    MessageIcon.Warning);
-                return;
-            }
+            //if (SelectedFuelSale.FiscalData.ReturnCheck != null)
+            //{
+            //    MessageBoxService.ShowMessage("Возврат по данной продаже уже был произведен ранее.", 
+            //        "Возврат невозможен",
+            //        MessageButton.OK,
+            //        MessageIcon.Warning);
+            //    return;
+            //}
 
             if (SelectedFuelSale.Tank == null)
             {

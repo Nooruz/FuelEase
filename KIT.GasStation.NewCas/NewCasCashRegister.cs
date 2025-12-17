@@ -5,12 +5,13 @@ using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Serilog;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.Tracing;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Drawing;
+using System.Drawing.Printing;
 
 namespace KIT.GasStation.NewCas
 {
@@ -22,6 +23,7 @@ namespace KIT.GasStation.NewCas
         private ILogger _logger;
         private CashRegister _cashRegister;
         private HttpClient _client;
+        private NewCasCashRegisterSettings _settings;
 
         #endregion
 
@@ -51,33 +53,37 @@ namespace KIT.GasStation.NewCas
         /// <inheritdoc/>
         public async Task CloseShiftAsync(string cashierName)
         {
-            DayStateNewCas state = await GetStateAsync();
+            var state = await GetStateAsync(); // кидает CashRegisterException при ошибке
+
+            if (state == DayStateNewCas.ShiftClosed)
+                throw new CashRegisterException("Смена уже закрыта.");
 
             if (state == DayStateNewCas.ShiftOpened)
             {
-                var response = new
+                var request = new
                 {
                     cashierName = cashierName,
                     printToBitmaps = true
                 };
 
-                HttpResponseMessage? closeShift = await SendRequest("/fiscal/shifts/closeDay", response);
+                var response = await SendRequest("/fiscal/shifts/closeDay", request);
 
-                if (closeShift != null && closeShift.IsSuccessStatusCode)
-                {
-                    OpenAndCloseRecResp? message = JsonSerializer.Deserialize<OpenAndCloseRecResp>(await closeShift.Content.ReadAsStringAsync());
-                    if (message != null)
-                    {
-                        await CreateJGP(message.Bitmaps);
-                        return;
-                    }
-                }
+                var message = JsonSerializer.Deserialize<OpenAndCloseRecResp>(
+                    await response.Content.ReadAsStringAsync());
+
+                if (message == null)
+                    throw new CashRegisterException("ККМ вернула пустой ответ при закрытии смены.");
+
+                if (message.Status != OpenAndCloseRecRespStatus.Success)
+                    throw new CashRegisterException($"Ошибка ККМ при закрытии смены: {message.ErrorMessage}");
+
+                CreateJGP(message.Bitmaps);
+
+                OnShiftClosed?.Invoke();
+                return;
             }
 
-            if (state == DayStateNewCas.ShiftClosed)
-            {
-                throw new CashRegisterException("Смена уже закрыта.");
-            }
+            throw new CashRegisterException("Неизвестное состояние смены ККМ.");
         }
 
         /// <inheritdoc/>
@@ -91,41 +97,55 @@ namespace KIT.GasStation.NewCas
                 throw new CashRegisterException("ККМ не найдена. Проверьте настройки ККМ.");
             }
 
+            if (cashRegister.Settings is NewCasCashRegisterSettings settings)
+            {
+                _settings = settings;
+            }
+
             _cashRegister = cashRegister;
         }
 
         /// <inheritdoc/>
         public async Task OpenShiftAsync(string cashierName)
         {
-            DayStateNewCas state = await GetStateAsync();
+            var state = await GetStateAsync(); // сам по себе уже кидает CashRegisterException при ошибке
+
+            if (state == DayStateNewCas.ShiftOpened)
+                throw new CashRegisterException("Смена уже открыта.");
 
             if (state == DayStateNewCas.ShiftClosed)
             {
-                var response = new
+                var request = new
                 {
                     cashierName = cashierName,
                     printToBitmaps = true
                 };
 
-                HttpResponseMessage? openShift = await SendRequest("/fiscal/shifts/openDay", response);
+                var response = await SendRequest("/fiscal/shifts/openDay", request);
 
-                if (openShift != null && openShift.IsSuccessStatusCode)
-                {
-                    throw new CashRegisterException("Смена успешно открыта.");
-                }
+                var message = JsonSerializer.Deserialize<OpenAndCloseRecResp>(
+                    await response.Content.ReadAsStringAsync());
+
+                if (message == null)
+                    throw new CashRegisterException("ККМ вернула пустой ответ при открытии смены.");
+
+                if (message.Status != OpenAndCloseRecRespStatus.Success)
+                    throw new CashRegisterException($"Ошибка ККМ при открытии смены: {message.ErrorMessage}");
+
+                CreateJGP(message.Bitmaps);
+
+                OnShiftOpened?.Invoke();
+                return;
             }
 
-            if (state == DayStateNewCas.ShiftOpened)
-            {
-                throw new CashRegisterException("Смена уже открыта.");
-            }
+            throw new CashRegisterException("Неизвестное состояние смены ККМ.");
         }
 
         /// <inheritdoc/>
         public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
         {
             // Данные для отправки в запросе
-            OpenAndCloseRec openAndCloseRec = new()
+            var openAndCloseRec = new OpenAndCloseRec()
             {
                 RecType = RecType.Coming,
                 CashierName = cashierName,
@@ -139,7 +159,7 @@ namespace KIT.GasStation.NewCas
                         ItemName = fuel.Name,
                         Article  = "",
                         Total    = fuelSale.Sum.ToString(),
-                        Unit     = fuel.UnitOfMeasurement.Name,
+                        Unit     = "л",
                         VatNum   = fuel.ValueAddedTax ? 1 : 0,
                         StNum    = (int)(fuel.SalesTax * 100)
                     }
@@ -154,36 +174,45 @@ namespace KIT.GasStation.NewCas
                 }
             };
 
-            HttpResponseMessage? sale = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
+            var response = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
 
-            return await CreateFiscalDataAsync(sale);
+            var fiscalData = await CreateFiscalDataAsync(response);
+
+            return fiscalData!;
         }
 
         /// <inheritdoc/>
         public async Task XReportAsync(bool printReceipt = true)
         {
-            var response = new
+            var request = new
             {
                 printToBitmaps = true,
             };
 
-            var stateMessage = await SendRequest("/fiscal/shifts/printXReport", response);
+            var response = await SendRequest("/fiscal/shifts/printXReport", request);
 
-            if (stateMessage != null && stateMessage.IsSuccessStatusCode)
-            {
-                OpenAndCloseRecResp state = JsonSerializer.Deserialize<OpenAndCloseRecResp>(await stateMessage.Content.ReadAsStringAsync());
-                if (state != null)
-                {
-                    await CreateJGP(state.Bitmaps);
-                }
-            }
+            var state = JsonSerializer.Deserialize<OpenAndCloseRecResp>(
+                await response.Content.ReadAsStringAsync());
+
+            if (state == null)
+                throw new CashRegisterException("ККМ вернула пустой ответ при печати X-отчета.");
+
+            if (state.Status != OpenAndCloseRecRespStatus.Success)
+                throw new CashRegisterException($"Ошибка ККМ при печати X-отчета: {state.ErrorMessage}");
+
+            if (printReceipt)
+                CreateJGP(state.Bitmaps);
         }
 
         /// <inheritdoc/>
         public async Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel)
         {
+            if (fuelSale.FiscalData == null)
+                throw new CashRegisterException("У продажи отсутствуют фискальные данные для возврата.");
+
+
             //Данные для отправки в запросе
-            OpenAndCloseRec openAndCloseRec = new()
+            var openAndCloseRec = new OpenAndCloseRec()
             {
                 RecType = RecType.ReturnComing,
                 PrintToBitmaps = true,
@@ -194,12 +223,12 @@ namespace KIT.GasStation.NewCas
                     new Goods {
                         Count = Math.Round(fuelSale.Sum / fuelSale.Price, 6),
                         Price = fuelSale.Price,
-                        ItemName = fuelSale.Tank.Fuel.Name,
+                        ItemName = fuel.Name,
                         Article = "",
                         Total = fuelSale.Sum.ToString(),
-                        Unit = fuelSale.Tank.Fuel.UnitOfMeasurement.Name,
-                        VatNum = fuelSale.Tank.Fuel.ValueAddedTax ? 1 : 0,
-                        StNum = (int)(fuelSale.Tank.Fuel.SalesTax * 100) } 
+                        Unit = fuel.UnitOfMeasurement.Name,
+                        VatNum = fuel.ValueAddedTax ? 1 : 0,
+                        StNum = (int)(fuel.SalesTax * 100) } 
                 },
                 PayItems = new []
                 {
@@ -211,37 +240,44 @@ namespace KIT.GasStation.NewCas
                 }
             };
 
-            HttpResponseMessage? sale = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
+            var response = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
 
-            if (sale != null && sale.IsSuccessStatusCode)
-            {
-                return await UpdateFiscalData(fuelSale, sale);
-            }
-            return null;
+            var fiscalData = await CreateFiscalDataAsync(response);
+
+            return fiscalData!;
         }
 
         /// <inheritdoc/>
         public async Task<string?> GetShiftStateAsync()
         {
-            return null;
+            var state = await GetStateAsync(); // при ошибке уже бросит CashRegisterException
+
+            return state switch
+            {
+                DayStateNewCas.ShiftOpened => "Открыта",
+                DayStateNewCas.ShiftClosed => "Закрыта",
+                _ => "Неизвестно"
+            };
         }
 
         /// <inheritdoc/>
         public async Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
         {
+            // 1) Возврат старой продажи
             var returnFiscalData = await ReturnAsync(fuelSale, fuel);
 
-            if (fuelSale.ReceivedQuantity > 0)
+            if (fuelSale.ReceivedQuantity <= 0)
+                return returnFiscalData; // ничего нового продавать не нужно
+
+            // 2) Новая продажа на реально полученное количество
+            var openAndCloseRec = new OpenAndCloseRec()
             {
-                // Данные для отправки в запросе
-                OpenAndCloseRec openAndCloseRec = new()
+                RecType = RecType.Coming,
+                CashierName = cashierName,
+                PrintToBitmaps = true,
+                Goods = new[]
                 {
-                    RecType = RecType.Coming,
-                    CashierName = cashierName,
-                    PrintToBitmaps = true,
-                    Goods = new[] 
-                    {
-                        new Goods() 
+                        new Goods()
                         {
                             Count = Math.Round(fuelSale.ReceivedSum / fuelSale.Price, 6),
                             Price = fuelSale.Price,
@@ -253,27 +289,21 @@ namespace KIT.GasStation.NewCas
                             StNum = (int)(fuelSale.Tank.Fuel.SalesTax * 100)
                         }
                     },
-                    PayItems = new[] 
-                    {
-                        new PayItems() 
+                PayItems = new[]
+                {
+                        new PayItems()
                         {
                             PayType = GetPayType(fuelSale.PaymentType),
                             Total = fuelSale.ReceivedSum.ToString()
                         }
                     }
-                };
+            };
 
-                HttpResponseMessage? sale = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
+            var saleResponse = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
 
-                if (sale != null)
-                {
-                    if (sale.IsSuccessStatusCode)
-                    {
-                        var saleFiscalData = await CreateFiscalDataAsync(sale);
-                    }
-                }
-            }
-            return null;
+            var newFiscalData = await CreateFiscalDataAsync(saleResponse);
+
+            return returnFiscalData;
         }
 
         #region Private Helpers
@@ -282,26 +312,24 @@ namespace KIT.GasStation.NewCas
         {
             try
             {
-                HttpResponseMessage? response = await GetResponseMessage(endpoint, data);
-                if (response != null)
+                var response = await GetResponseMessage(endpoint, data);
+
+                if (response == null)
+                    throw new CashRegisterException($"ККМ не ответила на запрос {endpoint}");
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return response;
-                    }
-                    else
-                    {
-                        var responseContent = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
-                        //HandleError(responseContent);
-                    }
+                    string body = await response.Content.ReadAsStringAsync();
+                    throw new CashRegisterException($"Ошибка ККМ ({response.StatusCode}): {body}");
                 }
+
+                return response;
             }
             catch (Exception e)
             {
                 LogError(e);
+                throw new CashRegisterException($"Ошибка выполнения запроса к ККМ: {e.Message}", e);
             }
-
-            return default; // Возвращайте значение по умолчанию в случае ошибки
         }
 
         private async Task<HttpResponseMessage?> GetResponseMessage(string api, object message)
@@ -309,34 +337,24 @@ namespace KIT.GasStation.NewCas
             try
             {
                 if (_client == null)
-                {
                     await GetOnlineCashRegister();
-                }
 
-                if (_client != null)
+                if (_client == null)
+                    throw new CashRegisterException("ККМ недоступна (клиент не создан)");
+
+                var json = JsonSerializer.Serialize(message, new JsonSerializerOptions
                 {
-                    JsonSerializerOptions options = new()
-                    {
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, // Игнорировать свойства, равные null
-                        WriteIndented = false
-                    };
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                });
 
-                    LogData(Newtonsoft.Json.JsonConvert.SerializeObject(message, new Newtonsoft.Json.JsonSerializerSettings
-                    {
-                        StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling.Default,
-                        NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
-                    }));
+                LogData(json);
 
-                    return await _client.PostAsync(api, new StringContent(JsonSerializer.Serialize(message, options),
-                        Encoding.UTF8, "application/json"));
-                }
-
-                return null;
+                return await _client.PostAsync(api, new StringContent(json, Encoding.UTF8, "application/json"));
             }
             catch (Exception e)
             {
                 LogError(e);
-                return null;
+                throw new CashRegisterException($"Ошибка связи с ККМ: {e.Message}", e);
             }
         }
 
@@ -344,23 +362,25 @@ namespace KIT.GasStation.NewCas
         {
             try
             {
-                if (_cashRegister != null)
+                if (_cashRegister == null)
+                    throw new CashRegisterException("ККМ не инициализирована.");
+
+                if (!await IsInternetConnectionAvailable())
+                    throw new CashRegisterException("ККМ недоступна по сети.");
+
+                _client = new HttpClient
                 {
-                    if (await IsInternetConnectionAvailable())
-                    {
-                        _client = new()
-                        {
-                            BaseAddress = new Uri(_cashRegister.Address)
-                        };
-                        _client.DefaultRequestHeaders.Accept.Clear();
-                        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                        _client.DefaultRequestHeaders.AcceptCharset.Add(new StringWithQualityHeaderValue("utf-8"));
-                    }
-                }
+                    BaseAddress = new Uri(_cashRegister.Address)
+                };
+
+                _client.DefaultRequestHeaders.Accept.Clear();
+                _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                _client.DefaultRequestHeaders.AcceptCharset.Add(new StringWithQualityHeaderValue("utf-8"));
             }
             catch (Exception e)
             {
                 LogError(e);
+                throw new CashRegisterException($"Ошибка подключения к ККМ: {e.Message}", e);
             }
         }
 
@@ -407,22 +427,22 @@ namespace KIT.GasStation.NewCas
             }
         }
 
-        private async Task CreateJGP(string[]? base64Strings)
+        private void CreateJGP(string[]? base64Strings)
         {
             try
             {
-                if (base64Strings != null)
-                {
-                    // Обрабатываем каждую строку Base64
-                    foreach (string base64String in base64Strings)
-                    {
-                        // 1. Декодируем Base64 в массив байтов
-                        byte[] imageBytes = Convert.FromBase64String(base64String);
+                if (base64Strings == null || base64Strings.Length == 0)
+                    return;
 
-                        // 2. Записываем байты напрямую в файл JPG
-                        string outputPath = $"D:\\Чеки\\output_image {DateTime.Now:dd.MM.yyyy HH-mm-ss-ffff}.jpg";
-                        await File.WriteAllBytesAsync(outputPath, imageBytes);
-                    }
+                // Обрабатываем каждую строку Base64
+                foreach (var base64String in base64Strings)
+                {
+                    byte[] imageBytes = Convert.FromBase64String(base64String);
+
+                    using var ms = new MemoryStream(imageBytes);
+                    using var img = Image.FromStream(ms);
+
+                    PrintImage(img); // синхронно печатает 1 картинку
                 }
             }
             catch (Exception e)
@@ -431,25 +451,148 @@ namespace KIT.GasStation.NewCas
             }
         }
 
-        private async Task<DayStateNewCas> GetStateAsync()
+        private void PrintImage(Image img)
         {
-            var response = new
-            {
+            using var pd = new PrintDocument();
 
+            pd.PrinterSettings.PrinterName = _settings.DefaultPrinterName;
+
+            // Если имя неправильное — Print() молча НЕ напечатает
+            if (!pd.PrinterSettings.IsValid)
+                throw new CashRegisterException("Принтер не найден или недоступен.");
+
+            // ВАЖНО: используем поля как "origin", чтобы драйвер не делал свою магию
+            pd.OriginAtMargins = true;
+
+            // Небольшие поля — чтобы QR имел “quiet zone” и не резался
+            pd.DefaultPageSettings.Margins = new Margins(15, 15, 6, 6);
+
+            pd.PrintPage += (s, e) =>
+            {
+                // Печатная область, которую реально можно печатать (без не-печатаемых краёв)
+                var pa = e.PageSettings.PrintableArea;
+
+                // Точка старта от полей
+                float x = e.MarginBounds.Left;
+                float y = e.MarginBounds.Top;
+
+                // Ширина по printable area, а не по MarginBounds (иногда MarginBounds врёт)
+                float printableWidth = pa.Width - (pd.DefaultPageSettings.Margins.Left + pd.DefaultPageSettings.Margins.Right);
+
+                // Масштаб только по ширине (чек — это “лента”)
+                float scale = printableWidth / img.Width;
+
+                // Если драйвер вернул какую-то дичь — страховка
+                if (scale <= 0 || float.IsNaN(scale) || float.IsInfinity(scale))
+                    scale = e.MarginBounds.Width / (float)img.Width;
+
+                int w = (int)(img.Width * scale);
+                int h = (int)(img.Height * scale);
+
+                // Рисуем без сглаживания (для чека полезно)
+                e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+
+                e.Graphics.DrawImage(img, x, y, w, h);
+                e.HasMorePages = false;
             };
 
-            HttpResponseMessage? stateMessage = await SendRequest("/fiscal/shifts/getState", response);
+            pd.Print();
+        }
 
-            if (stateMessage != null && stateMessage.IsSuccessStatusCode)
+        private async Task<DayStateNewCas> GetStateAsync()
+        {
+            try
             {
-                GetSateNewCas? state = JsonSerializer.Deserialize<GetSateNewCas>(await stateMessage.Content.ReadAsStringAsync());
+                var response = await SendRequest("/fiscal/shifts/getState", new { });
 
-                if (state != null)
-                {
-                    return state.State;
-                }
+                var state = JsonSerializer.Deserialize<GetSateNewCas>(
+                await response.Content.ReadAsStringAsync());
+
+                if (state == null)
+                    throw new CashRegisterException("ККМ вернула неверный формат состояния смены.");
+
+                return state.State;
             }
-            return DayStateNewCas.None;
+            catch (Exception ex)
+            {
+                LogError(ex);
+                throw new CashRegisterException($"Ошибка при получении статуса смены: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<FiscalData?> CreateFiscalDataAsync(HttpResponseMessage? responseMessage)
+        {
+            if (responseMessage == null)
+                throw new CashRegisterException("ККМ не ответила (responseMessage == null).");
+
+            var body = await responseMessage.Content.ReadAsStringAsync();
+
+            OpenAndCloseRecResp? saleResult;
+
+            try
+            {
+                saleResult = JsonSerializer.Deserialize<OpenAndCloseRecResp>(body);
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                throw new CashRegisterException($"ККМ вернула некорректный JSON: {ex.Message}. Body: {body}", ex);
+            }
+
+            if (saleResult == null)
+                throw new CashRegisterException($"ККМ вернула пустой ответ. Body: {body}");
+
+            // Логируем всегда (и успех, и ошибку)
+            LogData(Newtonsoft.Json.JsonConvert.SerializeObject(saleResult, new Newtonsoft.Json.JsonSerializerSettings
+            {
+                StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling.Default,
+                NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
+            }));
+
+            // ✅ Успех
+            if (saleResult.Status == OpenAndCloseRecRespStatus.Success)
+            {
+                // Иногда чек успешный, но печать/битмапы упали — это отдельная история
+                if (saleResult.Bitmaps != null)
+                    CreateJGP(saleResult.Bitmaps);
+
+                return new FiscalData
+                {
+                    FiscalModule = saleResult.FMNumber,
+                    FiscalDocument = saleResult.FDNumber,
+                    RegistrationNumber = saleResult.RegistrationNumber,
+                    Check = saleResult.QRCode,
+                };
+            }
+
+            // ❌ Ошибка ККМ
+            var msg =
+                $"Ошибка ККМ: {saleResult.Status}. " +
+                $"Message: {saleResult.ErrorMessage ?? "(нет текста)"}; " +
+                $"ExtCode={saleResult.ExtCode}, ExtCode2={saleResult.ExtCode2}";
+
+            // Тут можно делать более “человечные” сообщения по статусу
+            throw saleResult.Status switch
+            {
+                OpenAndCloseRecRespStatus.PrinterError =>
+                    new CashRegisterException("Ошибка печати на ККМ. Проверь принтер/бумагу/крышку. " + msg),
+
+                OpenAndCloseRecRespStatus.PrinterBusy =>
+                    new CashRegisterException("Принтер ККМ занят. Попробуй повторную печать. " + msg),
+
+                OpenAndCloseRecRespStatus.LicenseHasExpiredOrMissing =>
+                    new CashRegisterException("Лицензия фискального ядра истекла или отсутствует. " + msg),
+
+                OpenAndCloseRecRespStatus.InvalidArgumentRequest =>
+                    new CashRegisterException("ККМ не приняла параметры запроса (InvalidArgumentRequest). " + msg),
+
+                OpenAndCloseRecRespStatus.FiscalCoreError =>
+                    new CashRegisterException("Фискальное ядро вернуло ошибку (FiscalCoreError). " + msg),
+
+                _ =>
+                    new CashRegisterException(msg)
+            };
         }
 
         private PayType GetPayType(PaymentType paymentType)
@@ -458,88 +601,8 @@ namespace KIT.GasStation.NewCas
             {
                 PaymentType.Cash => PayType.Cash,
                 PaymentType.Cashless => PayType.Cashless,
-                _ => PayType.Cash,
+                _ => PayType.Cash
             };
-        }
-
-        private async Task<FiscalData?> CreateFiscalDataAsync(HttpResponseMessage? responseMessage)
-        {
-            try
-            {
-                if (responseMessage == null)
-                {
-                    return null;
-                }
-
-                OpenAndCloseRecResp? saleResult = JsonSerializer.Deserialize<OpenAndCloseRecResp>(await responseMessage.Content.ReadAsStringAsync());
-
-                if (saleResult != null)
-                {
-
-                    LogData(Newtonsoft.Json.JsonConvert.SerializeObject(saleResult, new Newtonsoft.Json.JsonSerializerSettings
-                    {
-                        StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling.Default,
-                        NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
-                    }));
-
-                    if (saleResult.Status == OpenAndCloseRecRespStatus.Success)
-                    {
-                        FiscalData fiscalData = new()
-                        {
-                            FiscalModule = saleResult.FMNumber,
-                            FiscalDocument = saleResult.FDNumber,
-                            RegistrationNumber = saleResult.RegistrationNumber,
-                            Check = saleResult.QRCode,
-                        };
-
-                        await CreateJGP(saleResult.Bitmaps);
-
-                        return fiscalData;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                LogError(e);
-            }
-            return null;
-        }
-
-        private async Task<FiscalData?> UpdateFiscalData(FuelSale fuelSale, HttpResponseMessage? responseMessage)
-        {
-            try
-            {
-                if (responseMessage == null && fuelSale == null)
-                {
-                    return null;
-                }
-
-                OpenAndCloseRecResp? saleResult = JsonSerializer.Deserialize<OpenAndCloseRecResp>(await responseMessage.Content.ReadAsStringAsync());
-
-                if (saleResult != null)
-                {
-
-                    LogData(Newtonsoft.Json.JsonConvert.SerializeObject(saleResult, new Newtonsoft.Json.JsonSerializerSettings
-                    {
-                        StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling.Default,
-                        NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore
-                    }));
-
-                    if (saleResult.Status == OpenAndCloseRecRespStatus.Success)
-                    {
-                        fuelSale.FiscalData.ReturnCheck = saleResult.QRCode;
-
-                        await CreateJGP(saleResult.Bitmaps);
-
-                        return fuelSale.FiscalData;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                LogError(e);
-            }
-            return null;
         }
 
         #endregion

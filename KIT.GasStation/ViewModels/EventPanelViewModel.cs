@@ -1,6 +1,5 @@
 ﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
-using KIT.GasStation.EntityFramework.Services;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.ViewModels.Base;
@@ -82,7 +81,7 @@ namespace KIT.GasStation.ViewModels
 
                 if (updatedFuelSale.FuelSaleStatus != FuelSaleStatus.None)
                 {
-                    eventPanel.Message = $"Продажа статус: {EnumHelper.GetEnumDisplayName(updatedFuelSale.FuelSaleStatus)} {EnumHelper.GetEnumDisplayName(updatedFuelSale.PaymentType)} {updatedFuelSale.ReceivedQuantity:N2}/{updatedFuelSale.Quantity:N2} л. {updatedFuelSale.ReceivedSum:N2}/{updatedFuelSale.Sum:N2} сом";
+                    eventPanel.Message = $"{EnumHelper.GetEnumDisplayName(updatedFuelSale.OperationType)} статус: {EnumHelper.GetEnumDisplayName(updatedFuelSale.FuelSaleStatus)} {EnumHelper.GetEnumDisplayName(updatedFuelSale.PaymentType)} {updatedFuelSale.ReceivedQuantity:N2}/{updatedFuelSale.Quantity:N2} л. {updatedFuelSale.ReceivedSum:N2}/{updatedFuelSale.Sum:N2} сом";
                     _ = _eventPanelService.EnqueueUpdateAsync(eventPanel);
                 }
             }

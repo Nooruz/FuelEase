@@ -27,7 +27,7 @@
         /// <summary>
         /// Событие при старте заправки.
         /// </summary>
-        //event Action<Guid, decimal, decimal> OnStartedFilling;
+        //event Action<Guid, decimal, decimal> OnStartedFueling;
 
         /// <summary>
         /// Событие при ожидании снятия пистолета.
@@ -37,7 +37,7 @@
         /// <summary>
         /// Событие при завершении заправки.
         /// </summary>
-        //event Action<int> OnCompletedFilling;
+        //event Action<int> OnCompletedFueling;
 
         /// <summary>
         /// Событие при потере соединения.
@@ -124,7 +124,7 @@
         ///// <param name="quantity">Объем топлива в литрах.</param>
         ///// <param name="tube">Номер колонки.</param>
         ///// <returns>Задача.</returns>
-        //Task StartRefuelingQuantityAsync(Nozzle nozzle, decimal? quantity = null);
+        //Task StartFuelingQuantityAsync(Nozzle nozzle, decimal? quantity = null);
 
         ///// <summary>
         ///// Начало заправки на определенный объем на сумму.
@@ -132,27 +132,27 @@
         ///// <param name="tube">Номер колонки.</param>
         ///// <param name="sum">Сумма</param>
         ///// <returns></returns>
-        //Task StartRefuelingSumAsync(Nozzle nozzle, decimal? sum = null);
+        //Task StartFuelingSumAsync(Nozzle nozzle, decimal? sum = null);
 
         ///// <summary>
         ///// Прекращение заправки.
         ///// </summary>
         ///// <returns>Задача.</returns>
-        //Task StopRefuelingAsync(Nozzle nozzle);
+        //Task StopFuelingAsync(Nozzle nozzle);
 
         ///// <summary>
         ///// Продолжение заправки.
         ///// </summary>
         ///// <param name="tube">Номер колонки.</param>
         ///// <returns>Задача</returns>
-        //Task ContinueFillingAsync(int tube);
+        //Task ContinueFuelingAsync(int tube);
 
         ///// <summary>
         ///// Завершение заправки.
         ///// </summary>
         ///// <param name="tube">Номер колонки.</param>
         ///// <returns>Задача</returns>
-        //Task CompleteFillingAsync(int tube);
+        //Task CompleteFuelingAsync(int tube);
 
         ///// <summary>
         ///// Запрос текущих счетчиков.

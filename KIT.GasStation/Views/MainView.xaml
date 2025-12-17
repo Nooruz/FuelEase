@@ -64,20 +64,21 @@
 
                 <MenuItem Header="Настройки и отчёты">
                     <MenuItem Header="Управление скидками"
-                      Command="{Binding DiscountManagementCommand}"
-                      IsEnabled="{Binding IsCurrentUserAdmin}"/>
+                              Command="{Binding DiscountManagementCommand}"
+                              IsEnabled="{Binding IsCurrentUserAdmin}"/>
                     <MenuItem Header="Управление конфигурацией"
-                      Command="{Binding ConfigurationManagementCommand}"
-                      IsEnabled="{Binding IsCurrentUserAdmin}"/>
+                              Command="{Binding ConfigurationManagementCommand}"
+                              IsEnabled="{Binding IsCurrentUserAdmin}"/>
                     <Separator/>
                     <MenuItem Header="Глобальные отчёты"
-                      Command="{Binding GlobalReportCommand}"/>
+                              Command="{Binding GlobalReportCommand}"/>
                     <Separator/>
                     <MenuItem Header="Настройки"
-                      Command="{Binding ConfigurationCommand}"/>
-                    <MenuItem Header="Экран">
-                        <MenuItem Header="Восстановить расположение"/>
-                        <MenuItem Header="Расположение по умолчанию"/>
+                              Command="{Binding ConfigurationCommand}"/>
+                    <MenuItem Header="Экран"
+                              IsEnabled="{Binding IsCurrentUserAdmin}">
+                        <MenuItem Header="Восстановить расположение"
+                                  Command="{Binding RestoreDockLayoutManagerPositionCommand}"/>
                         <MenuItem Header="Сохранить расположение панелей"
                                   Command="{Binding SaveDockLayoutManagerPositionCommand}"/>
                     </MenuItem>
@@ -113,8 +114,8 @@
 
                 <dxmvvm:Interaction.Behaviors>
                     <dxmvvm:EventToCommand EventName="Loaded"
-                                   Command="{Binding DockLayoutManagerLoadedCommand}"
-                                   PassEventArgsToCommand="True"/>
+                                           Command="{Binding DockLayoutManagerLoadedCommand}"
+                                           PassEventArgsToCommand="True"/>
                 </dxmvvm:Interaction.Behaviors>
 
                 <dxdo:LayoutGroup>
@@ -125,6 +126,7 @@
                                             AllowMaximize="True"
                                             Background="AliceBlue"
                                             AllowClose="False" 
+                                            
                                             Content="{Binding CurrentViewModel}"/>
 
                         <dxdo:LayoutPanel x:Name="Reservoir"

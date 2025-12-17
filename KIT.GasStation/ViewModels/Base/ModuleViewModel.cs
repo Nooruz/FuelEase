@@ -59,7 +59,7 @@ namespace KIT.GasStation.ViewModels.Base
         {
             var extension = new SvgImageSourceExtension()
             {
-                Uri = new Uri(string.Format(@"pack://application:,,,/KIT.GasStation;component/Images/{0}.svg", icon), UriKind.RelativeOrAbsolute)
+                Uri = new Uri(string.Format(@"pack://application:,,,/КИТ-АЗС;component/Images/{0}.svg", icon), UriKind.RelativeOrAbsolute)
             };
             Icon = (ImageSource)extension.ProvideValue(null);
             return this;

@@ -285,7 +285,8 @@ namespace KIT.GasStation.HostBuilders
             return new ControllerListViewModel(services.GetRequiredService<INozzleStore>(),
                 services.GetRequiredService<INavigator>(),
                 services.GetRequiredService<IViewService<TankFuelQuantityView>>(),
-                services.GetRequiredService<ILogger<ControllerListViewModel>>());
+                services.GetRequiredService<ILogger<ControllerListViewModel>>(),
+                services.GetRequiredService<IUserStore>());
         }
 
         private static MainViewModel CreateMainViewModel(IServiceProvider services)
@@ -294,7 +295,6 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<ILogger<MainViewModel>>(),
                 services.GetRequiredService<IShiftStore>(),
                 services.GetRequiredService<IUserStore>(),
-                services.GetRequiredService<ViewModelDelegateRenavigator<LoginViewModel>>(),
                 services.GetRequiredService<IFuelSaleService>(),
                 services.GetRequiredService<IUnregisteredSaleService>(),
                 services.GetRequiredService<IAuthenticator>(),
@@ -307,7 +307,8 @@ namespace KIT.GasStation.HostBuilders
         {
             return new MainWindowViewModel(services.GetRequiredService<INavigator>(),
                 services.GetRequiredService<ILogger<MainWindowViewModel>>(),
-                services.GetRequiredService<ICustomSplashScreenService>());
+                services.GetRequiredService<ICustomSplashScreenService>(),
+                services.GetRequiredService<IUserStore>());
         }
     }
 }

@@ -132,6 +132,13 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        [Category("Горячие клавиши"), Description("Горячая клавиша открытия окна настроек"), Display(Name = "Горячая клавиша открытия окна настроек")]
+        public string HotKey
+        {
+            get;
+            set;
+        }
+
         #endregion
 
         #region Private Voids

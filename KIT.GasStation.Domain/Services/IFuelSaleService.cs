@@ -4,7 +4,7 @@ namespace KIT.GasStation.Domain.Services
 {
     public interface IFuelSaleService : IDataService<FuelSale>, IDisposable
     {
-        event Action<Nozzle> OnContinueFilling;
+        event Action<FuelSale> OnResumeFueling;
 
         Task<FuelSale> GetFuelSaleWithPaymentType(int id);
         Task<decimal> GetReceivedQuantityAsync(int nozzleId, int shiftId);
@@ -27,7 +27,7 @@ namespace KIT.GasStation.Domain.Services
 
         Task<bool> DeleteAsync(IEnumerable<FuelSale> fuelSales);
 
-        void ContinueFilling(Nozzle nozzle);
+        void ResumeFueling(FuelSale fuelSale);
 
         /// <summary>
         /// Ставим запись в очередь, не дожидаясь завершения

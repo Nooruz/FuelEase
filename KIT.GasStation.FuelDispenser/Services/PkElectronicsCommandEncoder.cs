@@ -9,9 +9,9 @@ namespace KIT.GasStation.FuelDispenser.Services
         private static readonly Dictionary<Command, byte> _commandMap = new()
         {
             { Command.Status, 0x91 },
-            { Command.StartFillingSum, 0x80 },
-            { Command.StopFilling, 0x81 },
-            { Command.CompleteFilling, 0x8B },
+            { Command.StartFuelingSum, 0x80 },
+            { Command.StopFueling, 0x81 },
+            { Command.CompleteFueling, 0x8B },
             { Command.ChangePrice, 0x83 },
             { Command.CounterLiter, 0x8D },
             { Command.Sensor, 0xA7 },

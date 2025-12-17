@@ -9,5 +9,7 @@ namespace KIT.GasStation.State.Users
         event Action OnLogout;
 
         User? CurrentUser { get; set; }
+
+        void UpdateLogin();
     }
 }

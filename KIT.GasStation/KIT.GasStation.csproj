@@ -167,6 +167,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Properties\HotKeys.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HotKeys.settings</DependentUpon>
+    </Compile>
     <Compile Update="Properties\Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
@@ -187,6 +192,10 @@
     </None>
     <None Update="layout.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Properties\HotKeys.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>HotKeys.Designer.cs</LastGenOutput>
     </None>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

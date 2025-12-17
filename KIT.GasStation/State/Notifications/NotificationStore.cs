@@ -160,7 +160,7 @@ namespace KIT.GasStation.State.Notifications
                 _ = await _eventPanelService.CreateAsync(new EventPanel()
                 {
                     CreatedDate = DateTime.Now,
-                    Message = $"Продажа: {EnumHelper.GetEnumDisplayName(createdFuelSale.PaymentType)} {createdFuelSale.ReceivedQuantity:N2}/{createdFuelSale.Quantity:N2} л. {createdFuelSale.ReceivedSum:N2}/{createdFuelSale.Sum:N2} сом",
+                    Message = $"{EnumHelper.GetEnumDisplayName(createdFuelSale.OperationType)}: {EnumHelper.GetEnumDisplayName(createdFuelSale.PaymentType)} {createdFuelSale.ReceivedQuantity:N2}/{createdFuelSale.Quantity:N2} л. {createdFuelSale.ReceivedSum:N2}/{createdFuelSale.Sum:N2} сом",
                     ShiftId = _shiftStore.CurrentShift.Id,
                     Type = EventPanelType.Information,
                     EventEntity = EventEntity.FuelSale,

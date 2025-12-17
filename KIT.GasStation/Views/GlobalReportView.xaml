@@ -117,11 +117,11 @@
                     <dxb:BarCheckItem x:Name="layoutNormal" 
                               IsChecked="{Binding IsExpanded, ElementName=accordion, Mode=TwoWay}" 
                               GlyphSize="Small"
-                              Glyph="pack://application:,,,/KIT.GasStation;component/Images/NormalView.svg"/>
+                              Glyph="pack://application:,,,/КИТ-АЗС;component/Images/NormalView.svg"/>
                     <dxb:BarCheckItem x:Name="layoutReading" 
                               IsChecked="{Binding IsExpanded, ElementName=accordion, Mode=TwoWay, Converter={dxmvvm:BooleanNegationConverter}}"  
                               GlyphSize="Small"
-                              Glyph="pack://application:,,,/KIT.GasStation;component/Images/ReadingView.svg"/>
+                              Glyph="pack://application:,,,/КИТ-АЗС;component/Images/ReadingView.svg"/>
                 </dxr:RibbonStatusBarControl.RightItems>
             </dxr:RibbonStatusBarControl>
 

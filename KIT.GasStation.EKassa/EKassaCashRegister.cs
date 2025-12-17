@@ -764,7 +764,7 @@ namespace KIT.GasStation.EKassa
             }
             else
             {
-                fuelSale.FiscalData.ReturnCheck = await GetDuplicate(fiscalDocument);
+                //fuelSale.FiscalData.ReturnCheck = await GetDuplicate(fiscalDocument);
             }
         }
 

@@ -30,6 +30,7 @@ namespace KIT.GasStation.Lanfeng
         private ISharedSerialPortService _sharedSerialPortService;
         private HubConnection _hub;
         private volatile bool _pollingEnabled;
+        private bool _stopTickStatus = false;
         private Task _pollingTask;
         private PortLease? _lease;
         private readonly object _pollLock = new();
@@ -98,14 +99,14 @@ namespace KIT.GasStation.Lanfeng
                     await SetPriceAsync(groupName, price);
                 });
 
-                _hub.On<string, decimal, bool>("StartRefuelingAsync", async (groupName, sum, bySum) =>
+                _hub.On<string, decimal, bool>("StartFuelingAsync", async (groupName, sum, bySum) =>
                 {
-                    await StartRefuelingAsync(groupName, sum, bySum);
+                    await StartFuelingAsync(groupName, sum, bySum);
                 });
 
-                _hub.On<string>("CompleteRefuelingAsync", async (groupName) =>
+                _hub.On<string>("CompleteFuelingAsync", async (groupName) =>
                 {
-                    await CompleteRefuelingAsync(groupName);
+                    await CompleteFuelingAsync(groupName);
                 });
 
                 _hub.On<string, bool>("ChangeControlModeAsync", async (groupName, isProgramMode) =>
@@ -113,18 +114,20 @@ namespace KIT.GasStation.Lanfeng
                     await ChangeControlModeAsync(groupName, isProgramMode);
                 });
 
-                _hub.On<string>("StopRefuelingAsync", async (groupName) =>
+                _hub.On<string>("StopFuelingAsync", async (groupName) =>
                 {
-                    await StopRefuelingAsync(groupName);
+                    await StopFuelingAsync(groupName);
                 });
 
                 _hub.On<string>("GetCountersAsync", async (groupName) =>
                 {
+                    _stopTickStatus = true;
                     var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                     if (column is not null)
                     {
                         await ExecuteCommandAsync(Command.CounterLiter, Address, column.LanfengAddress);
                     }
+                    _stopTickStatus = false;
                 });
 
                 await _hubClient.EnsureStartedAsync(token);
@@ -148,9 +151,7 @@ namespace KIT.GasStation.Lanfeng
 
             if (Status is NozzleStatus.Unknown)
             {
-                // Задаем программное управление
-                //await _pauseGate.WaitAsync(token);
-                //await ExecuteCommandAsync(Command.KeyboardControlMode, Address, 0);
+                await ExecuteCommandAsync(Command.Status, Address, 0);
 
                 // Получаем версию прошивки
                 await _pauseGate.WaitAsync(token);
@@ -158,10 +159,7 @@ namespace KIT.GasStation.Lanfeng
 
                 // Инициализация по пистолетам
                 await _pauseGate.WaitAsync(token);
-                await InitializeByColumnsAsync(token);
             }
-
-            await ExecuteCommandAsync(Command.Status, Address, 0);
 
             while (!token.IsCancellationRequested && _pollingEnabled)
             {
@@ -170,7 +168,7 @@ namespace KIT.GasStation.Lanfeng
                     // опрос — одна команда через универсальный метод
                     if (Status is NozzleStatus.Ready or 
                         NozzleStatus.PumpWorking or
-                        NozzleStatus.WaitingRemoved)
+                        NozzleStatus.WaitingRemoved && !_stopTickStatus)
                     {
                         await ExecuteCommandAsync(Command.Status, Address, 0, null, ct: token);
                     }
@@ -217,7 +215,8 @@ namespace KIT.GasStation.Lanfeng
             await _exclusive.WaitAsync(ct);     // логически сериализуем окно команд
             try
             {
-                var frame = _protocolParser.BuildRequest(cmd, controllerAddress, nozzleMask, value);
+                var sd = _controllerType;
+                var frame = _protocolParser.BuildRequest(cmd, controllerAddress, nozzleMask, value, controllerType: _controllerType);
                 _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
 
                 byte[] rx;
@@ -247,7 +246,14 @@ namespace KIT.GasStation.Lanfeng
 
                     if (resp.Command is Command.CounterLiter)
                     {
-                        column = Columns.FirstOrDefault(c => c.LanfengAddress == resp.Address);
+                        if (_controllerType == LanfengControllerType.Single)
+                        {
+                            column = Columns.FirstOrDefault();
+                        }
+                        else
+                        {
+                            column = Columns.FirstOrDefault(c => c.LanfengAddress == resp.Address);
+                        }
                     }
                     else
                     {
@@ -315,6 +321,8 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
+                _stopTickStatus = true;
+
                 var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
@@ -328,15 +336,9 @@ namespace KIT.GasStation.Lanfeng
             {
                 _logger.Error(e, e.Message);
             }
-        }
-
-        private async Task InitializeByColumnsAsync(CancellationToken ct)
-        {
-            foreach (var column in Columns)
+            finally
             {
-                // Получает счетчик литров.
-                await ExecuteCommandAsync(Command.CounterLiter, Address, column.LanfengAddress);
-                await Task.Delay(300, ct);
+                _stopTickStatus = false;
             }
         }
 
@@ -344,6 +346,8 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
+                _stopTickStatus = true; // временно приостанавливаем опрос
+
                 var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
@@ -357,12 +361,18 @@ namespace KIT.GasStation.Lanfeng
             {
                 _logger.Error(e, e.Message);
             }
+            finally
+            {
+                _stopTickStatus = false; // возобновляем опрос
+            }
         }
 
-        private async Task StartRefuelingAsync(string groupName, decimal sum, bool bySum)
+        private async Task StartFuelingAsync(string groupName, decimal sum, bool bySum)
         {
             try
             {
+                _stopTickStatus = true;
+
                 var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
@@ -370,30 +380,40 @@ namespace KIT.GasStation.Lanfeng
                     return;
                 }
 
-                var cmd = bySum ? Command.StartFillingSum : Command.StartFillingQuantity;
+                var cmd = bySum ? Command.StartFuelingSum : Command.StartFuelingQuantity;
                 await ExecuteCommandAsync(cmd, Address, column.LanfengAddress, sum);
             }
             catch (Exception e)
             {
                 _logger.Error(e, e.Message);
             }
+            finally
+            {
+                _stopTickStatus = false;
+            }
         }
 
-        private async Task StopRefuelingAsync(string groupName)
+        private async Task StopFuelingAsync(string groupName)
         {
             try
             {
+                _stopTickStatus = true;
+
                 var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
                     _logger.Warning("Колонка {GroupName} не найдена", groupName);
                     return;
                 }
-                await ExecuteCommandAsync(Command.StopFilling, Address, column.LanfengAddress);
+                await ExecuteCommandAsync(Command.StopFueling, Address, column.LanfengAddress);
             }
             catch (Exception e)
             {
                 _logger.Error(e, e.Message);
+            }
+            finally
+            {
+                _stopTickStatus = false;
             }
         }
 
@@ -513,10 +533,12 @@ namespace KIT.GasStation.Lanfeng
             }
         }
 
-        private async Task CompleteRefuelingAsync(string groupName)
+        private async Task CompleteFuelingAsync(string groupName)
         {
             try
             {
+                _stopTickStatus = true;
+
                 var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
@@ -524,11 +546,15 @@ namespace KIT.GasStation.Lanfeng
                     return;
                 }
 
-                await ExecuteCommandAsync(Command.CompleteFilling, Address, column.Address);
+                await ExecuteCommandAsync(Command.CompleteFueling, Address, column.Address);
             }
             catch (Exception e)
             {
                 _logger.Error(e, e.Message);
+            }
+            finally
+            {
+                _stopTickStatus = false;
             }
         }
 

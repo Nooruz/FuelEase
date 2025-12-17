@@ -4,7 +4,6 @@ using DevExpress.Xpf.Editors;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
-using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
@@ -20,6 +19,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace KIT.GasStation.ViewModels
@@ -217,6 +217,21 @@ namespace KIT.GasStation.ViewModels
         public void TubeEnter()
         {
             SetFuelNozzle();
+        }
+
+        #endregion
+
+        #region Override Voids
+
+        protected override bool HandleHotKey(Key key)
+        {
+            if (key == Key.F5)
+            {
+                CreateFuelSale.PaymentType = PaymentType.Cashless;
+                return true;
+            }
+
+            return base.HandleHotKey(key);
         }
 
         #endregion

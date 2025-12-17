@@ -4,8 +4,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
+	  <UseWPF>true</UseWPF>
+    
     <Company>ОсОО "КИТ"</Company>
     <Product>Конфигуратор оборудования "КИТ-АЗС"</Product>
 	<Platforms>AnyCPU;x64</Platforms>
@@ -13,11 +13,7 @@
     <SignAssembly>False</SignAssembly>
     <ErrorReport>prompt</ErrorReport>
 	<OutputPath>C:\Users\nooru\source\Nooruz\FuelEase\KIT.GasStation.Hardware\bin</OutputPath>
-    <AssemblyName>HardwareConfiguration</AssemblyName>
     <ApplicationIcon>computer.ico</ApplicationIcon>
-	<AssemblyName>Hardware</AssemblyName>
-	<AssemblyTitle>Hardware</AssemblyTitle>
-	<Product>Hardware</Product>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,7 +30,7 @@
     <PackageReference Include="DevExpress.Wpf.Grid.Core.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.LayoutControl.ru" Version="21.2.3" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageReference Include="System.IO.Ports" Version="9.0.8" />
+    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 

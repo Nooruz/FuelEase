@@ -22,7 +22,9 @@ namespace KIT.GasStation.FuelDispenser.Services
 
         #region Public Voids
 
-        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress, decimal? value = null, decimal? quantity = null)
+        public byte[] BuildRequest(Command cmd, int controllerAddress,
+            int columnAddress = 0, decimal? value = null, bool bySum = true,
+            LanfengControllerType controllerType = LanfengControllerType.None)
         {
             // Формируем байт адреса: старшие 4 бита - controller, младшие - nozzle
             byte addr = (byte)(((controllerAddress & 0x0F) << 4) | (columnAddress & 0x0F));
@@ -33,19 +35,19 @@ namespace KIT.GasStation.FuelDispenser.Services
             {
                 case Command.Status:
                     break;
-                case Command.StartFillingSum:
-                    if (value != null && quantity != null)
-                    {
-                        list.AddRange(ConvertQuantityAndSumToBytes(quantity.Value, value.Value));
-                    }
+                case Command.StartFuelingSum:
+                    //if (value != null && quantity != null)
+                    //{
+                    //    list.AddRange(ConvertQuantityAndSumToBytes(quantity.Value, value.Value));
+                    //}
                     break;
-                case Command.StartFillingQuantity:
+                case Command.StartFuelingQuantity:
                     break;
-                case Command.StopFilling:
+                case Command.StopFueling:
                     break;
-                case Command.CompleteFilling:
+                case Command.CompleteFueling:
                     break;
-                case Command.ContinueFilling:
+                case Command.ContinueFueling:
                     break;
                 case Command.ChangePrice:
                     if (value != null)

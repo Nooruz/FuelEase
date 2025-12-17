@@ -5,6 +5,7 @@ using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
 using KIT.GasStation.State.Navigators;
 using KIT.GasStation.State.Nozzles;
+using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
 using Microsoft.Extensions.Logging;
@@ -25,6 +26,7 @@ namespace KIT.GasStation.ViewModels
         #region Private Members
 
         private readonly INozzleStore _nozzleStore;
+        private readonly IUserStore _userStore;
         private readonly ILogger<ControllerListViewModel> _logger;
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
         private readonly INavigator _navigator;
@@ -58,6 +60,7 @@ namespace KIT.GasStation.ViewModels
                 OnPropertyChanged(nameof(FuelDispenserViewModels));
             }
         }
+        public bool IsCurrentUserAdmin => _userStore.CurrentUser?.UserType == UserType.Admin;
 
         #endregion
 
@@ -66,12 +69,16 @@ namespace KIT.GasStation.ViewModels
         public ControllerListViewModel(INozzleStore nozzleStore,
             INavigator navigator,
             IViewService<TankFuelQuantityView> tankFuelQuantityView,
-            ILogger<ControllerListViewModel> logger)
+            ILogger<ControllerListViewModel> logger,
+            IUserStore userStore)
         {
             _nozzleStore = nozzleStore;
             _tankFuelQuantityView = tankFuelQuantityView;
             _logger = logger;
             _navigator = navigator;
+            _userStore = userStore;
+
+            _userStore.OnLogin += UserStore_OnLogin;
 
             EnsureXmlFileExists(); // Создаем XML файл, если он отсутствует
         }
@@ -293,6 +300,11 @@ namespace KIT.GasStation.ViewModels
                 viewModel.Nozzles = new(nozzle.OrderBy(n => n.Tube).ToList());
                 FuelDispenserViewModels.Add(viewModel);
             }
+        }
+
+        private void UserStore_OnLogin(User user)
+        {
+            OnPropertyChanged(nameof(IsCurrentUserAdmin));
         }
 
         #endregion

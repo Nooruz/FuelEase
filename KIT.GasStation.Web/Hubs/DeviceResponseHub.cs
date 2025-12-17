@@ -80,16 +80,16 @@ namespace KIT.GasStation.Web.Hubs
         public Task SetPriceAsync(string groupName, decimal price) =>
             Clients.Group(groupName).SetPriceAsync(groupName, price);
 
-        public Task StartRefuelingAsync(string groupName, decimal sum, bool bySum) =>
-            Clients.Group(groupName).StartRefuelingAsync(groupName, sum, bySum);
+        public Task StartFuelingAsync(string groupName, decimal sum, bool bySum) =>
+            Clients.Group(groupName).StartFuelingAsync(groupName, sum, bySum);
 
-        public Task StopRefuelingAsync(string groupName) =>
-            Clients.Group(groupName).StopRefuelingAsync(groupName);
+        public Task StopFuelingAsync(string groupName) =>
+            Clients.Group(groupName).StopFuelingAsync(groupName);
 
         public Task ColumnLiftedChanged(string groupName, bool isLifted) =>
             Clients.Group(groupName).ColumnLiftedChanged(groupName, isLifted);
-        public Task CompleteRefuelingAsync(string groupName) =>
-            Clients.Group(groupName).CompleteRefuelingAsync(groupName);
+        public Task CompleteFuelingAsync(string groupName) =>
+            Clients.Group(groupName).CompleteFuelingAsync(groupName);
         public Task GetCountersAsync(string groupName) =>
             Clients.Group(groupName).GetCountersAsync(groupName);
 
@@ -128,8 +128,8 @@ namespace KIT.GasStation.Web.Hubs
         }
 
 
-        public Task StartFilling() => Task.CompletedTask;
-        public Task StopFilling() => Task.CompletedTask;
+        public Task StartFueling() => Task.CompletedTask;
+        public Task StopFueling() => Task.CompletedTask;
 
         public sealed record StatusChangedEvent(ControllerResponse response);
 

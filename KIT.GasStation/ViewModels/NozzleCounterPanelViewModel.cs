@@ -1,5 +1,6 @@
 ﻿using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
+using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.State.Nozzles;
 using KIT.GasStation.ViewModels.Base;
 using Microsoft.Extensions.Logging;

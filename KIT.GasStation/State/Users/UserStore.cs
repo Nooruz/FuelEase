@@ -52,5 +52,10 @@ namespace KIT.GasStation.State.Users
 
         public event Action<User> OnLogin;
         public event Action OnLogout;
+
+        public void UpdateLogin()
+        {
+            OnLogin?.Invoke(CurrentUser);
+        }
     }
 }

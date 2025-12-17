@@ -23,6 +23,8 @@
                 <dxdo:DocumentGroup.ItemStyle>
                     <Style TargetType="{x:Type dxdo:DocumentPanel}" 
                            BasedOn="{StaticResource FuelTransferColumn}">
+                        <Setter Property="AllowDrag" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}}, Path=DataContext.IsCurrentUserAdmin}"/>
+                        <Setter Property="AllowSizing" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}}, Path=DataContext.IsCurrentUserAdmin}"/>
                         <Setter Property="dxmvvm:Interaction.BehaviorsTemplate">
                             <Setter.Value>
                                 <DataTemplate>

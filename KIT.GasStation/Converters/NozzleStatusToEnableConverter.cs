@@ -16,8 +16,8 @@ namespace KIT.GasStation.Converters
             {
                 return parameter.ToString() switch
                 {
-                    "StopFilling" => status is NozzleStatus.WaitingRemoved or NozzleStatus.PumpWorking,
-                    "ContinueFilling" => status is NozzleStatus.WaitingStop or NozzleStatus.PumpStop,
+                    "StopFueling" => status is NozzleStatus.WaitingRemoved or NozzleStatus.PumpWorking,
+                    "ResumeFueling" => status is NozzleStatus.WaitingStop or NozzleStatus.PumpStop,
                     "Pumping" => status is NozzleStatus.Ready,
                     _ => false
                 };

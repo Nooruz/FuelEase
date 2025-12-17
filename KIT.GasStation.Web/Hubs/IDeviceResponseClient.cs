@@ -22,18 +22,23 @@ namespace KIT.GasStation.Web.Hubs
         /// <param name="groupName">Название группы</param>
         /// <param name="sum">Сумма</param>
         /// <param name="bySum">Если true то по сумма, иначе по литражу</param>
-        Task StartRefuelingAsync(string groupName, decimal sum, bool bySum);
+        Task StartFuelingAsync(string groupName, decimal sum, bool bySum);
 
         /// <summary>
         /// Остановить заправку
         /// </summary>
-        Task StopRefuelingAsync(string groupName);
+        Task StopFuelingAsync(string groupName);
+
+        /// <summary>
+        /// Продолжить заправку
+        /// </summary>
+        Task ResumeFuelingAsync(string groupName);
 
         /// <summary>
         /// Завершить заправку
         /// </summary>
         /// <param name="groupName">Название группы</param>
-        Task CompleteRefuelingAsync(string groupName);
+        Task CompleteFuelingAsync(string groupName);
 
         /// <summary>
         /// Получить счетчики

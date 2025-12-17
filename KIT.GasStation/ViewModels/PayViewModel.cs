@@ -4,6 +4,7 @@ using DevExpress.Xpf.Editors;
 using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Discounts;
 using KIT.GasStation.ViewModels.Base;
@@ -136,12 +137,16 @@ namespace KIT.GasStation.ViewModels
                 // Если тип оплаты - наличные или безналичные средства, обрабатываем продажу через ККМ
                 if (CreateFuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
                 {
-                    var fiscalData = _cashRegisterStore.SaleAsync(CreateFuelSale, SelectedNozzle.Tank.Fuel);
+                    var fiscalData = await _cashRegisterStore.SaleAsync(CreateFuelSale, SelectedNozzle.Tank.Fuel);
                     
-                    if (fiscalData != null)
+                    if (fiscalData is not null)
                     {
-                        CreateFuelSale.FiscalData = await fiscalData;
+                        CreateFuelSale.FiscalData = fiscalData;
                         await _fuelSaleService.CreateAsync(CreateFuelSale);
+                    }
+                    else
+                    {
+                        MessageBoxService.ShowMessage("Не удалось получить фискальные данные от ККМ.", "Ошибка", MessageButton.OK, MessageIcon.Error);
                     }
                 }
                 // В противном случае создаем продажу через сервис продажи топлива
@@ -149,6 +154,9 @@ namespace KIT.GasStation.ViewModels
                 {
                     await _fuelSaleService.CreateAsync(CreateFuelSale);
                 }
+
+                
+
             }
             catch (CashRegisterException e)
             {

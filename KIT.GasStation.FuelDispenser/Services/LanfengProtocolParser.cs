@@ -31,7 +31,9 @@ namespace KIT.GasStation.FuelDispenser.Services
 
         #region Public Voids
 
-        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress = 0, decimal? value = null, bool bySum = true)
+        public byte[] BuildRequest(Command cmd, int controllerAddress, 
+            int columnAddress = 0, decimal? value = null, bool bySum = true,
+            LanfengControllerType controllerType = LanfengControllerType.None)
         {
             // Берём буфер из пула длиной 14
             var rented = ArrayPool<byte>.Shared.Rent(FrameLength);
@@ -44,7 +46,7 @@ namespace KIT.GasStation.FuelDispenser.Services
                 frame.Clear();
 
                 frame[0] = StartTx;
-                switch (_controllerType)
+                switch (controllerType)
                 {
                     case LanfengControllerType.Single:
                         frame[1] = (byte)(0 << 4 | controllerAddress);
@@ -61,7 +63,7 @@ namespace KIT.GasStation.FuelDispenser.Services
                     case Command.ChangePrice:
                         AddPriceBytes(rented, value);
                         break;
-                    case Command.StartFillingSum or Command.StartFillingQuantity:
+                    case Command.StartFuelingSum or Command.StartFuelingQuantity:
                         AddSumBytes(rented, value, bySum);
                         break;
                         // Для статуса и других команд никаких дополнительных байт

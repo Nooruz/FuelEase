@@ -37,13 +37,13 @@
 
         </dxlc:LayoutGroup>
 
-        <dxlc:LayoutGroup Header="Реквизиты подключения" 
-                      View="GroupBox"
-                      Orientation="Vertical">
+        <dxlc:LayoutGroup Header="Принтер" 
+                  View="GroupBox"
+                  Orientation="Vertical">
 
             <dxlc:LayoutItem Label="Принтер">
                 <dxe:ComboBoxEdit ItemsSource="{Binding Printers}"
-                              EditValue="{Binding SelectedCashRegister.DefaultPrinterName}"/>
+                                  EditValue="{Binding SelectedCashRegister.Settings.DefaultPrinterName, UpdateSourceTrigger=PropertyChanged}"/>
             </dxlc:LayoutItem>
 
         </dxlc:LayoutGroup>

@@ -10,7 +10,7 @@
     x:Class="KIT.GasStation.MainWindow"
     mc:Ignorable="d"
     WindowState="Maximized"
-    Title="{x:Static local:App.ProductName}" 
+    Title="{Binding UserName}" 
     MinHeight="450" 
     MinWidth="800">
     <dxmvvm:Interaction.Behaviors>
@@ -19,7 +19,14 @@
         <dxmvvm:EventToCommand EventName="Closing"
                                Command="{Binding ClosingCommand}"
                                PassEventArgsToCommand="True"/>
+        <dxmvvm:EventToCommand EventName="Loaded"
+                               Command="{Binding MainWindowLoadedCommand}"
+                               PassEventArgsToCommand="True"/>
         <dx:DXMessageBoxService/>
+        <dxmvvm:KeyToCommand KeyGesture="F5" Command="{Binding RefreshCommand}"/>
+        <dxmvvm:EventToCommand EventName="PreviewKeyDown"
+                               Command="{Binding PreviewKeyDownCommand}"
+                               PassEventArgsToCommand="True"/>
     </dxmvvm:Interaction.Behaviors>
 
     <ContentControl Content="{Binding CurrentViewModel, UpdateSourceTrigger=PropertyChanged}"/>

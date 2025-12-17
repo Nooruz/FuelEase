@@ -34,7 +34,7 @@
         </Grid.RowDefinitions>
 
         <dx:DXImage x:Name="PART_Logo" 
-                    Source="pack://application:,,,/KIT.GasStation;component/Images/whiteborderlogo.png"
+                    Source="pack://application:,,,/КИТ-АЗС;component/Images/whiteborderlogo.png"
                     Width="50"
                     Height="50"
                     Stretch="Fill"

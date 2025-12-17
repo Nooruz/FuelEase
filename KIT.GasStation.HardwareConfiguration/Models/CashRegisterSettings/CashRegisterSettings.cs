@@ -5,6 +5,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
 {
     [Serializable]
     [XmlInclude(typeof(EKassaCashRegisterSettings))]
+    [XmlInclude(typeof(NewCasCashRegisterSettings))]
     public abstract class CashRegisterSettings : INotifyPropertyChanged
     {
         #region PropertyChanged

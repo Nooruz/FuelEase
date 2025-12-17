@@ -38,7 +38,7 @@ namespace KIT.GasStation.EntityFramework.Services
         public event Action<FuelSale> OnCreated;
         public event Action<FuelSale> OnUpdated;
         public event Action<int> OnDeleted;
-        public event Action<Nozzle> OnContinueFilling;
+        public event Action<FuelSale> OnResumeFueling;
 
         #endregion
 
@@ -292,9 +292,9 @@ namespace KIT.GasStation.EntityFramework.Services
             }
         }
 
-        public void ContinueFilling(Nozzle nozzle)
+        public void ResumeFueling(FuelSale fuelSale)
         {
-            OnContinueFilling?.Invoke(nozzle);
+            OnResumeFueling?.Invoke(fuelSale);
         }
 
         public void Dispose()

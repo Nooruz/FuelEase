@@ -35,7 +35,7 @@
                                        BarItemDisplayMode="ContentAndGlyph"/>
 
                             <dxb:BarButtonItem Content="Продолжить"
-                                       Command="{Binding DataContext.ContinueFillingCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
+                                       Command="{Binding DataContext.ContinueFuelingCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
                                        Glyph="{dx:DXImage SvgImages/XAF/Action_Debug_Start.svg}" 
                                        BarItemDisplayMode="ContentAndGlyph"/>
                         </dxg:TableView.RowCellMenuCustomizations>
@@ -91,7 +91,7 @@
                       HorizontalAlignment="Right">
 
                 <Button Content="Завершить"
-                Command="{Binding CompleteFillingCommand}"/>
+                Command="{Binding CompleteFuelingCommand}"/>
                 <Button Content="Закрыть"
                 Command="{Binding CloseCommand}"/>
 

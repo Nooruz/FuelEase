@@ -273,9 +273,40 @@ namespace KIT.GasStation.Domain.Models
                 ReceivedSum = fuelSale.ReceivedSum;
                 ReceivedQuantity = fuelSale.ReceivedQuantity;
                 FuelSaleStatus = fuelSale.FuelSaleStatus;
-
             }
         }
+
+        public FuelSale Clone()
+        {
+            return new FuelSale
+            {
+                TankId = TankId,
+                NozzleId = NozzleId,
+                PaymentType = PaymentType,
+                OperationType = OperationType,
+                CreateDate = CreateDate,
+                Price = Price,
+                Sum = Sum,
+                ReceivedSum = ReceivedSum,
+                Quantity = Quantity,
+                ReceivedQuantity = ReceivedQuantity,
+                ReceivedCount = ReceivedCount,
+                CustomerSum = CustomerSum,
+                ChangeSum = ChangeSum,
+                ShiftId = ShiftId,
+                IsForSum = IsForSum,
+                FuelSaleStatus = FuelSaleStatus,
+
+                // Навигационные свойства ставим NULL,
+                // чтобы Entity Framework не пытался трекать их
+                Tank = null,
+                Shift = null,
+                DiscountSale = null,
+                FiscalData = null,
+                Nozzle = null
+            };
+        }
+
     }
 
     /// <summary>
@@ -339,7 +370,25 @@ namespace KIT.GasStation.Domain.Models
         /// Талон
         /// </summary>
         [Display(Name = "Талон")]
-        Ticket
+        Ticket,
+
+        /// <summary>
+        /// Дисконтная карта
+        /// </summary>
+        [Display(Name = "Дисконтная карта")]
+        DiscountCard,
+
+        /// <summary>
+        /// Топливная карта
+        /// </summary>
+        [Display(Name = "Топливная карта")]
+        FuelCard,
+
+        /// <summary>
+        /// Другое
+        /// </summary>
+        [Display(Name = "Другое")]
+        Other
     }
 
     public enum OperationType

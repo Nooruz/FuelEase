@@ -1,6 +1,7 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Docking;
+using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.SplashScreen;
@@ -17,7 +18,6 @@ using KIT.GasStation.Views;
 using KIT.GasStation.Views.Details;
 using KIT.GasStation.Views.Info;
 using Microsoft.Extensions.Logging;
-using System.ServiceProcess;
 using System;
 using System.IO;
 using System.Linq;
@@ -35,7 +35,6 @@ namespace KIT.GasStation.ViewModels
         private readonly ILogger<MainViewModel> _logger;
         private readonly IShiftStore _shiftStore;
         private readonly IUserStore _userStore;
-        private readonly IRenavigator _loginViewModelRenavigate;
         private readonly IFuelSaleService _fuelSaleService;
         private readonly IUnregisteredSaleService _unregisteredSaleService;
         private readonly IAuthenticator _authenticator;
@@ -155,7 +154,6 @@ namespace KIT.GasStation.ViewModels
             ILogger<MainViewModel> logger,
             IShiftStore shiftStore,
             IUserStore userStore,
-            IRenavigator loginViewModelRenavigate,
             IFuelSaleService fuelSaleService,
             IUnregisteredSaleService unregisteredSaleService,
             IAuthenticator authenticator,
@@ -167,7 +165,6 @@ namespace KIT.GasStation.ViewModels
             _logger = logger;
             _shiftStore = shiftStore;
             _userStore = userStore;
-            _loginViewModelRenavigate = loginViewModelRenavigate;
             _fuelSaleService = fuelSaleService;
             _unregisteredSaleService = unregisteredSaleService;
             _authenticator = authenticator;
@@ -183,6 +180,10 @@ namespace KIT.GasStation.ViewModels
             _cashRegisterStore.OnShiftClosed += CashRegisterStore_OnShiftClosed;
             //_cashRegisterStore.OnStatusChanged += CashRegisterStore_OnStatusChanged;
             _cashRegisterStore.OnUnknownError += CashRegisterStore_OnUnknownError;
+
+            _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
+
+            _userStore.OnLogin += UserStore_OnLogin;
         }
 
         #endregion
@@ -251,6 +252,20 @@ namespace KIT.GasStation.ViewModels
             {
                 const string LayoutFileName = "layout.xml";
                 MainDockLayoutManager?.SaveLayoutToXml(LayoutFileName);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+            }
+        }
+
+        [Command]
+        public void RestoreDockLayoutManagerPosition()
+        {
+            try
+            {
+                string? path = $@"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}\layout.xml";
+                MainDockLayoutManager?.RestoreLayoutFromXml(path);
             }
             catch (Exception e)
             {
@@ -410,6 +425,49 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        [Command]
+        public async Task GlobalReport()
+        {
+            try
+            {
+                var viewModel = await _navigator.GetViewModelAsync(ViewType.GlobalReportView);
+                DocumentViewerService.Title = "Глобальные отчеты";
+                DocumentViewerService.Show(nameof(GlobalReportView), viewModel);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+            }
+        }
+
+        [Command]
+        public void WindowLoaded()
+        {
+            try
+            {
+                WindowService?.Activate();
+                DocumentViewerService?.Activate();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+            }
+        }
+
+        [Command]
+        public void CloseApplication()
+        {
+            var result = MessageBoxService.ShowMessage("Вы уверены, что хотите закрыть программу?", "Подтверждение", MessageButton.YesNo, MessageIcon.Question);
+            if (result == MessageResult.Yes)
+            {
+                Application.Current.Shutdown();
+            }
+        }
+
+        #endregion
+
+        #region ККМ
+
         /// <summary>
         /// Закрыть смену
         /// </summary>
@@ -474,10 +532,10 @@ namespace KIT.GasStation.ViewModels
                 _splashScreenService.Show("Закрытие смены ККМ...");
                 await _cashRegisterStore.CloseShiftAsync();
             }
-            //catch (CashRegisterException e)
-            //{
-            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            //}
+            catch (CashRegisterException e)
+            {
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -503,10 +561,10 @@ namespace KIT.GasStation.ViewModels
                 _splashScreenService.Show("Открытие смены ККМ...");
                 await _cashRegisterStore.OpenShiftAsync();
             }
-            //catch (CashRegisterException e)
-            //{
-            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            //}
+            catch (CashRegisterException e)
+            {
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -529,10 +587,10 @@ namespace KIT.GasStation.ViewModels
                 _splashScreenService.Show("X-отчет ККМ...");
                 await _cashRegisterStore.XReportAsync();
             }
-            //catch (CashRegisterException e)
-            //{
-            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            //}
+            catch (CashRegisterException e)
+            {
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -565,10 +623,10 @@ namespace KIT.GasStation.ViewModels
                 WindowService.Title = "Состояние ККМ";
                 WindowService.Show(nameof(CashRegisterStateInfoView), viewModel);
             }
-            //catch (CashRegisterException e)
-            //{
-            //    MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
-            //}
+            catch (CashRegisterException e)
+            {
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
@@ -607,47 +665,14 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        [Command]
-        public async Task GlobalReport()
-        {
-            try
-            {
-                DocumentViewerService.Title = "Глобальные отчеты";
-                DocumentViewerService.Show(nameof(GlobalReportView), await _navigator.GetViewModelAsync(ViewType.GlobalReportView));
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, e.Message);
-            }
-        }
-
-        [Command]
-        public void WindowLoaded()
-        {
-            try
-            {
-                WindowService?.Activate();
-                DocumentViewerService?.Activate();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, ex.Message);
-            }
-        }
-
-        [Command]
-        public void CloseApplication()
-        {
-            var result = MessageBoxService.ShowMessage("Вы уверены, что хотите закрыть программу?", "Подтверждение", MessageButton.YesNo, MessageIcon.Question);
-            if (result == MessageResult.Yes)
-            {
-                Application.Current.Shutdown();
-            }
-        }
-
         #endregion
 
         #region Private Voids
+
+        private void UserStore_OnLogin(User user)
+        {
+            OnPropertyChanged(nameof(IsCurrentUserAdmin));
+        }
 
         private async Task GetViewModelAsync(ViewType viewType)
         {
@@ -902,6 +927,17 @@ namespace KIT.GasStation.ViewModels
         {
 
             _ = MessageBoxService.ShowMessage(errorMessage, "Внимание!", MessageButton.OK, MessageIcon.Error);
+        }
+
+        private async void FuelSaleService_OnCreated(FuelSale fuelSale)
+        {
+            _splashScreenService.Show("Идёт оформление топлива...");
+
+            // Даём пользователю увидеть splash
+            await Task.Delay(2000);
+
+
+            _splashScreenService.Close();
         }
 
         #endregion
