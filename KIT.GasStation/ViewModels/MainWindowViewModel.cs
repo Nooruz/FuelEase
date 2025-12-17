@@ -2,6 +2,7 @@
 using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Core;
 using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Navigators;
 using KIT.GasStation.State.Users;
@@ -10,9 +11,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.ComponentModel;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 
 namespace KIT.GasStation.ViewModels
 {
@@ -24,6 +27,11 @@ namespace KIT.GasStation.ViewModels
         private readonly INavigator _navigator;
         private readonly ICustomSplashScreenService _splashScreenService;
         private readonly IUserStore _userStore;
+        private readonly IHotKeysService _hotKeysService;
+        private readonly StringBuilder _buffer = new();
+        private CancellationTokenSource? _bufferCts;
+        private const int MaxDigits = 2;
+        private const int TimeoutMs = 1200; // подстрой: 800–1500 обычно норм (1.2 секунды)
 
         #endregion
 
@@ -44,7 +52,8 @@ namespace KIT.GasStation.ViewModels
                 return "";
             }
         }
-        
+        public string BufferText => _buffer.ToString();
+
         #endregion
 
         #region Constructor
@@ -52,12 +61,14 @@ namespace KIT.GasStation.ViewModels
         public MainWindowViewModel(INavigator navigator,
             ILogger<MainWindowViewModel> logger,
             ICustomSplashScreenService splashScreenService,
-            IUserStore userStore)
+            IUserStore userStore,
+            IHotKeysService hotKeysService)
         {
             _logger = logger;
             _navigator = navigator;
             _splashScreenService = splashScreenService;
             _userStore = userStore;
+            _hotKeysService = hotKeysService;
 
             _navigator.StateChanged += Navigator_StateChanged;
 
@@ -118,6 +129,95 @@ namespace KIT.GasStation.ViewModels
                     }
                 };
             }
+        }
+
+        #endregion
+
+        #region Hot Keys
+
+        [Command]
+        public void PreviewKeyDown(object args)
+        {
+            if (args is not KeyEventArgs e) return;
+
+            // Цифры (верхний ряд и NumPad)
+            if (TryGetDigit(e.Key, out var digit))
+            {
+                e.Handled = true; // <-- "команда должна остановиться": дальше по дереву не пойдёт
+
+                // если уже набрано 2 цифры — начинаем заново с этой цифры
+                if (_buffer.Length >= MaxDigits)
+                    _buffer.Clear();
+
+                _buffer.Append(digit);
+                RaisePropertyChanged(nameof(BufferText));
+
+                RestartTimeout();
+
+                // если уже 2 цифры — считаем что ввод завершён
+                if (_buffer.Length == MaxDigits)
+                    //CommitColumnSelection();
+
+                    return;
+            }
+
+            _hotKeysService.HandleKeyPress(e.Key);
+
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private static bool TryGetDigit(Key key, out char digit)
+        {
+            digit = default;
+
+            // Верхний ряд цифр
+            if (key >= Key.D0 && key <= Key.D9)
+            {
+                digit = (char)('0' + (key - Key.D0));
+                return true;
+            }
+
+            // NumPad
+            if (key >= Key.NumPad0 && key <= Key.NumPad9)
+            {
+                digit = (char)('0' + (key - Key.NumPad0));
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RestartTimeout()
+        {
+            _bufferCts?.Cancel();
+            _bufferCts?.Dispose();
+            _bufferCts = new CancellationTokenSource();
+
+            var token = _bufferCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(TimeoutMs, token);
+
+                    // вернуться в UI-поток
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        ClearBuffer();
+                    });
+                }
+                catch (TaskCanceledException) { /* норм */ }
+            }, token);
+        }
+
+        private void ClearBuffer()
+        {
+            _buffer.Clear();
+            RaisePropertyChanged(nameof(BufferText));
         }
 
         #endregion

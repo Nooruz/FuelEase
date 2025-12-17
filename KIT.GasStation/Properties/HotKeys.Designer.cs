@@ -22,5 +22,29 @@ namespace KIT.GasStation.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F5")]
+        public string FuelSaleCashless {
+            get {
+                return ((string)(this["FuelSaleCashless"]));
+            }
+            set {
+                this["FuelSaleCashless"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F1")]
+        public string FuelSaleCash {
+            get {
+                return ((string)(this["FuelSaleCash"]));
+            }
+            set {
+                this["FuelSaleCash"] = value;
+            }
+        }
     }
 }

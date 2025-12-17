@@ -3,6 +3,7 @@ using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
 using KIT.GasStation.FuelDispenser.Hubs;
+using KIT.GasStation.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Authenticators;
 using KIT.GasStation.State.CashRegisters;
@@ -267,9 +268,9 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<ILogger<FuelSaleViewModel>>(),
                 services.GetRequiredService<IFuelService>(),
                 services.GetRequiredService<IShiftStore>(),
-                services.GetRequiredService<ICustomSplashScreenService>(),
                 services.GetRequiredService<IDisñountStore>(),
-                services.GetRequiredService<ICashRegisterStore>());
+                services.GetRequiredService<ICashRegisterStore>(),
+                services.GetRequiredService<IHotKeysService>());
         }
 
         private static LoginViewModel CreateLoginViewModel(IServiceProvider services)
@@ -308,7 +309,8 @@ namespace KIT.GasStation.HostBuilders
             return new MainWindowViewModel(services.GetRequiredService<INavigator>(),
                 services.GetRequiredService<ILogger<MainWindowViewModel>>(),
                 services.GetRequiredService<ICustomSplashScreenService>(),
-                services.GetRequiredService<IUserStore>());
+                services.GetRequiredService<IUserStore>(),
+                services.GetRequiredService<IHotKeysService>());
         }
     }
 }

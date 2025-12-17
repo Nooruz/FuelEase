@@ -1,6 +1,12 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
-  <Profiles>
-    <Profile Name="(Default)" />
-  </Profiles>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="KIT.GasStation.Properties" GeneratedClassName="HotKeys">
+  <Profiles />
+  <Settings>
+    <Setting Name="FuelSaleCashless" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F5</Value>
+    </Setting>
+    <Setting Name="FuelSaleCash" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F1</Value>
+    </Setting>
+  </Settings>
 </SettingsFile>

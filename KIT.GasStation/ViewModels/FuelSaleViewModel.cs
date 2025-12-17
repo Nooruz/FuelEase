@@ -5,6 +5,7 @@ using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
 using KIT.GasStation.Helpers;
+using KIT.GasStation.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Discounts;
@@ -34,9 +35,9 @@ namespace KIT.GasStation.ViewModels
         private readonly ILogger<FuelSaleViewModel> _logger;
         private readonly IFuelService _fuelService;
         private readonly IShiftStore _shiftStore;
-        private readonly ICustomSplashScreenService _splashScreenService;
         private readonly IDisсountStore _disсountStore;
         private readonly ICashRegisterStore _cashRegisterStore;
+        private readonly IHotKeysService _hotKeysService;
         private int? _tube;
         private Nozzle? _selectedNozzle;
         private FuelSale _createFuelSale = new() { PaymentType = PaymentType.Cash };
@@ -126,9 +127,9 @@ namespace KIT.GasStation.ViewModels
             ILogger<FuelSaleViewModel> logger,
             IFuelService fuelService,
             IShiftStore shiftStore,
-            ICustomSplashScreenService splashScreenService,
             IDisсountStore disсountStore,
-            ICashRegisterStore cashRegisterStore)
+            ICashRegisterStore cashRegisterStore,
+            IHotKeysService hotKeysService)
         {
             _nozzleStore = nozzleStore;
             _tankFuelQuantityView = tankFuelQuantityView;
@@ -136,9 +137,9 @@ namespace KIT.GasStation.ViewModels
             _logger = logger;
             _fuelService = fuelService;
             _shiftStore = shiftStore;
-            _splashScreenService = splashScreenService;
             _disсountStore = disсountStore;
             _cashRegisterStore = cashRegisterStore;
+            _hotKeysService = hotKeysService;
 
             Title = "Панель заявок";
 
@@ -147,6 +148,7 @@ namespace KIT.GasStation.ViewModels
             _shiftStore.OnNozzleSelectionChanged += ShiftStore_OnNozzleSelectionChanged;
             _nozzleStore.OnNozzleSelected += OnNozzleSelected;
             _cashRegisterStore.OnReceiptPrinting += CashRegisterStore_OnReceiptPrinting;
+            _hotKeysService.OnHotKeyPressed += HotKeysService_OnHotKeyPressed;
         }
 
         #endregion
@@ -221,17 +223,11 @@ namespace KIT.GasStation.ViewModels
 
         #endregion
 
-        #region Override Voids
+        #region Hot Keys
 
-        protected override bool HandleHotKey(Key key)
+        private void HotKeysService_OnHotKeyPressed(Key key)
         {
-            if (key == Key.F5)
-            {
-                CreateFuelSale.PaymentType = PaymentType.Cashless;
-                return true;
-            }
-
-            return base.HandleHotKey(key);
+            
         }
 
         #endregion
