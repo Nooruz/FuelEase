@@ -261,18 +261,18 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public async Task EditNozzle()
         {
-            //if (SelectedNozzle != null)
-            //{
-            //    var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hardwareConfigurationService)
-            //    {
-            //        CreatedNozzle = new Nozzle(SelectedNozzle)
-            //    };
+            if (SelectedNozzle != null)
+            {
+                var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hubClient)
+                {
+                    CreatedNozzle = new Nozzle(SelectedNozzle)
+                };
 
-            //    await viewModel.StartAsync();
+                await viewModel.StartAsync();
 
-            //    WindowService.Title = $"({SelectedNozzle.Name}) Редактирование";
-            //    WindowService.Show(nameof(NozzleDetailView), viewModel);
-            //}
+                WindowService.Title = $"({SelectedNozzle.Name}) Редактирование";
+                WindowService.Show(nameof(NozzleDetailView), viewModel);
+            }
         }
 
         [Command]

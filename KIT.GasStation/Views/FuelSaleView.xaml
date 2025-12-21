@@ -65,8 +65,6 @@
                     <dxmvvm:EventToCommand EventName="Loaded"
                                            Command="{Binding SumTextEditLoadedCommand}"
                                            PassEventArgsToCommand="True"/>
-                    <dxmvvm:KeyToCommand KeyGesture="Enter"
-                                         Command="{Binding SaleCommand}"/>
                 </dxmvvm:Interaction.Behaviors>
             </dxe:TextEdit>
         </dxlc:LayoutItem>

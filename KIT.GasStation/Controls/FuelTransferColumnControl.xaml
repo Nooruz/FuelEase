@@ -64,136 +64,140 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid>
+    <Viewbox Stretch="Uniform">
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <Grid>
 
-        <Grid x:Name="grid">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="5"/>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
+            <Grid x:Name="grid">
 
-            <Border CornerRadius="10"
-                    BorderBrush="#B0B0B0"
-                    BorderThickness="2"
-                    Padding="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
 
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                <Border CornerRadius="10"
+                BorderBrush="#B0B0B0"
+                BorderThickness="2"
+                Padding="5">
 
-                    <dxga:DigitalGaugeControl Grid.Row="0"
-                                              Height="30"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Top"
-                                              Text="{Binding SelectedNozzle.FuelSale.Sum, StringFormat=F2, FallbackValue=0.00}"
-                                              Style="{StaticResource BaseDigitalScreenStyle}"
-                                              Margin="0 0 0 2"/>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                    <dxga:DigitalGaugeControl Grid.Row="1" 
-                                              Height="30"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Top"
-                                              Style="{StaticResource BaseDigitalScreenStyle}"
-                                              Text="{Binding SelectedNozzle.FuelSale.Quantity, StringFormat=F2, FallbackValue=0.00}"
-                                              Margin="0 0 0 2"/>
+                        <dxga:DigitalGaugeControl Grid.Row="0"
+                                          Height="30"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Text="{Binding SelectedNozzle.FuelSale.Sum, StringFormat=F2, FallbackValue=0.00}"
+                                          Style="{StaticResource BaseDigitalScreenStyle}"
+                                          Margin="0 0 0 2"/>
 
-
-                    <dxga:DigitalGaugeControl Grid.Row="3" 
-                                              SymbolCount="12"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Top"
-                                              Height="15"
-                                              Style="{StaticResource BaseDigitalScreenStyle}"
-                                              Text="{Binding SelectedNozzle.SalesSum, StringFormat=F2, FallbackValue=0.00}"
-                                              Margin="0 2 0 0"/>
-
-                </Grid>
-
-            </Border>
-
-            <Border CornerRadius="10"
-                    BorderBrush="#B0B0B0"
-                    BorderThickness="2"
-                    Padding="5"
-                    Grid.Column="2">
-
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <dxga:DigitalGaugeControl Grid.Row="0"
-                                              Height="30"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Top"
-                                              Text="{Binding ReceivedSum, StringFormat=F2, FallbackValue=0.00}"
-                                              Style="{StaticResource DefaultDigitalScreenStyle}"
-                                              Margin="0 0 0 2"/>
-
-                    <dxga:DigitalGaugeControl Grid.Row="1" 
-                                              Height="30"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Top"
-                                              Style="{StaticResource DefaultDigitalScreenStyle}"
-                                              Text="{Binding ReceivedQuantity, StringFormat=F2, FallbackValue=0.00}"
-                                              Margin="0 0 0 2"/>
+                        <dxga:DigitalGaugeControl Grid.Row="1" 
+                                          Height="30"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Style="{StaticResource BaseDigitalScreenStyle}"
+                                          Text="{Binding SelectedNozzle.FuelSale.Quantity, StringFormat=F2, FallbackValue=0.00}"
+                                          Margin="0 0 0 2"/>
 
 
-                    <dxga:DigitalGaugeControl Grid.Row="3" 
-                                              SymbolCount="12"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Top"
-                                              Height="15"
-                                              Style="{StaticResource DefaultDigitalScreenStyle}"
-                                              Text="{Binding SelectedNozzle.LastCounter, StringFormat=F2, FallbackValue=0.00}"
-                                              Margin="0 2 0 0"/>
+                        <dxga:DigitalGaugeControl Grid.Row="3" 
+                                          SymbolCount="12"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Height="15"
+                                          Style="{StaticResource BaseDigitalScreenStyle}"
+                                          Text="{Binding SelectedNozzle.SalesSum, StringFormat=F2, FallbackValue=0.00}"
+                                          Margin="0 2 0 0"/>
 
-                </Grid>
+                    </Grid>
 
-            </Border>
+                </Border>
+
+                <Border CornerRadius="10"
+                BorderBrush="#B0B0B0"
+                BorderThickness="2"
+                Padding="5"
+                Grid.Column="2">
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <dxga:DigitalGaugeControl Grid.Row="0"
+                                          Height="30"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Text="{Binding ReceivedSum, StringFormat=F2, FallbackValue=0.00}"
+                                          Style="{StaticResource DefaultDigitalScreenStyle}"
+                                          Margin="0 0 0 2"/>
+
+                        <dxga:DigitalGaugeControl Grid.Row="1" 
+                                          Height="30"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Style="{StaticResource DefaultDigitalScreenStyle}"
+                                          Text="{Binding ReceivedQuantity, StringFormat=F2, FallbackValue=0.00}"
+                                          Margin="0 0 0 2"/>
+
+
+                        <dxga:DigitalGaugeControl Grid.Row="3" 
+                                          SymbolCount="12"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Top"
+                                          Height="15"
+                                          Style="{StaticResource DefaultDigitalScreenStyle}"
+                                          Text="{Binding SelectedNozzle.LastCounter, StringFormat=F2, FallbackValue=0.00}"
+                                          Margin="0 2 0 0"/>
+
+                    </Grid>
+
+                </Border>
+
+            </Grid>
+
+            <TextBlock Text="{Binding SelectedNozzle.FuelSale.PaymentType, Converter={StaticResource EnumToStringConvertert}}"
+               TextAlignment="Center"
+               FontSize="18"
+               FontWeight="Bold"
+               dxb:BarManager.DXContextMenu="{StaticResource Menu}"
+               Grid.Row="1"/>
+
+            <ListBox x:Name="listBox"
+                     Background="Transparent"
+                     SelectionMode="Single" 
+                     IsEnabled="{Binding CanSelectedNozzle}"
+                     ItemContainerStyle="{StaticResource MenuListBoxItem}"
+                     SelectedItem="{Binding SelectedNozzle}"
+                     Style="{StaticResource NozzleListBox}"
+                     ItemsSource="{Binding Nozzles}"
+                     Grid.Row="2">
+                        <dxmvvm:Interaction.Behaviors>
+                            <dxmvvm:EventToCommand EventName="MouseDoubleClick"
+                                           Command="{Binding NozzleMouseDoubleClickCommand}"/>
+                            <dxmvvm:EventToCommand Event="PreviewMouseDown"
+                                           Command="{Binding NozzleMouseDownCommand}"
+                                           PassEventArgsToCommand="True" />
+                        </dxmvvm:Interaction.Behaviors>
+            </ListBox>
 
         </Grid>
 
-        <TextBlock Text="{Binding SelectedNozzle.FuelSale.PaymentType, Converter={StaticResource EnumToStringConvertert}}"
-                   TextAlignment="Center"
-                   FontSize="18"
-                   FontWeight="Bold"
-                   dxb:BarManager.DXContextMenu="{StaticResource Menu}"
-                   Grid.Row="1"/>
-
-        <ListBox x:Name="listBox"
-                 Background="Transparent"
-                 SelectionMode="Single" 
-                 IsEnabled="{Binding CanSelectedNozzle}"
-                 ItemContainerStyle="{StaticResource MenuListBoxItem}"
-                 SelectedItem="{Binding SelectedNozzle}"
-                 Style="{StaticResource NozzleListBox}"
-                 ItemsSource="{Binding Nozzles}"
-                 Grid.Row="2">
-            <dxmvvm:Interaction.Behaviors>
-                <dxmvvm:EventToCommand EventName="MouseDoubleClick"
-                                       Command="{Binding NozzleMouseDoubleClickCommand}"/>
-                <dxmvvm:EventToCommand Event="PreviewMouseDown"
-                                       Command="{Binding NozzleMouseDownCommand}"
-                                       PassEventArgsToCommand="True" />
-            </dxmvvm:Interaction.Behaviors>
-        </ListBox>
-
-    </Grid>
+    </Viewbox>
 
 </UserControl>

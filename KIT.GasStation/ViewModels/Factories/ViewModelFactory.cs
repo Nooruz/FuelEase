@@ -35,6 +35,7 @@ namespace KIT.GasStation.ViewModels.Factories
         private readonly CreateViewModel<DiscountViewModel> _createDiscountViewModel;
         private readonly CreateViewModel<FuelDispenserViewModel> _createFuelDispenserViewModel;
         private readonly CreateViewModel<WorkplaceSettingsViewModel> _createWorkplaceSettingsViewModel;
+        private readonly CreateViewModel<SettingsViewModel> _createSettingsViewModel;
 
         #endregion
 
@@ -63,7 +64,8 @@ namespace KIT.GasStation.ViewModels.Factories
             CreateViewModel<DiscountManagementViewModel> createDiscountManagementViewModel,
             CreateViewModel<DiscountViewModel> createDiscountViewModel,
             CreateViewModel<FuelDispenserViewModel> createFuelDispenserViewModel,
-            CreateViewModel<WorkplaceSettingsViewModel> createWorkplaceSettingsViewModel)
+            CreateViewModel<WorkplaceSettingsViewModel> createWorkplaceSettingsViewModel,
+            CreateViewModel<SettingsViewModel> createSettingsViewModel)
         {
             _createMainViewModel = createMainViewModel;
             _createLoginViewModel = createLoginViewModel;
@@ -89,6 +91,7 @@ namespace KIT.GasStation.ViewModels.Factories
             _createDiscountViewModel = createDiscountViewModel;
             _createFuelDispenserViewModel = createFuelDispenserViewModel;
             _createWorkplaceSettingsViewModel = createWorkplaceSettingsViewModel;
+            _createSettingsViewModel = createSettingsViewModel;
         }
 
         #endregion
@@ -127,6 +130,7 @@ namespace KIT.GasStation.ViewModels.Factories
                     ViewType.FuelDispenser => _createFuelDispenserViewModel(),
                     ViewType.WorkPlaceView => _createWorkplaceSettingsViewModel(),
                     ViewType.NozzleCounterPanelView => _createNozzleCounterPanelViewModel(),
+                    ViewType.SettingsView => _createSettingsViewModel(),
                     _ => throw new ArgumentException("The ViewType does not have a ViewModel.", nameof(viewType)),
                 };
             });
@@ -161,6 +165,7 @@ namespace KIT.GasStation.ViewModels.Factories
                 ViewType.DiscountView => _createDiscountViewModel(),
                 ViewType.FuelDispenser => _createFuelDispenserViewModel(),
                 ViewType.WorkPlaceView => _createWorkplaceSettingsViewModel(),
+                ViewType.SettingsView => _createSettingsViewModel(),
                 _ => throw new ArgumentException("The ViewType does not have a ViewModel.", nameof(viewType)),
             };
         }

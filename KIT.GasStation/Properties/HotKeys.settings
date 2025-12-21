@@ -8,5 +8,26 @@
     <Setting Name="FuelSaleCash" Type="System.String" Scope="User">
       <Value Profile="(Default)">F1</Value>
     </Setting>
+    <Setting Name="FuelSaleTicket" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F7</Value>
+    </Setting>
+    <Setting Name="FuelSale" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Enter</Value>
+    </Setting>
+    <Setting Name="StartFullFueling" Type="System.String" Scope="User">
+      <Value Profile="(Default)">/</Value>
+    </Setting>
+    <Setting Name="FuelSaleStatement" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F4</Value>
+    </Setting>
+    <Setting Name="FuelSaleDiscountCard" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F2</Value>
+    </Setting>
+    <Setting Name="FuelSaleCard" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F3</Value>
+    </Setting>
+    <Setting Name="FuelSaleOther" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F9</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -6,7 +6,7 @@ using KIT.GasStation.Domain.Views;
 using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
-using KIT.GasStation.FuelDispenser.Services;
+using KIT.GasStation.Services;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Nozzles;
 using KIT.GasStation.State.Shifts;
@@ -40,6 +40,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IUnregisteredSaleService _unregisteredSaleService;
         private readonly IUserStore _userStore;
         private readonly IHubClient _hubClient;
+        private readonly IHotKeysService _hotKeysService;
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
         private HubConnection _hub;
         private int _side;
@@ -115,7 +116,8 @@ namespace KIT.GasStation.ViewModels
             IFuelService fuelService,
             IUserStore userStore,
             IHubClient hubClient,
-            IViewService<TankFuelQuantityView> tankFuelQuantityView)
+            IViewService<TankFuelQuantityView> tankFuelQuantityView,
+            IHotKeysService hotKeysService)
         {
             _nozzleStore = nozzleStore;
             _fuelSaleService = fuelSaleService;
@@ -127,6 +129,7 @@ namespace KIT.GasStation.ViewModels
             _userStore = userStore;
             _hubClient = hubClient;
             _tankFuelQuantityView = tankFuelQuantityView;
+            _hotKeysService = hotKeysService;
 
             _shiftStore.OnLogin += ShiftStore_OnLogin;
             _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
@@ -138,6 +141,7 @@ namespace KIT.GasStation.ViewModels
             _shiftStore.OnClosed += ShiftStore_OnClosed;
             _fuelService.OnUpdated += FuelService_OnUpdated;
             _userStore.OnLogout += UserStore_OnLogout;
+            _hotKeysService.OnHotKeyPressed += HotKeysService_OnHotKeyPressed;
         }
 
         #endregion
@@ -1173,6 +1177,18 @@ namespace KIT.GasStation.ViewModels
                 }
             }
             return true;
+        }
+
+        #endregion
+
+        #region Hot Keys
+
+        private async void HotKeysService_OnHotKeyPressed(HotKeyAction hotKeyAction)
+        {
+            if (hotKeyAction == HotKeyAction.StartFullFueling)
+            {
+                await StartFullFueling();
+            }
         }
 
         #endregion

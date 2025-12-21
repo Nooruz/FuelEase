@@ -83,6 +83,10 @@
             <DataTemplate DataType="{x:Type viewModels:UserViewModel}">
                 <views:UserView/>
             </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type viewModels:SettingsViewModel}">
+                <views:SettingsView/>
+            </DataTemplate>
 
             <!--#region FuelTransferColumns-->
 

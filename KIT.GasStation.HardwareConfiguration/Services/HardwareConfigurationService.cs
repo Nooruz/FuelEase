@@ -26,7 +26,8 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
         public HardwareConfigurationService()
         {
-            _filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HardwareConfiguration.xml");
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "КИТ-АЗС");
+            _filePath = Path.Combine(dir, "HardwareConfiguration.xml");
         }
 
         #endregion
@@ -38,7 +39,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         {
             if (!File.Exists(_filePath) || new FileInfo(_filePath).Length == 0)
             {
-                throw new InvalidOperationException("Файл конфигурации отсутствует или пуст.");
+                throw new InvalidOperationException($"Файл конфигурации отсутствует или пуст. {_filePath}");
             }
 
             try
@@ -78,12 +79,20 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             {
                 var defaultConfig = new HardwareConfiguration();
                 var serializer = new XmlSerializer(typeof(HardwareConfiguration));
-                using var writer = new StreamWriter(_filePath);
-                await Task.Run(() => serializer.Serialize(writer, defaultConfig));
-            }
-            catch (Exception)
-            {
 
+                var dir = Path.GetDirectoryName(_filePath);
+                if (string.IsNullOrWhiteSpace(dir))
+                    throw new InvalidOperationException($"Плохой путь: '{_filePath}'");
+
+                Directory.CreateDirectory(dir); // ключевая строка
+
+                await using var fs = new FileStream(_filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                serializer.Serialize(fs, defaultConfig);
+            }
+            catch (Exception ex)
+            {
+                // хотя бы так, чтобы не было "молча обосрался и ушёл"
+                throw new IOException($"Не смог создать конфиг по пути: '{_filePath}'", ex);
             }
         }
 

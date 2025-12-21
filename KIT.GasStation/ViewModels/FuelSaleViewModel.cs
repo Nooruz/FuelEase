@@ -6,7 +6,6 @@ using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.Services;
-using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Discounts;
 using KIT.GasStation.State.Nozzles;
@@ -20,7 +19,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace KIT.GasStation.ViewModels
@@ -172,14 +170,7 @@ namespace KIT.GasStation.ViewModels
                     CreateFuelSale.ReceivedCount = SelectedNozzle.LastCounter;
                     CreateFuelSale.IsForSum = _isSumUpdating;
 
-                    PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore)
-                    {
-                        CreateFuelSale = CreateFuelSale,
-                        SelectedNozzle = SelectedNozzle,
-                    };
-
-                    WindowService.Title = "Оплата";
-                    WindowService.Show(nameof(PayView), viewModel);
+                    OpenPayView();
                 }
             }
             catch (Exception e)
@@ -225,14 +216,43 @@ namespace KIT.GasStation.ViewModels
 
         #region Hot Keys
 
-        private void HotKeysService_OnHotKeyPressed(Key key)
+        private void HotKeysService_OnHotKeyPressed(HotKeyAction hotKeyAction)
         {
-            
+            switch (hotKeyAction)
+            {
+                case HotKeyAction.FuelSale:
+                    OpenPayView();
+                    break;
+                case HotKeyAction.FuelSaleCashless:
+                    CreateFuelSale.PaymentType = PaymentType.Cashless;
+                    break;
+                case HotKeyAction.FuelSaleCash:
+                    CreateFuelSale.PaymentType = PaymentType.Cash;
+                    break;
+                case HotKeyAction.FuelSaleTicket:
+                    CreateFuelSale.PaymentType = PaymentType.Ticket;
+                    break;
+                default:
+                    CreateFuelSale.PaymentType = PaymentType.Cash;
+                    break;
+            }
         }
 
         #endregion
 
         #region Private members
+
+        private void OpenPayView()
+        {
+            PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore)
+            {
+                CreateFuelSale = CreateFuelSale,
+                SelectedNozzle = SelectedNozzle,
+            };
+
+            WindowService.Title = "Оплата";
+            WindowService.Show(nameof(PayView), viewModel);
+        }
 
         private void SetFuelNozzle()
         {

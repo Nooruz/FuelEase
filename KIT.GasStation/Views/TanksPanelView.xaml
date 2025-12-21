@@ -3,9 +3,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     x:Class="KIT.GasStation.Views.TanksPanelView">
 
-    <ListView ItemsSource="{Binding TankFuelQuantityViews}"
-              VerticalAlignment="Top"
-              HorizontalAlignment="Left"
-              Style="{StaticResource TankListView}"/>
+    <Viewbox Stretch="Uniform">
+
+        <ListView ItemsSource="{Binding TankFuelQuantityViews}"
+                  VerticalAlignment="Top"
+                  HorizontalAlignment="Left"
+                  Style="{StaticResource TankListView}"/>
+
+    </Viewbox>
 
 </UserControl>

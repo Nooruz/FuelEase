@@ -6,7 +6,6 @@ using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
 using Microsoft.AspNetCore.SignalR.Client;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 

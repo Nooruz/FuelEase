@@ -1,6 +1,7 @@
 ﻿using KIT.GasStation.Common.HostBuilders;
 using KIT.GasStation.Hardware.HostBuilders;
 using KIT.GasStation.Hardware.ViewModels;
+using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -71,6 +72,10 @@ namespace KIT.GasStation.Hardware
             try
             {
                 await _host.StartAsync();
+
+                var hardwareConfigurator = _host.Services.GetRequiredService<IHardwareConfigurationService>();
+
+                await hardwareConfigurator.EnsureConfigurationFileExistsAsync();
 
                 Window window = _host.Services.GetRequiredService<MainWindow>();
                 window.DataContext = _host.Services.GetRequiredService<MainWindowViewModel>();

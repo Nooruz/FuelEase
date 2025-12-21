@@ -58,12 +58,14 @@ namespace KIT.GasStation.HostBuilders
                 services.AddTransient(CreateDiscountViewModel);
                 services.AddTransient(CreateFuelDispenserViewModel);
                 services.AddTransient(CreateWorkplaceSettingsViewModel);
+                services.AddTransient(CreateSettingsViewModel);
 
-                
+
 
                 services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<MainWindowViewModel>());
                 services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<LoginViewModel>());
 
+                services.AddSingleton<CreateViewModel<SettingsViewModel>>(servicesProvider => () => CreateSettingsViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<RevaluationViewModel>>(servicesProvider => () => CreateRevaluationViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<UncompletedSalesViewModel>>(servicesProvider => () => CreateUncompletedSalesViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<CompletedSalesViewModel>>(servicesProvider => () => CreateCompletedSalesViewModel(servicesProvider));
@@ -97,6 +99,11 @@ namespace KIT.GasStation.HostBuilders
             });
         }
 
+        private static SettingsViewModel CreateSettingsViewModel(IServiceProvider services)
+        {
+            return new SettingsViewModel();
+        }
+
         private static WorkplaceSettingsViewModel CreateWorkplaceSettingsViewModel(IServiceProvider services)
         {
             return new WorkplaceSettingsViewModel(services.GetRequiredService<ICashRegisterStore>());
@@ -113,7 +120,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IFuelService>(),
                 services.GetRequiredService<IUserStore>(),
                 services.GetRequiredService<IHubClient>(),
-                services.GetRequiredService<IViewService<TankFuelQuantityView>>());
+                services.GetRequiredService<IViewService<TankFuelQuantityView>>(),
+                services.GetRequiredService<IHotKeysService>());
         }
 
         private static DiscountViewModel CreateDiscountViewModel(IServiceProvider services)

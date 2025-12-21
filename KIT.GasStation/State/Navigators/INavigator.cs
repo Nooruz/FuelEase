@@ -34,6 +34,7 @@ namespace KIT.GasStation.State.Navigators
         DiscountView,
         FuelDispenser,
         WorkPlaceView,
+        SettingsView
     }
     public interface INavigator
     {

@@ -23,7 +23,6 @@
                                Command="{Binding MainWindowLoadedCommand}"
                                PassEventArgsToCommand="True"/>
         <dx:DXMessageBoxService/>
-        <dxmvvm:KeyToCommand KeyGesture="F5" Command="{Binding RefreshCommand}"/>
         <dxmvvm:EventToCommand EventName="PreviewKeyDown"
                                Command="{Binding PreviewKeyDownCommand}"
                                PassEventArgsToCommand="True"/>

@@ -1,11 +1,10 @@
-﻿<local:BaseView       x:Class="KIT.GasStation.Views.SettingsView"
-                      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                      xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-                      xmlns:dxprg="http://schemas.devexpress.com/winfx/2008/xaml/propertygrid"
-                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                      xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
-                      Width="800"
-                    Height="400">
+﻿<local:BaseView x:Class="KIT.GasStation.Views.SettingsView"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+                xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+                xmlns:dxprg="http://schemas.devexpress.com/winfx/2008/xaml/propertygrid"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:local="clr-namespace:KIT.GasStation.Views.Base">
 
     <local:BaseView.Resources>
 
@@ -13,9 +12,26 @@
         
     </local:BaseView.Resources>
 
-    <dxprg:PropertyGridControl SelectedObject="{Binding Settings}"
-                               ShowCategories="True"
-                               ShowDescriptionIn="Panel"
-                               ExpandCategoriesWhenSelectedObjectChanged="True"/>
+
+    <dxlc:LayoutControl Orientation="Vertical">
+        
+        <dxprg:PropertyGridControl SelectedObject="{Binding Settings}"
+                                   ShowCategories="True"
+                                   ShowDescriptionIn="Panel"
+                                   ExpandCategoriesWhenSelectedObjectChanged="True"/>
+
+        <dxlc:LayoutGroup HorizontalAlignment="Right"
+                          VerticalAlignment="Bottom">
+
+            <Button Content="Сохранить"
+                    Command="{Binding SaveCommand}"/>
+            <Button Content="Закрыть"
+                    Command="{Binding CloseCommand}"/>
+
+        </dxlc:LayoutGroup>
+
+    </dxlc:LayoutControl>
+    
+    
 
 </local:BaseView>

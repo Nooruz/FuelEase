@@ -29,7 +29,7 @@
 
         <dxwui:HamburgerMenuNavigationButton Content="Настройки"
                                              Tag="{StaticResource faCogs}"
-                                             Command="{Binding SettingsCommand}"/>
+                                             CommandParameter="SettingsView"/>
 
     </customs:CustomHamburgerMenu>
     

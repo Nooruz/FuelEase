@@ -46,5 +46,89 @@ namespace KIT.GasStation.Properties {
                 this["FuelSaleCash"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F7")]
+        public string FuelSaleTicket {
+            get {
+                return ((string)(this["FuelSaleTicket"]));
+            }
+            set {
+                this["FuelSaleTicket"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Enter")]
+        public string FuelSale {
+            get {
+                return ((string)(this["FuelSale"]));
+            }
+            set {
+                this["FuelSale"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("/")]
+        public string StartFullFueling {
+            get {
+                return ((string)(this["StartFullFueling"]));
+            }
+            set {
+                this["StartFullFueling"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F4")]
+        public string FuelSaleStatement {
+            get {
+                return ((string)(this["FuelSaleStatement"]));
+            }
+            set {
+                this["FuelSaleStatement"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F2")]
+        public string FuelSaleDiscountCard {
+            get {
+                return ((string)(this["FuelSaleDiscountCard"]));
+            }
+            set {
+                this["FuelSaleDiscountCard"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F3")]
+        public string FuelSaleCard {
+            get {
+                return ((string)(this["FuelSaleCard"]));
+            }
+            set {
+                this["FuelSaleCard"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F9")]
+        public string FuelSaleOther {
+            get {
+                return ((string)(this["FuelSaleOther"]));
+            }
+            set {
+                this["FuelSaleOther"] = value;
+            }
+        }
     }
 }
