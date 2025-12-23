@@ -31,10 +31,9 @@ namespace KIT.GasStation.ViewModels
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
         private readonly INavigator _navigator;
         private Nozzle _selectedNozzle;
-        private List<DocumentPanelPosition> _positions = new();
-        private ObservableCollection<Nozzle> _nozzles = new();
         private ObservableCollection<FuelDispenserViewModel> _fuelDispenserViewModels = new();
-        private readonly string _documentPanelPositionPath = Path.Combine(AppContext.BaseDirectory, "DocumentPanelPosition.xml");
+        private readonly Dictionary<string, DocumentPanelPosition> _positions;
+        private readonly string _documentPanelPositionPath;
 
         #endregion
 
@@ -80,7 +79,8 @@ namespace KIT.GasStation.ViewModels
 
             _userStore.OnLogin += UserStore_OnLogin;
 
-            EnsureXmlFileExists(); // Создаем XML файл, если он отсутствует
+            _documentPanelPositionPath = GetDocumentPanelPositionPath();
+            _positions = LoadPositions();
         }
 
         #endregion
@@ -139,40 +139,23 @@ namespace KIT.GasStation.ViewModels
                     if (documentPanel.ActualWidth == 0 || documentPanel.ActualHeight == 0)
                         return;
 
-                    var positions = DeserializePositions();
-                    var position = positions.FirstOrDefault(p => p.DocumentPanelName == documentPanel.ActualTabCaption);
-
-                    if (position != null)
+                    UpdatePosition(documentPanel, position =>
                     {
                         position.X = documentPanel.MDILocation.X;
                         position.Y = documentPanel.MDILocation.Y;
                         position.Width = documentPanel.ActualWidth;
                         position.Height = documentPanel.ActualHeight;
-                    }
-                    else
-                    {
-                        positions.Add(new DocumentPanelPosition
-                        {
-                            DocumentPanelName = documentPanel.ActualTabCaption,
-                            X = documentPanel.MDILocation.X,
-                            Y = documentPanel.MDILocation.Y,
-                            Width = documentPanel.ActualWidth,
-                            Height = documentPanel.ActualHeight
-                        });
-                    }
-
-                    SerializePositions(positions);
+                    });
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                //ignore
+                _logger.LogWarning(ex, "Failed to update document panel position on MDI location change.");
             }
         }
 
         private void DefaultPositionDocumentPanel(DocumentGroup documentGroup)
         {
-            var positions = new List<DocumentPanelPosition>();
             double maxWidth = documentGroup.ActualWidth;
             double allItemsWidth = 0;
             double allItemsHeight = 0;
@@ -192,17 +175,20 @@ namespace KIT.GasStation.ViewModels
                 item.MDILocation = new Point(allItemsWidth, allItemsHeight);
                 allItemsWidth += item.ActualWidth + 5;
 
-                positions.Add(new DocumentPanelPosition
+                if (!string.IsNullOrWhiteSpace(item.ActualTabCaption))
                 {
-                    DocumentPanelName = item.ActualTabCaption,
-                    X = item.MDILocation.X,
-                    Y = item.MDILocation.Y,
-                    Width = item.ActualWidth,
-                    Height = item.ActualHeight
-                });
+                    _positions[item.ActualTabCaption] = new DocumentPanelPosition
+                    {
+                        DocumentPanelName = item.ActualTabCaption,
+                        X = item.MDILocation.X,
+                        Y = item.MDILocation.Y,
+                        Width = item.ActualWidth,
+                        Height = item.ActualHeight
+                    };
+                }
             }
 
-            SerializePositions(positions);
+            SavePositions();
         }
 
         private void DocumentPanel_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -215,76 +201,93 @@ namespace KIT.GasStation.ViewModels
                     if (e.NewSize.Width <= 0 || e.NewSize.Height <= 0)
                         return;
 
-                    var positions = DeserializePositions();
-                    var position = positions.FirstOrDefault(p => p.DocumentPanelName == documentPanel.ActualTabCaption);
-
-                    if (position != null)
+                    UpdatePosition(documentPanel, position =>
                     {
                         position.Width = documentPanel.ActualWidth;
                         position.Height = documentPanel.ActualHeight;
-                    }
-                    else
-                    {
-                        positions.Add(new DocumentPanelPosition
-                        {
-                            DocumentPanelName = documentPanel.ActualTabCaption,
-                            Width = documentPanel.ActualWidth,
-                            Height = documentPanel.ActualHeight,
-                        });
-                    }
-
-                    SerializePositions(positions);
+                    });
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                _logger.LogWarning(ex, "Failed to update document panel position on size change.");
             }
         }
 
         private void SetDocumentPanelPosition(DocumentPanel documentPanel)
         {
-            var positions = DeserializePositions();
-            var position = positions.FirstOrDefault(p => p.DocumentPanelName == documentPanel.ActualTabCaption);
-
-            if (position != null)
+            if (string.IsNullOrWhiteSpace(documentPanel.ActualTabCaption))
+            {
+                return;
+            }
+            if (_positions.TryGetValue(documentPanel.ActualTabCaption, out var position))
             {
                 documentPanel.MDILocation = new Point(position.X, position.Y);
                 documentPanel.MDISize = new Size(position.Width, position.Height);
             }
         }
 
-        private void EnsureXmlFileExists()
+        private Dictionary<string, DocumentPanelPosition> LoadPositions()
         {
             var path = GetDocumentPanelPositionPath();
 
-            if (!File.Exists(path))
+            if (!File.Exists(_documentPanelPositionPath))
             {
-                SerializePositions(new List<DocumentPanelPosition>());
+                return new Dictionary<string, DocumentPanelPosition>(StringComparer.Ordinal);
+            }
+            try
+            {
+                using FileStream fs = File.OpenRead(_documentPanelPositionPath);
+                var serializer = new XmlSerializer(typeof(List<DocumentPanelPosition>));
+                var positions = (List<DocumentPanelPosition>)serializer.Deserialize(fs);
+                return positions
+                    .Where(position => !string.IsNullOrWhiteSpace(position.DocumentPanelName))
+                    .ToDictionary(position => position.DocumentPanelName, StringComparer.Ordinal);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load document panel positions.");
+                return new Dictionary<string, DocumentPanelPosition>(StringComparer.Ordinal);
             }
         }
 
-        private List<DocumentPanelPosition> DeserializePositions()
+        private void SavePositions()
         {
-            EnsureXmlFileExists();
-            using FileStream fs = File.OpenRead(_documentPanelPositionPath);
-            var serializer = new XmlSerializer(typeof(List<DocumentPanelPosition>));
-            return (List<DocumentPanelPosition>)serializer.Deserialize(fs);
+            try
+            {
+                using FileStream fs = File.Create(_documentPanelPositionPath);
+                var serializer = new XmlSerializer(typeof(List<DocumentPanelPosition>));
+                serializer.Serialize(fs, _positions.Values.ToList());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to save document panel positions.");
+            }
         }
 
-        private void SerializePositions(List<DocumentPanelPosition> positions)
+        private void UpdatePosition(DocumentPanel documentPanel, Action<DocumentPanelPosition> update)
         {
-            var path = GetDocumentPanelPositionPath();
+            if (string.IsNullOrWhiteSpace(documentPanel.ActualTabCaption))
+            {
+                return;
+            }
 
-            using FileStream fs = File.Create(path);
-            var serializer = new XmlSerializer(typeof(List<DocumentPanelPosition>));
-            serializer.Serialize(fs, positions);
+            if (!_positions.TryGetValue(documentPanel.ActualTabCaption, out var position))
+            {
+                position = new DocumentPanelPosition
+                {
+                    DocumentPanelName = documentPanel.ActualTabCaption
+                };
+                _positions[documentPanel.ActualTabCaption] = position;
+            }
+            update(position);
+            SavePositions();
         }
 
         private string GetDocumentPanelPositionPath()
         {
             var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var appDir = Path.Combine(baseDir, "KIT", "GasStation");
+            var appDir = Path.Combine(baseDir, "КИТ-АЗС");
 
             Directory.CreateDirectory(appDir); // гарантируем, что папка существует
 

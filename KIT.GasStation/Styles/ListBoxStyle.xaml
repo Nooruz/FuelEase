@@ -13,9 +13,13 @@
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal"/>
+                    <!--<StackPanel Orientation="Horizontal"/>-->
                     <!--<controls:StretchyWrapPanel VerticalAlignment="Stretch"
                                                     Background="Green"/>-->
+                    <!--<UniformGrid Columns="{Binding RelativeSource={RelativeSource AncestorType=ListBox},
+                                 Path=Items.Count,
+                                 Converter={StaticResource NozzleColumnsConverter}}"/>-->
+                    <controls:NozzleUniformGrid MaxColumns="4"/>
                 </ItemsPanelTemplate>
             </Setter.Value>
         </Setter>
@@ -49,7 +53,8 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             SnapsToDevicePixels="True"
                             Background="{TemplateBinding Background}">
-                        <controls:NozzleControl VerticalAlignment="Stretch"/>
+                        <controls:NozzleControl VerticalAlignment="Stretch"
+                                                HorizontalAlignment="Stretch"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">

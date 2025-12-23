@@ -292,6 +292,15 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        [Command]
+        public void CurrentDocumentPanelLoaded(RoutedEventArgs args)
+        {
+            if (args.Source is DocumentPanel documentPanel)
+            {
+                
+            }
+        }
+
         /// <summary>
         /// Управления конфигурацией
         /// </summary>

@@ -126,8 +126,13 @@
                                             AllowMaximize="True"
                                             Background="AliceBlue"
                                             AllowClose="False" 
-                                            
-                                            Content="{Binding CurrentViewModel}"/>
+                                            Content="{Binding CurrentViewModel}">
+                            <dxmvvm:Interaction.Behaviors>
+                                <dxmvvm:EventToCommand Event="Loaded"
+                                                       Command="{Binding CurrentDocumentPanelLoadedCommand}"
+                                                       PassEventArgsToCommand="True"/>
+                            </dxmvvm:Interaction.Behaviors>
+                        </dxdo:DocumentPanel>
 
                         <dxdo:LayoutPanel x:Name="Reservoir"
                                           Caption="Панель резервуаров"
