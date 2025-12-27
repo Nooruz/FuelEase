@@ -67,8 +67,8 @@
             <dxlc:LayoutGroup>
 
                 <TreeView MinWidth="200"
-                  HorizontalAlignment="Left"
-                  Style="{StaticResource HardWareTreeView}">
+                          HorizontalAlignment="Left"
+                          Style="{StaticResource HardWareTreeView}">
 
                     <dxmvvm:Interaction.Behaviors>
                         <dxmvvm:EventToCommand Event="MouseRightButtonDown"
@@ -98,6 +98,9 @@
                                   Tag="CheckPrinter"/>
                     <TreeViewItem Header="Сервер авторизации"
                                   Tag="CheckPrinter"/>
+                    <TreeViewItem Header="КИТ"
+                                  Tag="KIT"
+                                  ContextMenu="{StaticResource KITContextMenu}"/>
                 </TreeView>
 
                 <ContentControl Content="{Binding SelectedBaseViewModel}"/>

@@ -2,11 +2,11 @@
 using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
-using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
-using Microsoft.AspNetCore.SignalR.Client;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels.Details
@@ -19,7 +19,7 @@ namespace KIT.GasStation.ViewModels.Details
         private readonly ITankService _tankService;
         private Nozzle _createdNozzle = new();
         private ObservableCollection<Tank> _tanks = new();
-        private readonly IHubClient _hubClient;
+        private IEnumerable<Nozzle> _nozzles;
 
         #endregion
 
@@ -52,11 +52,13 @@ namespace KIT.GasStation.ViewModels.Details
 
         public NozzleDetailViewModel(INozzleService nozzleService,
             ITankService tankService,
-            IHubClient hubClient)
+            string[] hubs,
+            IEnumerable<Nozzle> nozzles)
         {
             _nozzleService = nozzleService;
             _tankService = tankService;
-            _hubClient = hubClient;
+            Hubs = hubs;
+            _nozzles = nozzles;
         }
 
         #endregion
@@ -83,13 +85,19 @@ namespace KIT.GasStation.ViewModels.Details
 
         public async Task StartAsync()
         {
-            var hub = _hubClient.Connection;
-            await _hubClient.EnsureStartedAsync();
-
-            Hubs = await hub.InvokeAsync<string[]>("GetAllGroups");
-
-
             await LoadData();
+
+            int nozzelCount = 0;
+
+            if (_nozzles == null) return;
+
+            if (CreatedNozzle.Id == 0)
+            {
+                nozzelCount = _nozzles.Count() + 1;
+
+                CreatedNozzle.Name = $"ТРК {nozzelCount}";
+                CreatedNozzle.Tube = nozzelCount;
+            }
         }
 
         #endregion
@@ -128,7 +136,6 @@ namespace KIT.GasStation.ViewModels.Details
         private async Task LoadData()
         {
             Tanks = new(await _tankService.GetAllAsync());
-            //Columns = await _hardwareConfigurationService.GetColumnsAsync();
         }
 
         #endregion

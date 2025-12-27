@@ -9,12 +9,5 @@ namespace KIT.GasStation.Domain.Services
         IEnumerable<User> GetCashiers();
         Task<IEnumerable<User>> GetAdminAsync();
         Task<IEnumerable<User>> GetCashiersAsync();
-
-        /// <summary>
-        /// Поментка на удаление
-        /// </summary>
-        /// <param name="user">Пользователь</param>
-        /// <returns></returns>
-        Task<bool> MarkingForDeletion(User user);
     }
 }

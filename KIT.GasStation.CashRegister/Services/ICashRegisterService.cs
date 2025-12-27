@@ -39,7 +39,7 @@ namespace KIT.GasStation.CashRegisters.Services
         /// <summary>
         /// Проводит операцию продажи.
         /// </summary>
-        Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName);
+        Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName, bool isBefore = true);
 
         /// <summary>
         /// Х-отчет.

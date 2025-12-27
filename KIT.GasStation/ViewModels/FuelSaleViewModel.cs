@@ -44,7 +44,6 @@ namespace KIT.GasStation.ViewModels
         private bool _isSumUpdating;
         private decimal _sum;
         private decimal _quantity;
-        private bool _isSelectedNozzleInFuelSale;
         private TextEdit _sumTextEdit;
 
         #endregion
@@ -60,6 +59,7 @@ namespace KIT.GasStation.ViewModels
             {
                 _tube = value;
                 OnPropertyChanged(nameof(Tube));
+                SetFuelNozzle();
             }
         }
         public Nozzle? SelectedNozzle
@@ -87,13 +87,19 @@ namespace KIT.GasStation.ViewModels
             get => _sum;
             set
             {
+                if (_sum == value)
+                {
+                    return;
+                }
+
                 _sum = value;
                 OnPropertyChanged(nameof(Sum));
-                if (!_isUpdatingQuantity && SelectedNozzle != null && SelectedNozzle.Price != 0)
+                decimal? price = SelectedNozzle?.Price;
+                if (!_isUpdatingQuantity && price is > 0)
                 {
                     _isSumUpdating = true;
                     _isUpdatingSum = true;
-                    Quantity = decimal.Floor((Sum / SelectedNozzle.Price) * 100) / 100.0m;
+                    Quantity = decimal.Floor((Sum / price.Value) * 100) / 100.0m;
                     _isUpdatingSum = false;
                 }
             }
@@ -103,13 +109,17 @@ namespace KIT.GasStation.ViewModels
             get => _quantity;
             set
             {
+                if (_quantity == value)
+                {
+                    return;
+                }
                 _quantity = value;
                 OnPropertyChanged(nameof(Quantity));
-                if (!_isUpdatingSum && SelectedNozzle != null)
+                if (!_isUpdatingSum && SelectedNozzle?.Price is > 0)
                 {
                     _isSumUpdating = false;
                     _isUpdatingQuantity = true;
-                    Sum = Math.Round((decimal)Quantity * SelectedNozzle.Price, 2);
+                    Sum = Math.Round(Quantity * SelectedNozzle.Price, 2);
                     _isUpdatingQuantity = false;
                 }
             }
@@ -143,6 +153,7 @@ namespace KIT.GasStation.ViewModels
 
             _fuelService.OnUpdated += FuelService_OnUpdated;
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
+            _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
             _shiftStore.OnNozzleSelectionChanged += ShiftStore_OnNozzleSelectionChanged;
             _nozzleStore.OnNozzleSelected += OnNozzleSelected;
             _cashRegisterStore.OnReceiptPrinting += CashRegisterStore_OnReceiptPrinting;
@@ -158,29 +169,11 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                if (await CanFuelSale())
-                {
-                    CreateFuelSale.TankId = SelectedNozzle.TankId;
-                    CreateFuelSale.ShiftId = _shiftStore.CurrentShift.Id;
-                    CreateFuelSale.NozzleId = SelectedNozzle.Id;
-                    CreateFuelSale.Sum = Sum;
-                    CreateFuelSale.Quantity = Quantity;
-                    CreateFuelSale.Price = SelectedNozzle.Tank.Fuel.Price;
-                    CreateFuelSale.DiscountSale = _disсountStore.CalculateDiscount(CreateFuelSale, SelectedNozzle.Tank.Fuel.Id, _isSumUpdating);
-                    CreateFuelSale.ReceivedCount = SelectedNozzle.LastCounter;
-                    CreateFuelSale.IsForSum = _isSumUpdating;
-
-                    OpenPayView();
-                }
+                await OpenPayView();
             }
             catch (Exception e)
             {
-                //ignore
-            }
-            finally
-            {
-                CreateFuelSale = new() { PaymentType = PaymentType.Cash };
-                CleanForm();
+                _logger.LogError(e, "Ошибка при создании продажи топлива.");
             }
         }
 
@@ -206,22 +199,16 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        [Command]
-        public void TubeEnter()
-        {
-            SetFuelNozzle();
-        }
-
         #endregion
 
         #region Hot Keys
 
-        private void HotKeysService_OnHotKeyPressed(HotKeyAction hotKeyAction)
+        private async void HotKeysService_OnHotKeyPressed(HotKeyAction hotKeyAction)
         {
             switch (hotKeyAction)
             {
                 case HotKeyAction.FuelSale:
-                    OpenPayView();
+                    await OpenPayView();
                     break;
                 case HotKeyAction.FuelSaleCashless:
                     CreateFuelSale.PaymentType = PaymentType.Cashless;
@@ -232,8 +219,8 @@ namespace KIT.GasStation.ViewModels
                 case HotKeyAction.FuelSaleTicket:
                     CreateFuelSale.PaymentType = PaymentType.Ticket;
                     break;
-                default:
-                    CreateFuelSale.PaymentType = PaymentType.Cash;
+                case HotKeyAction.StartFullFueling:
+                    await StartFullFueling();
                     break;
             }
         }
@@ -242,8 +229,67 @@ namespace KIT.GasStation.ViewModels
 
         #region Private members
 
-        private void OpenPayView()
+        private async Task StartFullFueling()
         {
+            try
+            {
+                Quantity = 100;
+
+                if (!await CanFuelSale())
+                {
+                    return;
+                }
+
+                CreateFuelSale.TankId = SelectedNozzle.TankId;
+                CreateFuelSale.ShiftId = _shiftStore.CurrentShift.Id;
+                CreateFuelSale.NozzleId = SelectedNozzle.Id;
+                CreateFuelSale.Sum = Sum;
+                CreateFuelSale.Quantity = Quantity;
+                CreateFuelSale.Price = SelectedNozzle.Tank.Fuel.Price;
+                CreateFuelSale.DiscountSale = _disсountStore.CalculateDiscount(CreateFuelSale, SelectedNozzle.Tank.Fuel.Id, _isSumUpdating);
+                CreateFuelSale.ReceivedCount = SelectedNozzle.LastCounter;
+                CreateFuelSale.IsForSum = _isSumUpdating;
+
+
+                if (Properties.Settings.Default.ReceiptPrintingMode == "Before")
+                {
+                    var fiscalData = _cashRegisterStore.SaleAsync(CreateFuelSale, SelectedNozzle.Tank.Fuel);
+
+                    if (fiscalData != null)
+                    {
+                        CreateFuelSale.FiscalData = await fiscalData;
+                        await _fuelSaleService.CreateAsync(CreateFuelSale);
+                    }
+                }
+                else
+                {
+                    await _fuelSaleService.CreateAsync(CreateFuelSale);
+                }
+
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        private async Task OpenPayView()
+        {
+            if (!await CanFuelSale())
+            {
+                return;
+            }
+
+            CreateFuelSale.TankId = SelectedNozzle.TankId;
+            CreateFuelSale.ShiftId = _shiftStore.CurrentShift.Id;
+            CreateFuelSale.NozzleId = SelectedNozzle.Id;
+            CreateFuelSale.Sum = Sum;
+            CreateFuelSale.Quantity = Quantity;
+            CreateFuelSale.Price = SelectedNozzle.Tank.Fuel.Price;
+            CreateFuelSale.DiscountSale = _disсountStore.CalculateDiscount(CreateFuelSale, SelectedNozzle.Tank.Fuel.Id, _isSumUpdating);
+            CreateFuelSale.ReceivedCount = SelectedNozzle.LastCounter;
+            CreateFuelSale.IsForSum = _isSumUpdating;
+
             PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore)
             {
                 CreateFuelSale = CreateFuelSale,
@@ -277,30 +323,21 @@ namespace KIT.GasStation.ViewModels
 
         private void CashRegisterStore_OnReceiptPrinting()
         {
-            _ = Task.Run(async () =>
-            {
-                await _fuelSaleService.CreateAsync(CreateFuelSale);
-            });
+            _ = _fuelSaleService.CreateAsync(CreateFuelSale);
         }
 
         private void FuelService_OnUpdated(Fuel fuel)
         {
             foreach (var item in Nozzles)
             {
-                if (item.Tank != null && item.Tank.Fuel != null && item.Tank.Fuel.Id == fuel.Id)
+                if (item.Tank?.Fuel?.Id == fuel.Id)
                 {
                     item.Tank.Fuel.Price = fuel.Price;
                 }
             }
-            if (CreateFuelSale != null)
-            {
-                CreateFuelSale.Price = fuel.Price;
-                CreateFuelSale.Sum = (decimal)CreateFuelSale.Quantity * fuel.Price;
-            }
-            if (SelectedNozzle != null &&
-                SelectedNozzle.Tank != null &&
-                SelectedNozzle.Tank.Fuel != null &&
-                SelectedNozzle.Tank.Fuel.Id == fuel.Id)
+            CreateFuelSale.Price = fuel.Price;
+            CreateFuelSale.Sum = CreateFuelSale.Quantity * fuel.Price;
+            if (SelectedNozzle?.Tank?.Fuel?.Id == fuel.Id)
             {
                 SelectedNozzle.Tank.Fuel.Price = fuel.Price;
                 CleanForm();
@@ -313,7 +350,7 @@ namespace KIT.GasStation.ViewModels
             {
                 Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.Id == fuelSale.NozzleId);
 
-                if (nozzle != null && nozzle.FuelSale != null)
+                if (nozzle != null)
                 {
                     nozzle.FuelSale = fuelSale;
                 }
@@ -324,6 +361,11 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        private void FuelSaleService_OnCreated(FuelSale fuelSale)
+        {
+            CleanForm();
+        }
+
         private async Task<bool> CanFuelSale()
         {
             if (!ValidateNozzleSelection() || !await ValidateShift() || !ValidateCashRegisterShift()
@@ -331,6 +373,9 @@ namespace KIT.GasStation.ViewModels
             {
                 return false;
             }
+
+
+
             return true;
         }
 
@@ -359,7 +404,8 @@ namespace KIT.GasStation.ViewModels
             }
             if (result == MessageResult.Yes)
             {
-                return await _shiftStore.OpenShiftAsync();
+                await _shiftStore.OpenShiftAsync();
+                return false;
             }
 
             if (result == MessageResult.No)
@@ -442,7 +488,13 @@ namespace KIT.GasStation.ViewModels
             }
 
             IEnumerable<TankFuelQuantityView> tanks = await _tankFuelQuantityView.GetAllAsync();
-            TankFuelQuantityView tank = tanks.First(t => t.Id == SelectedNozzle.TankId);
+
+            TankFuelQuantityView tank = tanks.FirstOrDefault(t => t.Id == SelectedNozzle.TankId);
+            if (tank == null)
+            {
+                MessageBoxService.ShowMessage("Резервуар не найден!", "Внимание!", MessageButton.OK, MessageIcon.Exclamation);
+                return false;
+            }
 
             if (tank.MinimumSize > 0)
             {
@@ -475,6 +527,7 @@ namespace KIT.GasStation.ViewModels
 
         private void CleanForm()
         {
+            CreateFuelSale = new() { PaymentType = PaymentType.Cash };
             Quantity = 0;
             Tube = null;
             SelectedNozzle = null;
@@ -525,18 +578,10 @@ namespace KIT.GasStation.ViewModels
 
         private void FocusSumTextEdit()
         {
-            if (SelectedNozzle != null)
+            if (SelectedNozzle != null && _sumTextEdit != null)
             {
-                DispatcherTimer timer = new()
-                {
-                    Interval = TimeSpan.FromMilliseconds(50)
-                };
-                timer.Tick += (s, e) =>
-                {
-                    _sumTextEdit.Focus();
-                    timer.Stop();
-                };
-                timer.Start();
+                _sumTextEdit.Dispatcher.BeginInvoke(new Action(() => _sumTextEdit.Focus()),
+                    DispatcherPriority.Background);
             }
         }
 
@@ -553,6 +598,7 @@ namespace KIT.GasStation.ViewModels
                 _shiftStore.OnNozzleSelectionChanged -= ShiftStore_OnNozzleSelectionChanged;
                 _nozzleStore.OnNozzleSelected -= OnNozzleSelected;
                 _cashRegisterStore.OnReceiptPrinting -= CashRegisterStore_OnReceiptPrinting;
+                _hotKeysService.OnHotKeyPressed -= HotKeysService_OnHotKeyPressed;
             }
 
             base.Dispose(disposing);

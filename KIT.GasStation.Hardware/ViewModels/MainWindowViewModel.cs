@@ -206,6 +206,12 @@ namespace KIT.GasStation.Hardware.ViewModels
             }
         }
 
+        [Command]
+        public void KITCreate()
+        {
+            SelectedBaseViewModel = new KITViewModel();
+        }
+
         #endregion
 
         #region Private Methods

@@ -22,6 +22,7 @@ namespace KIT.GasStation.EntityFramework.Services
 
         public async Task<Tank> CreateAsync(Tank entity)
         {
+            entity.CreatedAt = DateTime.Now;
             var result = await _nonQueryDataService.Create(entity);
             if (result != null)
             {
@@ -32,12 +33,19 @@ namespace KIT.GasStation.EntityFramework.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var result = await _nonQueryDataService.Delete(id);
-            if (result)
+            var entity = await GetAsync(id);
+
+            if (entity == null) return false;
+
+            entity.DeletedAt = DateTime.Now;
+            entity.IsDeleted = true;
+
+            var result = await _nonQueryDataService.Update(id, entity);
+            if (result != null)
             {
                 OnDeleted?.Invoke(id);
             }
-            return result;
+            return result != null;
         }
 
         public async Task<IEnumerable<Tank>> GetAllAsync()
@@ -45,7 +53,10 @@ namespace KIT.GasStation.EntityFramework.Services
             try
             {
                 await using GasStationDbContext context = _contextFactory.CreateDbContext();
-                return await context.Tanks.Include(t => t.Fuel).ToListAsync();
+                return await context.Tanks
+                    .Where(t => !t.IsDeleted)
+                    .Include(t => t.Fuel)
+                    .ToListAsync();
             }
             catch (Exception)
             {
@@ -59,7 +70,10 @@ namespace KIT.GasStation.EntityFramework.Services
             try
             {
                 await using GasStationDbContext context = _contextFactory.CreateDbContext();
-                return await context.Tanks.Include(t => t.Fuel).FirstOrDefaultAsync((e) => e.Id == id);
+                return await context.Tanks
+                    .Where(t => !t.IsDeleted)
+                    .Include(t => t.Fuel)
+                    .FirstOrDefaultAsync((e) => e.Id == id);
             }
             catch (Exception)
             {
@@ -74,7 +88,9 @@ namespace KIT.GasStation.EntityFramework.Services
             try
             {
                 await using GasStationDbContext context = _contextFactory.CreateDbContext();
-                Tank? tank = await context.Tanks.FirstOrDefaultAsync((e) => e.Number == number);
+                Tank? tank = await context.Tanks
+                    .Where(t => !t.IsDeleted)
+                    .FirstOrDefaultAsync((e) => e.Number == number);
 
                 return tank != null;
             }
@@ -87,6 +103,7 @@ namespace KIT.GasStation.EntityFramework.Services
 
         public async Task<Tank> UpdateAsync(int id, Tank entity)
         {
+            entity.UpdatedAt = DateTime.Now;
             var result = await _nonQueryDataService.Update(id, entity);
             if (result != null)
                 OnUpdated?.Invoke(await GetAsync(result.Id));

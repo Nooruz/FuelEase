@@ -142,23 +142,24 @@ namespace KIT.GasStation.NewCas
         }
 
         /// <inheritdoc/>
-        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
+        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName, bool isBefore = true)
         {
+            decimal sum = isBefore ? fuelSale.Sum : fuelSale.ReceivedSum;
+
             // Данные для отправки в запросе
             var openAndCloseRec = new OpenAndCloseRec()
             {
                 RecType = RecType.Coming,
                 CashierName = cashierName,
-                PrintToBitmaps = true,
                 Goods = new[]
                 {
                     new Goods
                     {
-                        Count    = Math.Round(fuelSale.Sum / fuelSale.Price, 6),
+                        Count    = Math.Round(sum / fuelSale.Price, 6),
                         Price    = fuelSale.Price,
                         ItemName = fuel.Name,
                         Article  = "",
-                        Total    = fuelSale.Sum.ToString(),
+                        Total    = sum.ToString(),
                         Unit     = "л",
                         VatNum   = fuel.ValueAddedTax ? 1 : 0,
                         StNum    = (int)(fuel.SalesTax * 100)
@@ -169,7 +170,7 @@ namespace KIT.GasStation.NewCas
                     new PayItems
                     {
                         PayType = GetPayType(fuelSale.PaymentType),
-                        Total   = fuelSale.Sum.ToString()
+                        Total   = sum.ToString()
                     }
                 }
             };

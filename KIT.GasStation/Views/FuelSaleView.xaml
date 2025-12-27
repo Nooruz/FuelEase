@@ -6,7 +6,8 @@
     xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
     xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
     x:Class="KIT.GasStation.Views.FuelSaleView"
-    MinWidth="250">
+    MinWidth="250"
+    FontSize="12">
 
     <dxmvvm:Interaction.Behaviors>
         <dxmvvm:EventToCommand Event="Loaded"

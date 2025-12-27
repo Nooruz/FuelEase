@@ -26,6 +26,7 @@ namespace KIT.GasStation.Services
         #endregion
 
         public event Action<HotKeyAction> OnHotKeyPressed;
+        public event Action<int> OnNumberKeyPressed;
 
         public void HandleKeyPress(Key key)
         {
@@ -33,6 +34,11 @@ namespace KIT.GasStation.Services
             {
                 OnHotKeyPressed?.Invoke(action);
             }
+        }
+
+        public void HandleNumberKeyPress(int number)
+        {
+            OnNumberKeyPressed?.Invoke(number);
         }
 
         #region Helpers

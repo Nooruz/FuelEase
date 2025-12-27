@@ -15,7 +15,7 @@ namespace KIT.GasStation.Domain.Models
         private int _tube;
         private int _side;
         private int _tankId;
-        private string _group;
+        private string _group = string.Empty;
         private NozzleStatus _status;
         private bool _isProgramControl;
         private decimal _lastCounter;
@@ -25,6 +25,7 @@ namespace KIT.GasStation.Domain.Models
         private int _number;
         private string? _workerStateMessage;
         private DateTimeOffset _workerStateUpdatedAt;
+        private bool _isDeleted;
 
         #endregion
 
@@ -94,6 +95,34 @@ namespace KIT.GasStation.Domain.Models
                 OnPropertyChanged(nameof(Group));
             }
         }
+
+        /// <summary>
+        /// Пометка удаления
+        /// </summary>
+        public bool IsDeleted
+        {
+            get => _isDeleted;
+            set
+            {
+                _isDeleted = value;
+                OnPropertyChanged(nameof(IsDeleted));
+            }
+        }
+
+        /// <summary>
+        /// Дата создания
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Дата изменения
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Дата удаления
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
 
         public Tank? Tank { get; set; }
 
@@ -249,6 +278,10 @@ namespace KIT.GasStation.Domain.Models
                 Side = updatedNozzle.Side;
                 TankId = updatedNozzle.TankId;
                 Group = updatedNozzle.Group;
+                CreatedAt = updatedNozzle.CreatedAt;
+                IsDeleted = updatedNozzle.IsDeleted;
+                UpdatedAt = updatedNozzle.UpdatedAt;
+                DeletedAt = updatedNozzle.DeletedAt;
             }
         }
     }

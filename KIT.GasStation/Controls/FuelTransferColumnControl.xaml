@@ -140,20 +140,20 @@
                         </Grid.RowDefinitions>
 
                         <dxga:DigitalGaugeControl Grid.Row="0"
-                                          Height="30"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Top"
-                                          Text="{Binding ReceivedSum, StringFormat=F2, FallbackValue=0.00}"
-                                          Style="{StaticResource DefaultDigitalScreenStyle}"
-                                          Margin="0 0 0 2"/>
+                                                  Height="30"
+                                                  HorizontalAlignment="Right"
+                                                  VerticalAlignment="Top"
+                                                  Text="{Binding ReceivedSum, StringFormat=F2, FallbackValue=0.00}"
+                                                  Style="{StaticResource DefaultDigitalScreenStyle}"
+                                                  Margin="0 0 0 2"/>
 
                         <dxga:DigitalGaugeControl Grid.Row="1" 
-                                          Height="30"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Top"
-                                          Style="{StaticResource DefaultDigitalScreenStyle}"
-                                          Text="{Binding ReceivedQuantity, StringFormat=F2, FallbackValue=0.00}"
-                                          Margin="0 0 0 2"/>
+                                                  Height="30"
+                                                  HorizontalAlignment="Right"
+                                                  VerticalAlignment="Top"
+                                                  Style="{StaticResource DefaultDigitalScreenStyle}"
+                                                  Text="{Binding ReceivedQuantity, StringFormat=F2, FallbackValue=0.00}"
+                                                  Margin="0 0 0 2"/>
 
 
                         <dxga:DigitalGaugeControl Grid.Row="3" 
@@ -171,13 +171,7 @@
 
             </Grid>
 
-            <!--<TextBlock Text="{Binding SelectedNozzle.FuelSale.PaymentType, Converter={StaticResource EnumToStringConvertert}}"
-                       TextAlignment="Center"
-                       FontSize="18"
-                       FontWeight="Bold"
-                       dxb:BarManager.DXContextMenu="{StaticResource Menu}"
-                       Grid.Row="1"/>-->
-            <TextBlock Text="{Binding Path=MDISize, RelativeSource={RelativeSource AncestorType={x:Type dxdo:DocumentPanel}}}"
+            <TextBlock Text="{Binding SelectedNozzle.FuelSale.PaymentType, Converter={StaticResource EnumToStringConvertert}}"
                        TextAlignment="Center"
                        FontSize="18"
                        FontWeight="Bold"

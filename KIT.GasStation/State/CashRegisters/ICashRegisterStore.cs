@@ -52,7 +52,12 @@ namespace KIT.GasStation.State.CashRegisters
         /// <summary>
         /// Продажа
         /// </summary>
-        Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel);
+        Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, bool isBefore = true);
+
+        /// <summary>
+        /// Произвольный чек
+        /// </summary>
+        //Task<FiscalData?> CustomReceiptAsync(FuelSale fuelSale);
 
         /// <summary>
         /// Возврат

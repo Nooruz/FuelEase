@@ -6,6 +6,7 @@ using KIT.GasStation.Domain.Models;
 using KIT.GasStation.EntityFramework;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.HostBuilders;
+using KIT.GasStation.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
@@ -263,8 +264,8 @@ namespace KIT.GasStation
                 userStore.OnLogout += UserStore_OnLogout;
 
                 _splashScreenViewModel.Status = "Запуск сервисов...";
-                //await Services.ServiceManager.StartWebAsync();
-                //await Services.ServiceManager.StartWorkerAsync();
+                await Services.ServiceManager.StartWebAsync();
+                await Services.ServiceManager.StartWorkerAsync();
 
                 _splashScreenViewModel.Status = "Загрузка основного окна...";
                 // Получаем главное окно из DI и устанавливаем DataContext
@@ -440,12 +441,25 @@ namespace KIT.GasStation
             await command.ExecuteNonQueryAsync();
         }
 
-        protected override async void OnExit(ExitEventArgs e)
+        protected override void OnExit(ExitEventArgs e)
         {
-            await _host.StopAsync();
-            _host.Dispose();
+            Try(() => ServiceManager.StopWebAsync().Wait(TimeSpan.FromSeconds(5)));
+            Try(() => ServiceManager.StopWorkerAsync().Wait(TimeSpan.FromSeconds(5)));
+
+            Try(() => _host.StopAsync(TimeSpan.FromSeconds(3)).Wait(TimeSpan.FromSeconds(4)));
+            Try(() => _host.Dispose());
 
             base.OnExit(e);
+        }
+
+        private static void Try(Action a)
+        {
+            try { a(); }
+            catch (Exception ex)
+            {
+                // ЛОГ сюда. Главное — не блокировать выход приложения.
+                // Logger.Error(ex, "Shutdown error");
+            }
         }
     }
 }

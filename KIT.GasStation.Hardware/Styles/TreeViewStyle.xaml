@@ -24,6 +24,11 @@
                   Command="{Binding CashRegisterCreateCommand}"/>
     </ContextMenu>
 
+    <ContextMenu x:Key="KITContextMenu">
+        <MenuItem Header="Добавить"
+              Command="{Binding KITCreateCommand}"/>
+    </ContextMenu>
+
     <Style TargetType="{x:Type TreeView}" x:Key="HardWareTreeView">
         <Setter Property="ItemContainerStyle" Value="{StaticResource HardWareTreeViewItem}"/>
     </Style>

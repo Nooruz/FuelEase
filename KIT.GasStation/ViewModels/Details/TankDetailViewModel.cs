@@ -126,7 +126,7 @@ namespace KIT.GasStation.ViewModels.Details
             {
                 var tanks = await _tankService.GetAllAsync();
                 
-                if (tanks != null && tanks.Any())
+                if (tanks != null && tanks.Any() && Tank.Id == 0)
                 {
                     int number = tanks.Count() + 1;
                     Tank.Name = $"Резервуар {number}";
@@ -143,9 +143,9 @@ namespace KIT.GasStation.ViewModels.Details
 
         #region Private Voids
 
-        private void TankService_OnCreated(Tank tank)
+        private async void TankService_OnCreated(Tank tank)
         {
-            Task.Run(StartAsync);
+            await StartAsync();
         }
 
         #endregion

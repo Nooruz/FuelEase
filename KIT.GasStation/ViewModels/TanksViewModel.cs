@@ -8,6 +8,7 @@ using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Details;
 using KIT.GasStation.ViewModels.Factories;
 using KIT.GasStation.Views.Details;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
@@ -102,15 +103,7 @@ namespace KIT.GasStation.ViewModels
                 OnPropertyChanged(nameof(Nozzles));
             }
         }
-        //public ObservableCollection<Column> Columns
-        //{
-        //    get => _columns;
-        //    set
-        //    {
-        //        _columns = value;
-        //        OnPropertyChanged(nameof(Columns));
-        //    }
-        //}
+        public string[] Hubs { get; set; }
 
         #endregion
 
@@ -250,7 +243,7 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public async Task CreateNozzle()
         {
-            var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hubClient);
+            var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, Hubs, Nozzles);
 
             await viewModel.StartAsync();
 
@@ -263,7 +256,7 @@ namespace KIT.GasStation.ViewModels
         {
             if (SelectedNozzle != null)
             {
-                var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, _hubClient)
+                var viewModel = new NozzleDetailViewModel(_nozzleService, _tankService, Hubs, Nozzles)
                 {
                     CreatedNozzle = new Nozzle(SelectedNozzle)
                 };
@@ -298,7 +291,10 @@ namespace KIT.GasStation.ViewModels
             Fuels = new(await _fuelService.GetAllAsync());
             Tanks = new(await _tankFuelQuantityView.GetAllAsync());
             Nozzles = new(await _nozzleService.GetAllAsync());
-            //Columns = await _hardwareConfigurationService.GetColumnsAsync();
+            var hub = _hubClient.Connection;
+            await _hubClient.EnsureStartedAsync();
+
+            Hubs = await hub.InvokeAsync<string[]>("GetAllGroups");
         }
 
         #endregion

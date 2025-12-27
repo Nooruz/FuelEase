@@ -3,18 +3,15 @@
                     xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
                     xmlns:dxprg="http://schemas.devexpress.com/winfx/2008/xaml/propertygrid">
 
-    
-    
-    <DataTemplate x:Key="ReceiptPrintingModeTypeItem">
-        <dxprg:PropertyDefinition>
-            <dxprg:PropertyDefinition.CellTemplate>
-                <DataTemplate>
-                    <dxe:ComboBoxEdit Name="PART_Editor"
-                                      ItemsSource="{Binding ReceiptPrintingModeTypeItems}"
-                                      DisplayMember="Description"/>
-                </DataTemplate>
-            </dxprg:PropertyDefinition.CellTemplate>
-        </dxprg:PropertyDefinition>
+
+
+    <DataTemplate x:Key="ReceiptPrintingModeTypeItemEditor">
+        <dxe:ComboBoxEdit Name="PART_Editor"
+                          ItemsSource="{Binding DataContext.ReceiptPrintingModeTypes, RelativeSource={RelativeSource AncestorType=dxprg:PropertyGridControl}}"
+                          DisplayMember="Value"
+                          IsTextEditable="False"
+                          ValueMember="Key"
+                          SelectedItem="{Binding DataContext.Settings.ReceiptPrintingModeTypeItem, RelativeSource={RelativeSource AncestorType=dxprg:PropertyGridControl}}"/>
     </DataTemplate>
 
 </ResourceDictionary>

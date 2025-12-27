@@ -42,6 +42,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IHubClient _hubClient;
         private readonly IHotKeysService _hotKeysService;
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
+        private readonly INozzleService _nozzleService;
         private HubConnection _hub;
         private int _side;
         private NozzleStatus _status;
@@ -102,7 +103,6 @@ namespace KIT.GasStation.ViewModels
         public decimal ReceivedQuantity => SelectedNozzle?.FuelSale?.ReceivedQuantity ?? 0;
         public decimal ReceivedSum => SelectedNozzle?.FuelSale?.ReceivedSum ?? 0;
 
-
         #endregion
 
         #region Constructors
@@ -117,7 +117,8 @@ namespace KIT.GasStation.ViewModels
             IUserStore userStore,
             IHubClient hubClient,
             IViewService<TankFuelQuantityView> tankFuelQuantityView,
-            IHotKeysService hotKeysService)
+            IHotKeysService hotKeysService,
+            INozzleService nozzleService)
         {
             _nozzleStore = nozzleStore;
             _fuelSaleService = fuelSaleService;
@@ -130,6 +131,7 @@ namespace KIT.GasStation.ViewModels
             _hubClient = hubClient;
             _tankFuelQuantityView = tankFuelQuantityView;
             _hotKeysService = hotKeysService;
+            _nozzleService = nozzleService;
 
             _shiftStore.OnLogin += ShiftStore_OnLogin;
             _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
@@ -141,7 +143,10 @@ namespace KIT.GasStation.ViewModels
             _shiftStore.OnClosed += ShiftStore_OnClosed;
             _fuelService.OnUpdated += FuelService_OnUpdated;
             _userStore.OnLogout += UserStore_OnLogout;
-            _hotKeysService.OnHotKeyPressed += HotKeysService_OnHotKeyPressed;
+            _hotKeysService.OnNumberKeyPressed += HotKeysService_OnNumberKeyPressed;
+            _nozzleService.OnCreated += NozzleService_OnCreated;
+            _nozzleService.OnUpdated += NozzleService_OnUpdated;
+            _nozzleService.OnDeleted += NozzleService_OnDeleted;
         }
 
         #endregion
@@ -264,9 +269,9 @@ namespace KIT.GasStation.ViewModels
                         CreateDate = DateTime.Now,
                         PaymentType = PaymentType.Cash,
                     };
-                    
 
-                    if (await CanFuelSale(fuelSale))
+
+                    if (Properties.Settings.Default.ReceiptPrintingMode == "Before")
                     {
                         var fiscalData = _cashRegisterStore.SaleAsync(fuelSale, SelectedNozzle.Tank.Fuel);
 
@@ -275,6 +280,10 @@ namespace KIT.GasStation.ViewModels
                             fuelSale.FiscalData = await fiscalData;
                             await _fuelSaleService.CreateAsync(fuelSale);
                         }
+                    }
+                    else
+                    {
+                        await _fuelSaleService.CreateAsync(fuelSale);
                     }
                 }
             }
@@ -358,16 +367,32 @@ namespace KIT.GasStation.ViewModels
 
                 var fuelSale = SelectedNozzle.FuelSale;
 
-                if (fuelSale.Quantity > fuelSale.ReceivedQuantity)
+                if (Properties.Settings.Default.ReceiptPrintingMode == "After")
                 {
-                    if (fuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
-                    {
-                        var returntFiscalData = await _cashRegisterStore
-                            .ReturnAndReceivedSaleAsync(SelectedNozzle.FuelSale, SelectedNozzle.Tank.Fuel, _userStore.CurrentUser.FullName);
+                    var fiscalData = await _cashRegisterStore.SaleAsync(fuelSale, fuelSale.Tank.Fuel, false);
 
-                        if (returntFiscalData != null)
+                    if (fiscalData is not null)
+                    {
+                        fuelSale.FiscalData = fiscalData;
+                    }
+                    else
+                    {
+                        MessageBoxService.ShowMessage("Не удалось получить фискальные данные от ККМ.", "Ошибка", MessageButton.OK, MessageIcon.Error);
+                    }
+                }
+                else
+                {
+                    if (fuelSale.Quantity > fuelSale.ReceivedQuantity)
+                    {
+                        if (fuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
                         {
-                            fuelSale.FiscalData.ReturnCheck = returntFiscalData.Check;
+                            var returntFiscalData = await _cashRegisterStore
+                                .ReturnAndReceivedSaleAsync(SelectedNozzle.FuelSale, SelectedNozzle.Tank.Fuel, _userStore.CurrentUser.FullName);
+
+                            if (returntFiscalData != null)
+                            {
+                                fuelSale.FiscalData.ReturnCheck = returntFiscalData.Check;
+                            }
                         }
                     }
                 }
@@ -1071,6 +1096,37 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        private void NozzleService_OnDeleted(int id)
+        {
+            var nozzle = Nozzles.FirstOrDefault(n => n.Id == id);
+
+            if (nozzle == null) return;
+
+            Nozzles.Remove(nozzle);
+
+            if (!Nozzles.Any())
+            {
+
+            }
+        }
+
+        private void NozzleService_OnUpdated(Nozzle updatedNozzle)
+        {
+            var nozzle = Nozzles.FirstOrDefault(n => n.Id == updatedNozzle.Id);
+
+            if (nozzle == null) return;
+
+            nozzle.Update(updatedNozzle);
+        }
+
+        private void NozzleService_OnCreated(Nozzle createdNozzle)
+        {
+            if (createdNozzle.Side == Side)
+            {
+                Nozzles.Add(createdNozzle);
+            }
+        }
+
         #endregion
 
         #region ККМ
@@ -1183,11 +1239,27 @@ namespace KIT.GasStation.ViewModels
 
         #region Hot Keys
 
-        private async void HotKeysService_OnHotKeyPressed(HotKeyAction hotKeyAction)
+        private void HotKeysService_OnNumberKeyPressed(int number)
         {
-            if (hotKeyAction == HotKeyAction.StartFullFueling)
+            var isSelectionAllowed = Status switch
             {
-                await StartFullFueling();
+                NozzleStatus.PumpWorking => true,
+                NozzleStatus.WaitingStop => true,
+                NozzleStatus.WaitingRemoved => true,
+                _ => false
+            };
+
+            if (isSelectionAllowed) return;
+
+            if (Nozzles != null)
+            {
+                var nozzle = Nozzles.FirstOrDefault(n => n.Tube == number);
+
+                if (nozzle != null)
+                {
+                    SelectedNozzle = nozzle;
+                    _nozzleStore.SelectNozzle(number);
+                }
             }
         }
 

@@ -22,7 +22,9 @@ namespace KIT.GasStation.Hardware.HostBuilders
                 services.AddTransient(CreatePKElectronicsViewModel);
                 services.AddTransient(CreateEKassaViewModel);
                 services.AddTransient(CreateNewCasViewModel);
+                services.AddTransient(CreateKITViewModel);
 
+                services.AddSingleton<CreateViewModel<KITViewModel>>(servicesProvider => () => CreateKITViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<MainWindowViewModel>>(servicesProvider => () => CreateMainWindowViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<LanfengViewModel>>(servicesProvider => () => CreateLanfengViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<PKElectronicsViewModel>>(servicesProvider => () => CreatePKElectronicsViewModel(servicesProvider));
@@ -31,6 +33,11 @@ namespace KIT.GasStation.Hardware.HostBuilders
 
                 services.AddSingleton<IViewModelFactory, ViewModelFactory>();
             });
+        }
+
+        private static KITViewModel CreateKITViewModel(IServiceProvider services)
+        {
+            return new KITViewModel();
         }
 
         private static NewCasViewModel CreateNewCasViewModel(IServiceProvider services)

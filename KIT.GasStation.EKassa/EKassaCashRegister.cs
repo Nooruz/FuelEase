@@ -133,7 +133,7 @@ namespace KIT.GasStation.EKassa
         }
 
         /// <inheritdoc/>
-        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
+        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName, bool isBefore = true)
         {
             try
             {

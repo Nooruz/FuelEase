@@ -30,18 +30,26 @@ namespace KIT.GasStation.EntityFramework.Services
 
         public async Task<Nozzle> CreateAsync(Nozzle entity)
         {
+            entity.CreatedAt = DateTime.Now;
             var result = await _nonQueryDataService.Create(entity);
             if (result != null)
-                OnCreated?.Invoke(result);
+                OnCreated?.Invoke(await GetAsync(result.Id));
             return result;
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var result = await _nonQueryDataService.Delete(id);
-            if (result)
+            var entity = await GetAsync(id);
+
+            if (entity == null) return false;
+
+            entity.DeletedAt = DateTime.Now;
+            entity.IsDeleted = true;
+
+            var result = await _nonQueryDataService.Update(id, entity);
+            if (result != null)
                 OnDeleted?.Invoke(id);
-            return result;
+            return result != null;
         }
 
         public async Task<Nozzle> GetAsync(int id)
@@ -50,6 +58,9 @@ namespace KIT.GasStation.EntityFramework.Services
             {
                 await using GasStationDbContext context = _contextFactory.CreateDbContext();
                 return await context.Nozzles
+                    .Where(n => !n.IsDeleted)
+                    .Include(n => n.Tank)
+                    .ThenInclude(n => n.Fuel)
                     .FirstOrDefaultAsync((e) => e.Id == id);
             }
             catch (Exception)
@@ -65,6 +76,7 @@ namespace KIT.GasStation.EntityFramework.Services
             {
                 await using GasStationDbContext context = _contextFactory.CreateDbContext();
                 return await context.Nozzles
+                    .Where(n => !n.IsDeleted)
                     .Include(n => n.Tank)
                     .ThenInclude(n => n.Fuel)
                     .ThenInclude(n => n.UnitOfMeasurement)
@@ -82,7 +94,7 @@ namespace KIT.GasStation.EntityFramework.Services
             try
             {
                 await using GasStationDbContext context = _contextFactory.CreateDbContext();
-                return await context.Nozzles.CountAsync();
+                return await context.Nozzles.Where(n => !n.IsDeleted).CountAsync();
             }
             catch (Exception)
             {
@@ -93,6 +105,7 @@ namespace KIT.GasStation.EntityFramework.Services
 
         public async Task<Nozzle> UpdateAsync(int id, Nozzle entity)
         {
+            entity.UpdatedAt = DateTime.Now;
             var result = await _nonQueryDataService.Update(id, entity);
             if (result != null)
                 OnUpdated?.Invoke(result);

@@ -14,11 +14,16 @@
 
 
     <dxlc:LayoutControl Orientation="Vertical">
-        
+
         <dxprg:PropertyGridControl SelectedObject="{Binding Settings}"
                                    ShowCategories="True"
                                    ShowDescriptionIn="Panel"
-                                   ExpandCategoriesWhenSelectedObjectChanged="True"/>
+                                   ExpandCategoriesWhenSelectedObjectChanged="False">
+            <dxprg:PropertyGridControl.PropertyDefinitions>
+                <dxprg:PropertyDefinition Path="ReceiptPrintingModeTypeItem"
+                                          CellTemplate="{StaticResource ReceiptPrintingModeTypeItemEditor}"/>
+            </dxprg:PropertyGridControl.PropertyDefinitions>
+        </dxprg:PropertyGridControl>
 
         <dxlc:LayoutGroup HorizontalAlignment="Right"
                           VerticalAlignment="Bottom">

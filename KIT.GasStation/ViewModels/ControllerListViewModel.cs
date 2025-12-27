@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using System.Xml.Serialization;
 
 namespace KIT.GasStation.ViewModels
@@ -33,6 +34,7 @@ namespace KIT.GasStation.ViewModels
         private Nozzle _selectedNozzle;
         private ObservableCollection<FuelDispenserViewModel> _fuelDispenserViewModels = new();
         private readonly Dictionary<string, DocumentPanelPosition> _positions;
+        private readonly HashSet<string> _initializingDocumentPanels = new(StringComparer.Ordinal);
         private readonly string _documentPanelPositionPath;
 
         #endregion
@@ -114,9 +116,22 @@ namespace KIT.GasStation.ViewModels
             {
                 if (args.Source is DocumentPanel documentPanel)
                 {
+                    if (!string.IsNullOrWhiteSpace(documentPanel.ActualTabCaption))
+                    {
+                        _initializingDocumentPanels.Add(documentPanel.ActualTabCaption);
+                    }
+
                     DependencyPropertyDescriptor.FromProperty(DocumentPanel.MDILocationProperty, typeof(DocumentPanel)).AddValueChanged(documentPanel, OnMDILocationPropertyChanged);
                     documentPanel.SizeChanged += DocumentPanel_SizeChanged;
                     SetDocumentPanelPosition(documentPanel);
+
+                    documentPanel.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (!string.IsNullOrWhiteSpace(documentPanel.ActualTabCaption))
+                        {
+                            _initializingDocumentPanels.Remove(documentPanel.ActualTabCaption);
+                        }
+                    }), DispatcherPriority.Loaded);
                 }
             }
             catch (Exception)
@@ -268,6 +283,11 @@ namespace KIT.GasStation.ViewModels
         private void UpdatePosition(DocumentPanel documentPanel, Action<DocumentPanelPosition> update)
         {
             if (string.IsNullOrWhiteSpace(documentPanel.ActualTabCaption))
+            {
+                return;
+            }
+
+            if (_initializingDocumentPanels.Contains(documentPanel.ActualTabCaption))
             {
                 return;
             }

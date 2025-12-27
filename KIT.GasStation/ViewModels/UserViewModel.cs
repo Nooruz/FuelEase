@@ -107,7 +107,7 @@ namespace KIT.GasStation.ViewModels
                             FullName = SelectedUser.FullName,
                             UserRoleId = SelectedUser.UserRoleId,
                             Password = SelectedUser.Password,
-                            Deleted = SelectedUser.Deleted
+                            IsDeleted = SelectedUser.IsDeleted
                         }
                     };
 

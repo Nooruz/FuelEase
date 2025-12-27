@@ -9,51 +9,46 @@
     x:Class="KIT.GasStation.Views.Details.NozzleDetailView"
     Width="400">
 
-    <dx:LoadingDecorator FadeInDuration="0"
-                         FadeOutDuration="0:0:0:2">
+    <dxlc:LayoutControl Orientation="Vertical">
 
-        <dxlc:LayoutControl Orientation="Vertical">
+        <dxlc:LayoutItem Label="Наименование">
+            <dxe:TextEdit EditValue="{Binding CreatedNozzle.Name}"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Наименование">
-                <dxe:TextEdit EditValue="{Binding CreatedNozzle.Name}"/>
-            </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Код стороны">
+            <dxe:TextEdit EditValue="{Binding CreatedNozzle.Side}" MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n0"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Код стороны">
-                <dxe:TextEdit EditValue="{Binding CreatedNozzle.Side}" MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n0"/>
-            </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Код шланга">
+            <dxe:TextEdit EditValue="{Binding CreatedNozzle.Tube}" MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n0"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Код шланга">
-                <dxe:TextEdit EditValue="{Binding CreatedNozzle.Tube}" MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n0"/>
-            </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Резервуар">
+            <dxe:ComboBoxEdit ItemsSource="{Binding Tanks}"
+                          DisplayMember="Name"
+                          ValueMember="Id"
+                          EditValue="{Binding CreatedNozzle.TankId}"
+                          ShowError="False"
+                          ShowErrorToolTip="False"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Резервуар">
-                <dxe:ComboBoxEdit ItemsSource="{Binding Tanks}"
-                                  DisplayMember="Name"
-                                  ValueMember="Id"
-                                  EditValue="{Binding CreatedNozzle.TankId}"
-                                  ShowError="False"
-                                  ShowErrorToolTip="False"/>
-            </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Канал контроллера">
+            <dxe:ComboBoxEdit ItemsSource="{Binding Hubs}"
+                          EditValue="{Binding CreatedNozzle.Group}"
+                          ShowError="False"
+                          ShowErrorToolTip="False"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Канал контроллера">
-                <dxe:ComboBoxEdit ItemsSource="{Binding Hubs}"
-                                  EditValue="{Binding CreatedNozzle.Group}"
-                                  ShowError="False"
-                                  ShowErrorToolTip="False"/>
-            </dxlc:LayoutItem>
+        <dxlc:LayoutGroup HorizontalAlignment="Right">
 
-            <dxlc:LayoutGroup HorizontalAlignment="Right">
+            <Button Content="Сохранить"
+                Command="{Binding SaveCommand}"/>
 
-                <Button Content="Сохранить"
-                        Command="{Binding SaveCommand}"/>
+            <Button Style="{StaticResource CancelButton}"/>
 
-                <Button Style="{StaticResource CancelButton}"/>
+        </dxlc:LayoutGroup>
 
-            </dxlc:LayoutGroup>
+    </dxlc:LayoutControl>
 
-        </dxlc:LayoutControl>
-
-    </dx:LoadingDecorator>
-    
 
 </local:BaseView>

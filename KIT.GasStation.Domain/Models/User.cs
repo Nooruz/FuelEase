@@ -18,6 +18,7 @@ namespace KIT.GasStation.Domain.Models
         private bool _deleted;
         private bool _isAdmin;
         private UserType _userType;
+        private bool _isDeleted;
 
         #endregion
 
@@ -76,19 +77,6 @@ namespace KIT.GasStation.Domain.Models
         }
 
         /// <summary>
-        /// Удаленный
-        /// </summary>
-        public bool Deleted
-        {
-            get => _deleted;
-            set
-            {
-                _deleted = value;
-                OnPropertyChanged(nameof(Deleted));
-            }
-        }
-
-        /// <summary>
         /// Является ли пользователь Администратором
         /// </summary>
         public bool IsAdmin
@@ -100,6 +88,34 @@ namespace KIT.GasStation.Domain.Models
                 OnPropertyChanged(nameof(IsAdmin));
             }
         }
+
+        /// <summary>
+        /// Является ли пользователь удаленным
+        /// </summary>
+        public bool IsDeleted
+        {
+            get => _isDeleted;
+            set
+            {
+                _isDeleted = value;
+                OnPropertyChanged(nameof(IsDeleted));
+            }
+        }
+
+        /// <summary>
+        /// Дата создания записи
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Дата обновления записи
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Дата удаления записи
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
 
         [NotMapped]
         public UserType UserType => UserRoleId switch
@@ -125,17 +141,15 @@ namespace KIT.GasStation.Domain.Models
 
         public override void Update(DomainObject updatedItem)
         {
-
-        }
-
-        public void UpdateFrom(User user)
-        {
-            if (user != null)
+            if (updatedItem is User user)
             {
                 FullName = user.FullName;
                 Password = user.Password;
                 UserRoleId = user.UserRoleId;
-                Deleted = user.Deleted;
+                IsDeleted = user.IsDeleted;
+                CreatedAt = user.CreatedAt;
+                UpdatedAt = user.UpdatedAt;
+                DeletedAt = user.DeletedAt;
             }
         }
 

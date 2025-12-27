@@ -1,5 +1,4 @@
 ﻿using DevExpress.Mvvm.DataAnnotations;
-using DevExpress.Mvvm.POCO;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.ViewModels.Base;
 using System;
@@ -31,16 +30,7 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        public List<ReceiptPrintingModeTypeItem> ReceiptPrintingModeTypeItems =>
-            Enum.GetValues(typeof(ReceiptPrintingModeType))
-                .Cast<ReceiptPrintingModeType>()
-                .Select(e => new ReceiptPrintingModeTypeItem
-                {
-                    Value = e.ToString(),
-                    Description = GetEnumDescription(e)
-                })
-                .ToList();
-
+        public List<KeyValuePair<ReceiptPrintingModeType, string>> ReceiptPrintingModeTypes => new(EnumHelper.GetLocalizedEnumValues<ReceiptPrintingModeType>());
         public IEnumerable<PropertyDescriptor> Properties { get { return TypeDescriptor.GetProperties(Settings).Cast<PropertyDescriptor>(); } }
 
         #endregion
@@ -73,19 +63,6 @@ namespace KIT.GasStation.ViewModels
         }
 
         #endregion
-
-        #region Private Voids
-
-        private string GetEnumDescription(Enum value)
-        {
-            var fieldInfo = value.GetType().GetField(value.ToString());
-
-            var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(fieldInfo, typeof(DescriptionAttribute));
-
-            return attribute != null ? attribute.Description : value.ToString();
-        }
-
-        #endregion
     }
 
     public static class Cat
@@ -94,9 +71,8 @@ namespace KIT.GasStation.ViewModels
         public const string Shift = "Смена";
 
         public const string HotKeys = "Горячие клавиши";
-        public const string HotKeys_Payment = HotKeys + @"\Способы оплаты";
-        public const string HotKeys_Trk = HotKeys + @"\Состояние ТРК";
-        public const string HotKeys_Trk_Free = HotKeys_Trk + @"\Свободно";
+        public const string HotKeys_Payment = HotKeys + @": Способы оплаты";
+        public const string HotKeys_Trk_Free = HotKeys + @": Состояние ТРК Свободно";
     }
 
 
@@ -109,23 +85,18 @@ namespace KIT.GasStation.ViewModels
 
         #region Private Members
 
-        private string _fuelSaleCashlessDraft = Properties.HotKeys.Default.FuelSaleCashless;
-        private string _fuelSaleCashDraft = Properties.HotKeys.Default.FuelSaleCash;
-        private string _fuelSaleTicketDraft = Properties.HotKeys.Default.FuelSaleTicket;
-        private string _startFullFuelingDraft = Properties.HotKeys.Default.StartFullFueling;
-        private string _fuelSaleStatementDraft = Properties.HotKeys.Default.FuelSaleStatement;
-        private string _fuelSaleDiscountCardDraft = Properties.HotKeys.Default.FuelSaleDiscountCard;
-        private string _fuelSaleCardDraft = Properties.HotKeys.Default.FuelSaleCard;
-        private string _fuelSaleOtherDraft = Properties.HotKeys.Default.FuelSaleOther;
+        private string _fuelSaleCashlessDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleCashless);
+        private string _fuelSaleCashDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleCash);
+        private string _fuelSaleTicketDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleTicket);
+        private string _startFullFuelingDraft = FormatHotKey(Properties.HotKeys.Default.StartFullFueling);
+        private string _fuelSaleStatementDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleStatement);
+        private string _fuelSaleDiscountCardDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleDiscountCard);
+        private string _fuelSaleCardDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleCard);
+        private string _fuelSaleOtherDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleOther);
         private string _nameGasStationDraft = Properties.Settings.Default.NameGasStation;
         private string _idGasStationDraft = Properties.Settings.Default.IdGasStation;
         private bool _autoClosingShiftDraft = Properties.Settings.Default.AutoClosingShift;
-        private ReceiptPrintingModeTypeItem _receiptPrintingModeTypeItemDraft =
-            new ReceiptPrintingModeTypeItem
-            {
-                Value = Properties.Settings.Default.ReceiptPrintingMode,
-                Description = Properties.Settings.Default.ReceiptPrintingMode
-            };
+        private ReceiptPrintingModeType _receiptPrintingModeType;
 
         #endregion
 
@@ -134,13 +105,19 @@ namespace KIT.GasStation.ViewModels
         public GasStationSettings()
         {
             // нормализуем описание для режима печати
-            _receiptPrintingModeTypeItemDraft = BuildReceiptPrintingModeItem(Properties.Settings.Default.ReceiptPrintingMode);
+            var value = EnumHelper.TryParseByName<ReceiptPrintingModeType>(Properties.Settings.Default.ReceiptPrintingMode);
+
+            if (value is ReceiptPrintingModeType receiptPrintingModeType)
+            {
+                _receiptPrintingModeType = receiptPrintingModeType;
+            }
         }
 
         #endregion
 
         #region Public Properties
 
+        [Browsable(false)]
         public bool HasErrors => GetAllErrors().Any();
 
         [Category(Cat.Identification), Description("Наименование АЗС"), Display(Name = "Наименование")]
@@ -157,6 +134,7 @@ namespace KIT.GasStation.ViewModels
             set { _idGasStationDraft = value; OnPropertyChanged(nameof(IdGasStation)); }
         }
 
+        [Browsable(false)]
         [Category(Cat.Shift), Description("Автоматическое закрытие смены по расписанию/времени"), Display(Name = "Автозакрытие смены по времени")]
         public bool AutoClosingShift
         {
@@ -165,13 +143,13 @@ namespace KIT.GasStation.ViewModels
         }
 
         [Category(Cat.Shift), Description("Определяет, когда печатать чек"), Display(Name = "Режим печати чека")]
-        public ReceiptPrintingModeTypeItem ReceiptPrintingModeTypeItem
+        public ReceiptPrintingModeType ReceiptPrintingModeType
         {
-            get => _receiptPrintingModeTypeItemDraft;
+            get => _receiptPrintingModeType;
             set
             {
-                _receiptPrintingModeTypeItemDraft = value ?? BuildReceiptPrintingModeItem(Properties.Settings.Default.ReceiptPrintingMode);
-                OnPropertyChanged(nameof(ReceiptPrintingModeTypeItem));
+                _receiptPrintingModeType = value;
+                OnPropertyChanged(nameof(ReceiptPrintingModeType));
             }
         }
 
@@ -231,8 +209,6 @@ namespace KIT.GasStation.ViewModels
             set { _startFullFuelingDraft = value; OnPropertyChanged(nameof(StartFullFueling)); }
         }
 
-
-
         #endregion
 
         #region Public Voids
@@ -243,9 +219,8 @@ namespace KIT.GasStation.ViewModels
             Properties.Settings.Default.NameGasStation = _nameGasStationDraft?.Trim() ?? "";
             Properties.Settings.Default.IdGasStation = _idGasStationDraft?.Trim() ?? "";
             Properties.Settings.Default.AutoClosingShift = _autoClosingShiftDraft;
+            Properties.Settings.Default.ReceiptPrintingMode = _receiptPrintingModeType.ToString();
 
-            if (!string.IsNullOrWhiteSpace(_receiptPrintingModeTypeItemDraft?.Value))
-                Properties.Settings.Default.ReceiptPrintingMode = _receiptPrintingModeTypeItemDraft.Value;
 
             Properties.Settings.Default.Save();
 
@@ -267,21 +242,20 @@ namespace KIT.GasStation.ViewModels
             _nameGasStationDraft = Properties.Settings.Default.NameGasStation;
             _idGasStationDraft = Properties.Settings.Default.IdGasStation;
             _autoClosingShiftDraft = Properties.Settings.Default.AutoClosingShift;
-            _receiptPrintingModeTypeItemDraft = BuildReceiptPrintingModeItem(Properties.Settings.Default.ReceiptPrintingMode);
 
-            _fuelSaleCashlessDraft = Properties.HotKeys.Default.FuelSaleCashless;
-            _fuelSaleCashDraft = Properties.HotKeys.Default.FuelSaleCash;
-            _fuelSaleStatementDraft = Properties.HotKeys.Default.FuelSaleStatement;
-            _fuelSaleDiscountCardDraft = Properties.HotKeys.Default.FuelSaleDiscountCard;
-            _fuelSaleCardDraft = Properties.HotKeys.Default.FuelSaleCard;
-            _fuelSaleTicketDraft = Properties.HotKeys.Default.FuelSaleTicket;
-            _fuelSaleOtherDraft = Properties.HotKeys.Default.FuelSaleOther;
-            _startFullFuelingDraft = Properties.HotKeys.Default.StartFullFueling;
+            _fuelSaleCashlessDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleCashless);
+            _fuelSaleCashDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleCash);
+            _fuelSaleStatementDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleStatement);
+            _fuelSaleDiscountCardDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleDiscountCard);
+            _fuelSaleCardDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleCard);
+            _fuelSaleTicketDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleTicket);
+            _fuelSaleOtherDraft = FormatHotKey(Properties.HotKeys.Default.FuelSaleOther);
+            _startFullFuelingDraft = FormatHotKey(Properties.HotKeys.Default.StartFullFueling);
 
             OnPropertyChanged(nameof(NameGasStation));
             OnPropertyChanged(nameof(IdGasStation));
             OnPropertyChanged(nameof(AutoClosingShift));
-            OnPropertyChanged(nameof(ReceiptPrintingModeTypeItem));
+            OnPropertyChanged(nameof(ReceiptPrintingModeType));
 
             OnPropertyChanged(nameof(FuelSaleCashless));
             OnPropertyChanged(nameof(FuelSaleCash));
@@ -297,21 +271,14 @@ namespace KIT.GasStation.ViewModels
 
         #region Private Voids
 
-        private static string GetEnumDescription(Enum value)
-        {
-            var fieldInfo = value.GetType().GetField(value.ToString());
-
-            var attribute = (DescriptionAttribute)Attribute.GetCustomAttribute(fieldInfo, typeof(DescriptionAttribute));
-
-            return attribute != null ? attribute.Description : value.ToString();
-        }
-
         private string Validate(string columnName)
         {
             // Формат хоткеев
             if (IsHotKeyProperty(columnName))
             {
-                var text = GetHotKeyValue(columnName);
+                var text = NormalizeHotKey(GetHotKeyValue(columnName));
+
+                if (text == "/") text = "Oem2";
 
                 if (!HotKeyParser.TryParse(text, out var g))
                     return "Неверный формат. Пример: Ctrl+F11, F1, Insert, Ctrl+Shift+S";
@@ -327,7 +294,6 @@ namespace KIT.GasStation.ViewModels
 
             return string.Empty;
         }
-
         private IEnumerable<string> GetAllErrors()
         {
             // перечисли все хоткей-свойства и собери ошибки
@@ -338,7 +304,6 @@ namespace KIT.GasStation.ViewModels
                     yield return err;
             }
         }
-
         private static readonly string[] HotKeyPropertyNames =
         {
             nameof(FuelSaleCashless),
@@ -385,24 +350,29 @@ namespace KIT.GasStation.ViewModels
                 .Where(kv => kv.Key != selfPropName)
                 .Any(kv => string.Equals(kv.Value, normalized, StringComparison.OrdinalIgnoreCase));
         }
-        private static string NormalizeHotKey(string? text) =>
-            (text ?? "").Trim();
-        private static ReceiptPrintingModeTypeItem BuildReceiptPrintingModeItem(string rawValue)
+        private static string NormalizeHotKey(string? text)
         {
-            if (Enum.TryParse(typeof(ReceiptPrintingModeType), rawValue, out var enumObj) && enumObj is ReceiptPrintingModeType m)
-            {
-                return new ReceiptPrintingModeTypeItem { Value = m.ToString(), Description = GetEnumDescription(m) };
-            }
-            // fallback
-            return new ReceiptPrintingModeTypeItem { Value = ReceiptPrintingModeType.Before.ToString(), Description = GetEnumDescription(ReceiptPrintingModeType.Before) };
+            var normalized = (text ?? "").Trim();
+            return string.Equals(normalized, "/", StringComparison.OrdinalIgnoreCase)
+                ? "Divide"
+                : normalized;
+        }
+        private static string FormatHotKey(string? text)
+        {
+            var normalized = NormalizeHotKey(text);
+            return string.Equals(normalized, "Divide", StringComparison.OrdinalIgnoreCase)
+                ? "/"
+                : normalized;
         }
 
         #endregion
 
         #region DataErrorInfo
 
+        [Browsable(false)]
         public string Error => string.Empty;
 
+        [Browsable(false)]
         public string this[string columnName]
         {
             get
@@ -426,17 +396,11 @@ namespace KIT.GasStation.ViewModels
     /// </summary>
     public enum ReceiptPrintingModeType
     {
-        [Description("До")]
+        [Display(Name = "До")]
         Before,
 
-        [Description("После")]
+        [Display(Name = "После")]
         After
-    }
-
-    public class ReceiptPrintingModeTypeItem
-    {
-        public string Value { get; set; } = "";
-        public string Description { get; set; } = "";
     }
 
 }

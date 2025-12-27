@@ -22,7 +22,7 @@ namespace KIT.GasStation.State.Users
             {
                 if (CurrentUser != null && CurrentUser.Equals(updatedUser))
                 {
-                    CurrentUser.UpdateFrom(updatedUser);
+                    CurrentUser.Update(updatedUser);
                 }
             }
             catch (Exception)

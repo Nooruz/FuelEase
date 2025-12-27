@@ -4,6 +4,7 @@ using KIT.GasStation.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KIT.GasStation.EntityFramework.Migrations
 {
     [DbContext(typeof(GasStationDbContext))]
-    partial class GasStationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251227062958_AddIsDeleteNozzleTankFuel")]
+    partial class AddIsDeleteNozzleTankFuel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -686,14 +689,11 @@ namespace KIT.GasStation.EntityFramework.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -702,14 +702,8 @@ namespace KIT.GasStation.EntityFramework.Migrations
                     b.Property<bool>("IsAdmin")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Password")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("UserRoleId")
                         .HasColumnType("int");
@@ -724,11 +718,10 @@ namespace KIT.GasStation.EntityFramework.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            CreatedDate = new DateTime(2025, 12, 27, 13, 0, 30, 839, DateTimeKind.Local).AddTicks(6885),
+                            CreatedDate = new DateTime(2025, 12, 27, 12, 29, 57, 626, DateTimeKind.Local).AddTicks(9272),
+                            Deleted = false,
                             FullName = "Администратор",
                             IsAdmin = false,
-                            IsDeleted = false,
                             Password = "1",
                             UserRoleId = 1
                         });

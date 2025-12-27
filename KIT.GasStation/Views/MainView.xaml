@@ -56,8 +56,8 @@
                               Command="{Binding CashRegisterCloseShiftCommand}"/>
                     <MenuItem Header="Х-отчёт"
                               Command="{Binding CashRegisterXReportCommand}"/>
-                    <MenuItem Header="Произвольный чек"
-                              Command="{Binding CashRegisterCustomReceiptCommand}"/>
+                    <!--<MenuItem Header="Произвольный чек"
+                              Command="{Binding CashRegisterCustomReceiptCommand}"/>-->
                     <MenuItem Header="Состояние ККМ"
                               Command="{Binding CashRegisterGetStateCommand}"/>
                 </MenuItem>
@@ -73,8 +73,8 @@
                     <MenuItem Header="Глобальные отчёты"
                               Command="{Binding GlobalReportCommand}"/>
                     <Separator/>
-                    <MenuItem Header="Настройки"
-                              Command="{Binding ConfigurationCommand}"/>
+                    <!--<MenuItem Header="Настройки"
+                              Command="{Binding ConfigurationCommand}"/>-->
                     <MenuItem Header="Экран"
                               IsEnabled="{Binding IsCurrentUserAdmin}">
                         <MenuItem Header="Восстановить расположение"

@@ -30,5 +30,20 @@ namespace KIT.GasStation.Helpers
             var attribute = field.GetCustomAttribute<DisplayAttribute>();
             return attribute != null;
         }
+
+        public static T? TryParseByName<T>(string text)
+            where T : struct, Enum
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return null;
+
+            if (!Enum.TryParse<T>(text, ignoreCase: true, out var value))
+                return null;
+
+            if (!Enum.IsDefined(typeof(T), value))
+                return null;
+
+            return value;
+        }
     }
 }

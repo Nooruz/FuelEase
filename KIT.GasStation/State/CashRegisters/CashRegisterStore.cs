@@ -103,9 +103,9 @@ namespace KIT.GasStation.State.CashRegisters
             return await _cashRegisterService.GetShiftStateAsync();
         }
 
-        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, bool isBefore = true)
         {
-            return await _cashRegisterService.SaleAsync(fuelSale, fuel, _userStore.CurrentUser.FullName);
+            return await _cashRegisterService.SaleAsync(fuelSale, fuel, _userStore.CurrentUser.FullName, isBefore);
         }
 
         public async Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel)

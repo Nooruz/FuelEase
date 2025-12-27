@@ -1,10 +1,13 @@
 ﻿using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.Helpers;
+using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
@@ -16,18 +19,21 @@ namespace KIT.GasStation.ViewModels.Details
 
         private readonly ILogger<CustomReceiptViewModel> _logger;
         private readonly IFuelService _fuelService;
+        private readonly ICashRegisterStore _cashRegisterStore;
         private ObservableCollection<Fuel> _fuels = new();
         private Fuel _selectedFuel;
         private decimal _price;
-        private double _quantity;
+        private decimal _quantity;
         private decimal _sum;
         private bool _isUpdatingQuantity;
         private bool _isUpdatingSum;
+        private FuelSale _createdFuelSale = new() { PaymentType = PaymentType.Cash };
 
         #endregion
 
         #region Public Properties
 
+        public List<KeyValuePair<PaymentType, string>> PaymentTypes => new(EnumHelper.GetLocalizedEnumValues<PaymentType>());
         public ObservableCollection<Fuel> Fuels
         {
             get => _fuels;
@@ -57,7 +63,7 @@ namespace KIT.GasStation.ViewModels.Details
                 Sum = Math.Round(Price * (decimal)Quantity, 2);
             }
         }
-        public double Quantity
+        public decimal Quantity
         {
             get => _quantity;
             set
@@ -82,9 +88,18 @@ namespace KIT.GasStation.ViewModels.Details
                 if (!_isUpdatingQuantity && Price != 0)
                 {
                     _isUpdatingSum = true;
-                    Quantity = Math.Round((double)(Sum / Price), 6);
+                    Quantity = Math.Round((Sum / Price), 6);
                     _isUpdatingSum = false;
                 }
+            }
+        }
+        public FuelSale CreatedFuelSale
+        {
+            get => _createdFuelSale;
+            set
+            {
+                _createdFuelSale = value;
+                OnPropertyChanged(nameof(CreatedFuelSale));
             }
         }
 
@@ -93,10 +108,12 @@ namespace KIT.GasStation.ViewModels.Details
         #region Constructor
 
         public CustomReceiptViewModel(ILogger<CustomReceiptViewModel> logger,
-            IFuelService fuelService)
+            IFuelService fuelService,
+            ICashRegisterStore cashRegisterStore)
         {
             _logger = logger;
             _fuelService = fuelService;
+            _cashRegisterStore = cashRegisterStore;
         }
 
         #endregion
@@ -108,9 +125,8 @@ namespace KIT.GasStation.ViewModels.Details
         {
             try
             {
-                //await _cashRegisterManager.CustomReceiptAsync(new FuelSale
+                //await _cashRegisterStore.CustomReceiptAsync(new FuelSale
                 //{
-                //    PaymentType = PaymentType.Arbitrary,
                 //    Quantity = Quantity,
                 //    Price = Price,
                 //    Sum = Sum,

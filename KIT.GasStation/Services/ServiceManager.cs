@@ -59,15 +59,30 @@ namespace KIT.GasStation.Services
             sc.WaitForStatus(ServiceControllerStatus.Running, timeout);
         });
 
-        private static Task StopAsync(string serviceName, TimeSpan timeout) => Task.Run(() =>
+        private static async Task StopAsync(string serviceName, TimeSpan timeout)
         {
-            using var sc = new ServiceController(serviceName);
-            if (sc.Status == ServiceControllerStatus.Stopped) return;
-            if (sc.CanStop)
+            await Task.Run(() =>
             {
+                using var sc = new ServiceController(serviceName);
+
+                // 1) Получение статуса может выбросить AccessDenied
+                var status = sc.Status;
+
+                if (status == ServiceControllerStatus.Stopped)
+                    return;
+
+                if (!sc.CanStop)
+                    throw new InvalidOperationException($"Service '{serviceName}' cannot be stopped. Current status: {status}");
+
                 sc.Stop();
+
                 sc.WaitForStatus(ServiceControllerStatus.Stopped, timeout);
-            }
-        });
+
+                // 2) ВАЖНО: после WaitForStatus проверяем, успели ли остановиться
+                sc.Refresh();
+                if (sc.Status != ServiceControllerStatus.Stopped)
+                    throw new System.TimeoutException($"Timeout stopping service '{serviceName}'. Current status: {sc.Status}");
+            }).ConfigureAwait(false);
+        }
     }
 }

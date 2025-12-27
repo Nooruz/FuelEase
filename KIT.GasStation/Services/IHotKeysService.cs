@@ -16,7 +16,10 @@ namespace KIT.GasStation.Services
     public interface IHotKeysService
     {
         event Action<HotKeyAction> OnHotKeyPressed;
+        event Action<int> OnNumberKeyPressed;
 
         void HandleKeyPress(Key key);
+
+        void HandleNumberKeyPress(int number);
     }
 }

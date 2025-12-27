@@ -121,7 +121,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IUserStore>(),
                 services.GetRequiredService<IHubClient>(),
                 services.GetRequiredService<IViewService<TankFuelQuantityView>>(),
-                services.GetRequiredService<IHotKeysService>());
+                services.GetRequiredService<IHotKeysService>(),
+                services.GetRequiredService<INozzleService>());
         }
 
         private static DiscountViewModel CreateDiscountViewModel(IServiceProvider services)
@@ -166,7 +167,8 @@ namespace KIT.GasStation.HostBuilders
         private static CustomReceiptViewModel CreateCustomReceiptViewModel(IServiceProvider services)
         {
             return new CustomReceiptViewModel(services.GetRequiredService<ILogger<CustomReceiptViewModel>>(),
-                services.GetRequiredService<IFuelService>());
+                services.GetRequiredService<IFuelService>(),
+                services.GetRequiredService<ICashRegisterStore>());
         }
 
         private static SaleManagerViewModel CreateSaleManagerViewModel(IServiceProvider services)

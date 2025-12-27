@@ -27,6 +27,7 @@ namespace KIT.GasStation.EntityFramework.Services
 
         public async Task<User> CreateAsync(User entity)
         {
+            entity.CreatedAt = DateTime.Now;
             var result = await _nonQueryDataService.Create(entity);
             if (result != null)
             {
@@ -37,12 +38,20 @@ namespace KIT.GasStation.EntityFramework.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var result = await _nonQueryDataService.Delete(id);
-            if (result)
+            var entity = await GetAsync(id);
+
+            if (entity == null)
+                return false;
+
+            entity.IsDeleted = true;
+            entity.DeletedAt = DateTime.Now;
+
+            var result = await _nonQueryDataService.Update(id, entity);
+            if (result != null)
             {
                 OnDeleted?.Invoke(id);
             }
-            return result;
+            return result != null;
         }
 
         public Task<IEnumerable<User>> GetAdminAsync()
@@ -56,6 +65,7 @@ namespace KIT.GasStation.EntityFramework.Services
             {
                 await using var context = _contextFactory.CreateDbContext();
                 return await context.Users
+                    .Where(u => !u.IsDeleted)
                     .Include(u => u.UserRole)
                     .ToListAsync();
             }
@@ -71,7 +81,10 @@ namespace KIT.GasStation.EntityFramework.Services
             try
             {
                 await using var context = _contextFactory.CreateDbContext();
-                return await context.Users.Include(u => u.UserRole).FirstOrDefaultAsync(u => u.Id == id);
+                return await context.Users
+                    .Where(u => !u.IsDeleted)
+                    .Include(u => u.UserRole)
+                    .FirstOrDefaultAsync(u => u.Id == id);
             }
             catch (Exception)
             {
@@ -85,7 +98,9 @@ namespace KIT.GasStation.EntityFramework.Services
             try
             {
                 await using var context = _contextFactory.CreateDbContext();
-                return await context.Users.FirstOrDefaultAsync(u => u.FullName == username);
+                return await context.Users
+                    .Where(u => !u.IsDeleted)
+                    .FirstOrDefaultAsync(u => u.FullName == username);
             }
             catch (Exception)
             {
@@ -104,13 +119,9 @@ namespace KIT.GasStation.EntityFramework.Services
             throw new NotImplementedException();
         }
 
-        public Task<bool> MarkingForDeletion(User user)
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task<User> UpdateAsync(int id, User entity)
         {
+            entity.UpdatedAt = DateTime.Now;
             var result = await _nonQueryDataService.Update(id, entity);
             if (result != null)
                 OnUpdated?.Invoke(await GetAsync(result.Id));

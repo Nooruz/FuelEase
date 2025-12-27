@@ -21,6 +21,7 @@ namespace KIT.GasStation.Domain.Models
         private bool _valueAddedTax;
         private decimal _salesTax;
         private string _colorHex;
+        private bool _isDeleted;
 
         #endregion
 
@@ -150,6 +151,34 @@ namespace KIT.GasStation.Domain.Models
             }
         }
 
+        /// <summary>
+        /// Признак удаления
+        /// </summary>
+        public bool IsDeleted
+        {
+            get => _isDeleted;
+            set
+            {
+                _isDeleted = value;
+                OnPropertyChanged(nameof(IsDeleted));
+            }
+        }
+
+        /// <summary>
+        /// Создано в
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Редактировано в
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Удалено в
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
         public UnitOfMeasurement UnitOfMeasurement { get; set; }
         public ICollection<Tank> Tanks { get; set; }
         public ICollection<FuelRevaluation> FuelRevaluations { get; set; }
@@ -168,6 +197,10 @@ namespace KIT.GasStation.Domain.Models
                 SalesTax = fuel.SalesTax;
                 TNVED = fuel.TNVED;
                 ColorHex = fuel.ColorHex;
+                IsDeleted = fuel.IsDeleted;
+                CreatedAt = fuel.CreatedAt;
+                UpdatedAt = fuel.UpdatedAt;
+                DeletedAt = fuel.DeletedAt;
             }
         }
 

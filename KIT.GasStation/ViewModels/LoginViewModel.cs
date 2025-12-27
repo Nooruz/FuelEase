@@ -135,20 +135,7 @@ namespace KIT.GasStation.ViewModels
                 try
                 {
                     User? user = Users.FirstOrDefault(u => u.Id == updatedUser.Id);
-                    if (user != null)
-                    {
-                        if (user.Deleted)
-                        {
-                            _ = Users.Remove(user);
-                        }
-                        else
-                        {
-                            user.FullName = updatedUser.FullName;
-                            user.UserRoleId = updatedUser.UserRoleId;
-                            user.Deleted = updatedUser.Deleted;
-                            user.Password = updatedUser.Password;
-                        }
-                    }
+                    user?.Update(updatedUser);
                 }
                 catch (Exception e)
                 {

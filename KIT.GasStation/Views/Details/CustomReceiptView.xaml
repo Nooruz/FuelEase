@@ -40,6 +40,16 @@
                               Mask="n"/>
             </dxlc:LayoutItem>
 
+            <dxlc:LayoutItem Label="Вид оплаты"
+                             TabIndex="2">
+                <dxe:ComboBoxEdit ItemsSource="{Binding PaymentTypes}"
+                                  DisplayMember="Value"
+                                  ShowError="False"
+                                  ShowErrorToolTip="False"
+                                  ValueMember="Key"
+                                  EditValue="{Binding CreateFuelSale.PaymentType, UpdateSourceTrigger=PropertyChanged}"/>
+            </dxlc:LayoutItem>
+
         </dxlc:LayoutGroup>
 
         <dxlc:LayoutGroup HorizontalAlignment="Right"

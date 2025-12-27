@@ -16,7 +16,7 @@ namespace KIT.GasStation.Domain.Models
         private decimal _size;
         private decimal _minimumSize;
         private Fuel _fuel;
-        private bool _deleted;
+        private bool _isDeleted;
 
         #endregion
 
@@ -77,13 +77,13 @@ namespace KIT.GasStation.Domain.Models
         /// <summary>
         /// Удалено?
         /// </summary>
-        public bool Deleted
+        public bool IsDeleted
         {
-            get => _deleted;
+            get => _isDeleted;
             set
             {
-                _deleted = value;
-                OnPropertyChanged(nameof(Deleted));
+                _isDeleted = value;
+                OnPropertyChanged(nameof(IsDeleted));
             }
         }
 
@@ -109,6 +109,21 @@ namespace KIT.GasStation.Domain.Models
                 OnPropertyChanged(nameof(Fuel));
             }
         }
+
+        /// <summary>
+        /// Создано в
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// Удалено в
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// Редактировано в
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
 
         public ICollection<FuelIntake> FuelIntakes { get; set; }
         public ICollection<FuelSale> FuelSales { get; set; }
@@ -143,6 +158,10 @@ namespace KIT.GasStation.Domain.Models
                 Size = tank.Size;
                 MinimumSize = tank.MinimumSize;
                 FuelId = tank.FuelId;
+                IsDeleted = tank.IsDeleted;
+                UpdatedAt = tank.UpdatedAt;
+                CreatedAt = tank.CreatedAt;
+                DeletedAt = tank.DeletedAt;
             }
         }
     }

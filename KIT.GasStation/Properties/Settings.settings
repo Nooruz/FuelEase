@@ -1,12 +1,12 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="FuelEase.Properties" GeneratedClassName="Settings">
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="KIT.GasStation.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
     <Setting Name="NameGasStation" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">ff</Value>
     </Setting>
     <Setting Name="IdGasStation" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">ffff</Value>
     </Setting>
     <Setting Name="AutoClosingShift" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>

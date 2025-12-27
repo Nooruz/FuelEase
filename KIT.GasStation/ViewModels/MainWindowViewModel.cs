@@ -109,11 +109,6 @@ namespace KIT.GasStation.ViewModels
             {
                 args.Cancel = true;
             }
-            else
-            {
-                //await Services.ServiceManager.StopWebAsync();
-                //await Services.ServiceManager.StopWorkerAsync();
-            }
         }
 
         [Command]
@@ -152,17 +147,13 @@ namespace KIT.GasStation.ViewModels
                 _buffer.Append(digit);
                 RaisePropertyChanged(nameof(BufferText));
 
-                RestartTimeout();
-
                 // если уже 2 цифры — считаем что ввод завершён
-                if (_buffer.Length == MaxDigits)
-                    //CommitColumnSelection();
+                if (int.TryParse(_buffer.ToString(), out var number))
+                    _hotKeysService.HandleNumberKeyPress(number);
 
-                    return;
+                return;
             }
-
             _hotKeysService.HandleKeyPress(e.Key);
-
         }
 
         #endregion
@@ -177,13 +168,6 @@ namespace KIT.GasStation.ViewModels
             if (key >= Key.D0 && key <= Key.D9)
             {
                 digit = (char)('0' + (key - Key.D0));
-                return true;
-            }
-
-            // NumPad
-            if (key >= Key.NumPad0 && key <= Key.NumPad9)
-            {
-                digit = (char)('0' + (key - Key.NumPad0));
                 return true;
             }
 
@@ -207,15 +191,20 @@ namespace KIT.GasStation.ViewModels
                     // вернуться в UI-поток
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        ClearBuffer();
+                        CommitBuffer();
                     });
                 }
                 catch (TaskCanceledException) { /* норм */ }
             }, token);
         }
 
-        private void ClearBuffer()
+        private void CommitBuffer()
         {
+            if (_buffer.Length == 0) return;
+
+            if (int.TryParse(_buffer.ToString(), out var number))
+                _hotKeysService.HandleNumberKeyPress(number);
+
             _buffer.Clear();
             RaisePropertyChanged(nameof(BufferText));
         }
