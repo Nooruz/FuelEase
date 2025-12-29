@@ -1,17 +1,20 @@
 ﻿using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Domain.Models;
+using KIT.GasStation.EKassa.Helpers;
+using KIT.GasStation.EKassa.Models;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using QRCoder;
 using Serilog;
-using System.Drawing.Printing;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.Drawing.Printing;
+using System.Dynamic;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.Json;
-using System.Dynamic;
 
 
 namespace KIT.GasStation.EKassa
@@ -31,7 +34,6 @@ namespace KIT.GasStation.EKassa
         private const string _xReport = "shift_state_by_fiscal_number";
         private string? _check = string.Empty;
         private string? _url = string.Empty;
-        
 
         #endregion
 
@@ -111,19 +113,23 @@ namespace KIT.GasStation.EKassa
         {
             _logger.Information("Открытие смены ККМ...");
 
-            dynamic fiscalNumber = new ExpandoObject();
-            fiscalNumber.fiscal_number = _cashRegister.RegistrationNumber;
-
-            if (_settings.TapeType == TapeType.TXT)
+            var shiftOpen = new ShiftOpen
             {
-                fiscalNumber.txt = true;
-            }
-            else
+                FiscalNumber = _cashRegister.RegistrationNumber,
+
+            };
+
+            switch (_settings.TapeType)
             {
-                fiscalNumber.txt80 = true;
+                case TapeType.TXT:
+                    shiftOpen.Txt = true;
+                    break;
+                case TapeType.TXT80:
+                    shiftOpen.Txt80 = true;
+                    break;
             }
 
-            _cashRegister.Status = await ExecuteOperationAsync($"/api/{_openShift}", fiscalNumber);
+            _cashRegister.Status = await ExecuteOperationAsync($"/api/{_openShift}", shiftOpen);
             _logger.Information("Статус кассы после открытия смены: {Status}", _cashRegister.Status);
             OnStatusChanged?.Invoke(_cashRegister.Status);
             if (_cashRegister.Status == CashRegisterStatus.Open)
@@ -584,126 +590,283 @@ namespace KIT.GasStation.EKassa
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var loginData = new
+            var loginData = new Login
             {
-                email = _cashRegister.UserName,
-                password = _cashRegister.Password
+                Email = _cashRegister.UserName,
+                Password = _cashRegister.Password
             };
 
             HttpResponseMessage loginResponse = await PostAsync("/api/auth/login", loginData);
-            if (loginResponse.IsSuccessStatusCode)
+
+            if (!loginResponse.IsSuccessStatusCode)
             {
-                var loginResult = JsonSerializer.Deserialize<JsonElement>(await loginResponse.Content.ReadAsStringAsync());
-                if (loginResult.TryGetProperty("status", out _) &&
-                    loginResult.TryGetProperty("data", out JsonElement data) &&
-                    data.TryGetProperty("access_token", out var token))
+                _logger.Error("HTTP ошибка авторизации: {StatusCode}", loginResponse.StatusCode);
+                throw new CashRegisterException("Ошибка соединения с сервером");
+            }
+
+            var json = await loginResponse.Content.ReadAsStringAsync();
+
+            var response = JsonSerializer.Deserialize<ApiResponse<LoginResult>>(json);
+
+            if (response == null)
+            {
+                _logger.Error("Ответ от сервера пустой [{Timestamp}]",
+                    DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss.fff"));
+                throw new CashRegisterException("Пустой ответ сервера");
+            }
+
+            if (response.Status != ResponseStatus.Success)
+            {
+                // аккуратно вытаскиваем текст ошибки
+                string errorText = response.Message.ValueKind switch
                 {
-                    _cashRegister.Token = token.GetString();
-                    _client.DefaultRequestHeaders.Authorization =
-                        new AuthenticationHeaderValue("Bearer", _cashRegister.Token);
-                }
+                    JsonValueKind.String => response.Message.GetString(),
+                    JsonValueKind.Object => response.Message.GetProperty("error").GetString(),
+                    _ => "Неизвестная ошибка"
+                };
+
+                throw new CashRegisterException(errorText);
             }
-            else
+
+            LoginResult? loginResult = response.Data;
+
+            if (loginResult == null)
             {
-                _logger.Error("Соединение не установлено. Проверьте правильность заполнения полей 'Пользователь' и 'Пароль'. [{Timestamp}]", DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss.fff"));
-                throw new CashRegisterException("Ошибка авторизации. Проверьте правильность заполнения полей 'Пользователь' и 'Пароль'.");
+                _logger.Error("Ошибка авторизации. Ответ от сервера пустой. [{Timestamp}]",
+                    DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss.fff"));
+                throw new CashRegisterException("Ошибка авторизации. Ответ от сервера пустой.");
             }
+
+            _cashRegister.Token = loginResult.AccessToken;
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue(loginResult.TokenType, _cashRegister.Token);
         }
 
         private void PrintText()
         {
             try
             {
-                // Генерация QR-кода в виде Bitmap с помощью QRCoder
-                Bitmap? qrCodeImage = GenerateQrCodeBitmap();
-
-                // Настройка документа для печати
                 PrintDocument printDoc = new PrintDocument();
-
-                // Устанавливаем поля равными нулю, чтобы печатать без отступов
                 printDoc.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
-
                 printDoc.PrinterSettings.PrinterName = _settings.DefaultPrinterName;
+
+                // Установим размер бумаги: 80мм × большая высота (не ограничиваем)
+                int paperWidth = (int)(80 / 25.4 * 100); // 315 (1/100 дюйма)
+                int paperHeight = 800; // 50 дюймов - достаточно для любого чека
+                printDoc.DefaultPageSettings.PaperSize = new PaperSize("Custom", paperWidth, paperHeight);
+
                 printDoc.PrintPage += (sender, e) =>
                 {
-                    // Настройка графики для резкого масштабирования
-                    e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                    int printerDpi = 203;
 
-                    float xPos = e.PageBounds.Left;
-                    float yPos = e.PageBounds.Top;
+                    // Немного уменьшим отступы
+                    int leftRightMarginMm = 6;   // 6мм слева и справа (было 8)
+                    int topBottomMarginMm = 10;  // 10мм сверху и снизу
 
-                    Font textFont = _settings.TapeType is TapeType.TXT
-                        ? new Font("Courier New", 6f)
-                        : new Font("Courier New", 7f);
+                    // Конвертируем мм в единицы принтера (dots)
+                    int leftMarginDots = (int)(leftRightMarginMm * printerDpi / 25.4);
+                    int rightMarginDots = (int)(leftRightMarginMm * printerDpi / 25.4);
+                    int topMarginDots = (int)(topBottomMarginMm * printerDpi / 25.4);
+                    int bottomMarginDots = (int)(topBottomMarginMm * printerDpi / 25.4);
 
-                    SizeF textSize = e.Graphics.MeasureString(_check, textFont, (int)e.PageBounds.Width);
-                    RectangleF textRect = new RectangleF(xPos, yPos, e.PageBounds.Width, textSize.Height);
-                    e.Graphics.DrawString(_check, textFont, Brushes.Black, textRect);
+                    // Конвертируем dots в 1/100 дюйма для Graphics
+                    float leftMargin = leftMarginDots / (float)printerDpi * 100;
+                    float rightMargin = rightMarginDots / (float)printerDpi * 100;
+                    float topMargin = topMarginDots / (float)printerDpi * 100;
+                    float bottomMargin = bottomMarginDots / (float)printerDpi * 100;
 
-                    yPos += textSize.Height + 10; // Отступ между текстом и QR‑кодом
+                    // Ширина бумаги в 1/100 дюйма
+                    float paperWidthInches = 80f / 25.4f;
+                    float printWidth = paperWidthInches * 100;
 
-                    if (qrCodeImage != null)
+                    // Уменьшим коэффициент безопасности
+                    float safetyFactor = 0.98f; // Уменьшили до 0.98
+                    float contentWidth = (printWidth - leftMargin - rightMargin) * safetyFactor;
+
+                    _logger.Information($"Ширина бумаги: {printWidth} (1/100 дюйма)");
+                    _logger.Information($"Доступная ширина контента: {contentWidth} (с учетом коэффициента безопасности {safetyFactor})");
+                    _logger.Information($"Отступы: слева={leftMargin}, справа={rightMargin}, сверху={topMargin}, снизу={bottomMargin}");
+
+                    // Размер QR-кода - занимает всю доступную ширину (но не более 300 точек)
+                    int maxQrSize = 250; // Уменьшили до 300
+                    int targetQrSize = Math.Min((int)(contentWidth / 100 * printerDpi), maxQrSize);
+
+                    _logger.Information($"Размер QR-кода: {targetQrSize}x{targetQrSize} dots");
+
+                    // Генерация QR-кода
+                    Bitmap qrCodeImage = GenerateQrCodeForThermalPrinter(_url, targetQrSize);
+
+                    if (qrCodeImage == null) return;
+
+                    // Начальная позиция с учетом верхнего отступа
+                    float yPos = topMargin;
+
+                    // Отступ между текстом и QR-кодом (в мм, конвертируем в 1/100 дюйма)
+                    int textQrSpacingMm = 5;
+                    float textQrSpacing = textQrSpacingMm / 25.4f * 100;
+
+                    // Уменьшим размер шрифта до 6pt
+                    Font textFont = new Font("Courier New", 6f, FontStyle.Regular);
+
+                    // Разбиваем текст на строки и печатаем с учетом ширины
+                    string[] lines = _check.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+                    // Проверим ширину самой длинной строки для отладки
+                    string longestLine = "";
+                    float maxLineWidth = 0;
+
+                    foreach (string line in lines)
                     {
-                        // Например, установить QR‑код в прямоугольник 140x140 пикселей
-                        // При этом важно, что размер указывается не в миллиметрах, а в пикселях.
-                        int imageWidth = 140;
-                        int imageHeight = 140;
-                        e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-                        e.Graphics.DrawImage(qrCodeImage, xPos, yPos, imageWidth, imageHeight);
+                        string trimmedLine = line.Trim();
+                        if (!string.IsNullOrEmpty(trimmedLine))
+                        {
+                            SizeF lineSize = e.Graphics.MeasureString(trimmedLine, textFont);
+                            if (lineSize.Width > maxLineWidth)
+                            {
+                                maxLineWidth = lineSize.Width;
+                                longestLine = trimmedLine;
+                            }
+                        }
                     }
+
+                    _logger.Information($"Самая длинная строка: '{longestLine}'");
+                    _logger.Information($"Ширина самой длинной строки: {maxLineWidth}, доступная ширина: {contentWidth}");
+
+                    if (maxLineWidth > contentWidth)
+                    {
+                        _logger.Warning($"Строка не помещается! Превышение: {maxLineWidth - contentWidth}");
+                    }
+
+                    // Печатаем все строки
+                    foreach (string line in lines)
+                    {
+                        string trimmedLine = line.Trim();
+
+                        if (string.IsNullOrEmpty(trimmedLine))
+                        {
+                            yPos += textFont.GetHeight(e.Graphics);
+                            continue;
+                        }
+
+                        // Измеряем строку
+                        SizeF lineSize = e.Graphics.MeasureString(trimmedLine, textFont);
+
+                        // Для строк-разделителей (состоящих из тире) обрезаем до нужной длины
+                        if (trimmedLine.StartsWith("-") && trimmedLine.Length > 1 && trimmedLine.All(c => c == '-'))
+                        {
+                            // Это строка-разделитель, создаем её нужной длины
+                            int targetChars = (int)(contentWidth / (lineSize.Width / trimmedLine.Length));
+                            if (targetChars < 3) targetChars = 3;
+                            trimmedLine = new string('-', targetChars);
+                            lineSize = e.Graphics.MeasureString(trimmedLine, textFont);
+                        }
+
+                        // Если строка слишком длинная, обрезаем её
+                        if (lineSize.Width > contentWidth)
+                        {
+                            // Находим максимальное количество символов, которые помещаются
+                            string currentText = trimmedLine;
+                            while (currentText.Length > 3)
+                            {
+                                // Укорачиваем строку на 1 символ
+                                currentText = currentText.Substring(0, currentText.Length - 1);
+                                lineSize = e.Graphics.MeasureString(currentText, textFont);
+                                if (lineSize.Width <= contentWidth)
+                                {
+                                    trimmedLine = currentText;
+                                    break;
+                                }
+                            }
+
+                            _logger.Information($"Обрезана строка до: '{trimmedLine}'");
+                        }
+
+                        // Печатаем строку
+                        e.Graphics.DrawString(trimmedLine, textFont, Brushes.Black, leftMargin, yPos);
+                        yPos += lineSize.Height;
+                    }
+
+                    // Отступ после текста
+                    yPos += textQrSpacing;
+
+                    // Размер QR-кода в 1/100 дюйма
+                    float qrWidth = targetQrSize / (float)printerDpi * 100;
+                    float qrHeight = qrWidth;
+
+                    // Центрирование QR-кода по горизонтали (в пределах доступной ширины)
+                    float qrX = leftMargin + (contentWidth - qrWidth) / 2;
+
+                    // Настройки для печати QR-кода
+                    e.Graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
+                    e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                    e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+
+                    // Рисуем QR-код
+                    e.Graphics.DrawImage(qrCodeImage, qrX, yPos, qrWidth, qrHeight);
+
+                    // Высота после QR-кода с учетом нижнего отступа
+                    yPos += qrHeight + bottomMargin;
+
+                    // Логируем итоговые параметры
+                    _logger.Information($"Расположение элементов:");
+                    _logger.Information($"- Текст: начальная позиция {topMargin}, высота {yPos - topMargin - textQrSpacing - qrHeight - bottomMargin}");
+                    _logger.Information($"- QR-код: x={qrX:F2}, y={yPos - qrHeight - bottomMargin:F2}, размер={qrWidth:F2}x{qrHeight:F2}");
+                    _logger.Information($"- Общая высота чека: {yPos:F2} (1/100 дюйма)");
+                    _logger.Information($"- Это примерно: {yPos / 100 * 25.4:F1} мм");
+
+                    qrCodeImage.Dispose();
+                    textFont.Dispose();
+
+                    e.HasMorePages = false; // Только одна страница
                 };
 
-                // Печать документа
                 printDoc.Print();
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _logger.Error(e, "Ошибка во время печати страницы");
+                _logger.Error(ex, "Ошибка во время печати страницы");
             }
         }
 
-        private Bitmap? GenerateQrCodeBitmap()
+        private Bitmap GenerateQrCodeForThermalPrinter(string url, int sizeInPixels)
         {
-            if (string.IsNullOrEmpty(_url))
-            {
-                return null;
-            }
+            if (string.IsNullOrWhiteSpace(url)) return null;
 
-            // Создаём генератор QR-кодов
-            var qrGenerator = new QRCodeGenerator();
-            // Создаём данные QR-кода
-            var qrCodeData = qrGenerator.CreateQrCode(_url, QRCodeGenerator.ECCLevel.M);
+            var gen = new QRCodeGenerator();
+            var data = gen.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
 
-            // Используем специализированный класс для получения PNG в виде массива байт
-            var qrCode = new BitmapByteQRCode(qrCodeData);
-            byte[] qrCodeBytes = qrCode.GetGraphic(30);
+            using var qr = new QRCode(data);
 
-            // Преобразуем массив байт в Bitmap
-            using var ms = new MemoryStream(qrCodeBytes);
-            var bmp = new Bitmap(ms);
+            // Генерируем QR-код нужного размера
+            int modules = data.ModuleMatrix.Count;
+            int pixelsPerModule = Math.Max(1, sizeInPixels / modules);
 
-            // Устанавливаем разрешение Bitmap, чтобы соответствовало DPI принтера (например, 203 DPI)
+            var bmp = qr.GetGraphic(
+                pixelsPerModule: pixelsPerModule,
+                darkColor: Color.Black,
+                lightColor: Color.White,
+                drawQuietZones: true);
+
             bmp.SetResolution(203, 203);
-            return bmp;
-        }
 
-        private Bitmap ScaleImage(Bitmap original, int scaleFactor)
-        {
-            int width = original.Width * scaleFactor;
-            int height = original.Height * scaleFactor;
-            Bitmap scaled = new Bitmap(width, height);
-            // Сохраняем оригинальное разрешение
-            scaled.SetResolution(original.HorizontalResolution, original.VerticalResolution);
-
-            using (Graphics g = Graphics.FromImage(scaled))
+            // Если изображение не точно нужного размера, ресайзим
+            if (bmp.Width != sizeInPixels || bmp.Height != sizeInPixels)
             {
-                // Режим NearestNeighbor для резкого масштабирования
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
-                g.DrawImage(original, new Rectangle(0, 0, width, height));
+                var resized = new Bitmap(sizeInPixels, sizeInPixels, PixelFormat.Format24bppRgb);
+                resized.SetResolution(203, 203);
+
+                using (var g = Graphics.FromImage(resized))
+                {
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                    g.DrawImage(bmp, 0, 0, sizeInPixels, sizeInPixels);
+                }
+
+                bmp.Dispose();
+                return resized;
             }
 
-            return scaled;
+            return bmp;
         }
 
         #endregion

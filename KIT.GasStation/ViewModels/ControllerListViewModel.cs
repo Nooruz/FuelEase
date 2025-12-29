@@ -27,6 +27,7 @@ namespace KIT.GasStation.ViewModels
         #region Private Members
 
         private readonly INozzleStore _nozzleStore;
+        private readonly INozzleService _nozzleService;
         private readonly IUserStore _userStore;
         private readonly ILogger<ControllerListViewModel> _logger;
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
@@ -71,15 +72,18 @@ namespace KIT.GasStation.ViewModels
             INavigator navigator,
             IViewService<TankFuelQuantityView> tankFuelQuantityView,
             ILogger<ControllerListViewModel> logger,
-            IUserStore userStore)
+            IUserStore userStore,
+            INozzleService nozzleService)
         {
             _nozzleStore = nozzleStore;
             _tankFuelQuantityView = tankFuelQuantityView;
             _logger = logger;
             _navigator = navigator;
             _userStore = userStore;
+            _nozzleService = nozzleService;
 
             _userStore.OnLogin += UserStore_OnLogin;
+            _nozzleService.OnCreated += NozzleService_OnCreated;
 
             _documentPanelPositionPath = GetDocumentPanelPositionPath();
             _positions = LoadPositions();
@@ -321,6 +325,17 @@ namespace KIT.GasStation.ViewModels
                 var viewModel = (FuelDispenserViewModel)await _navigator.GetViewModelAsync(ViewType.FuelDispenser);
                 viewModel.Side = nozzle.Key.Side;
                 viewModel.Nozzles = new(nozzle.OrderBy(n => n.Tube).ToList());
+                FuelDispenserViewModels.Add(viewModel);
+            }
+        }
+
+        private async void NozzleService_OnCreated(Nozzle createdNozzle)
+        {
+            if (!Nozzles.Any(n => n.Side == createdNozzle.Side))
+            {
+                var viewModel = (FuelDispenserViewModel)await _navigator.GetViewModelAsync(ViewType.FuelDispenser);
+                viewModel.Side = createdNozzle.Side;
+                viewModel.Nozzles.Add(createdNozzle);
                 FuelDispenserViewModels.Add(viewModel);
             }
         }

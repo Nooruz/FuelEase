@@ -297,7 +297,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<INavigator>(),
                 services.GetRequiredService<IViewService<TankFuelQuantityView>>(),
                 services.GetRequiredService<ILogger<ControllerListViewModel>>(),
-                services.GetRequiredService<IUserStore>());
+                services.GetRequiredService<IUserStore>(),
+                services.GetRequiredService<INozzleService>());
         }
 
         private static MainViewModel CreateMainViewModel(IServiceProvider services)

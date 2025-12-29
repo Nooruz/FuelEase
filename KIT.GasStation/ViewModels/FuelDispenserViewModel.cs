@@ -357,6 +357,8 @@ namespace KIT.GasStation.ViewModels
         /// </summary>
         private async Task OnCompletedFueling(Nozzle nozzle, ControllerResponse response)
         {
+            var fuelSale = SelectedNozzle?.FuelSale;
+
             try
             {
                 decimal quantity = response.Quantity;
@@ -364,8 +366,6 @@ namespace KIT.GasStation.ViewModels
 
                 SelectedNozzle.FuelSale.ReceivedQuantity = quantity;
                 SelectedNozzle.FuelSale.ReceivedSum = sum;
-
-                var fuelSale = SelectedNozzle.FuelSale;
 
                 if (Properties.Settings.Default.ReceiptPrintingMode == "After")
                 {
@@ -396,14 +396,16 @@ namespace KIT.GasStation.ViewModels
                         }
                     }
                 }
-
-                fuelSale.FuelSaleStatus = FuelSaleStatus.Completed;
-                await _fuelSaleService.UpdateAsync(fuelSale.Id, fuelSale);
-                await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
             }
             catch (Exception e)
             {
 
+            }
+            finally
+            {
+                fuelSale.FuelSaleStatus = FuelSaleStatus.Completed;
+                await _fuelSaleService.UpdateAsync(fuelSale.Id, fuelSale);
+                await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
             }
         }
 
@@ -1096,7 +1098,7 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        private void NozzleService_OnDeleted(int id)
+        private async void NozzleService_OnDeleted(int id)
         {
             var nozzle = Nozzles.FirstOrDefault(n => n.Id == id);
 
@@ -1106,7 +1108,8 @@ namespace KIT.GasStation.ViewModels
 
             if (!Nozzles.Any())
             {
-
+                await _hub.InvokeAsync("StopPolling", nozzle.Group);
+                await _hub.InvokeAsync("LeaveController", nozzle.Group);
             }
         }
 
@@ -1117,6 +1120,7 @@ namespace KIT.GasStation.ViewModels
             if (nozzle == null) return;
 
             nozzle.Update(updatedNozzle);
+            Side = updatedNozzle.Side;
         }
 
         private void NozzleService_OnCreated(Nozzle createdNozzle)

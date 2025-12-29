@@ -68,7 +68,7 @@
 
             </dxlc:LayoutGroup>
 
-            <dxlc:LayoutGroup>
+            <dxlc:LayoutGroup >
 
                 <dxb:ToolBarControl Style="{StaticResource BaseToolBarControl}">
                     <dxb:BarButtonItem Content="Сохранить настройки"
