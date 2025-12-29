@@ -693,92 +693,86 @@ namespace KIT.GasStation.EKassa
                     _logger.Information($"Отступы: слева={leftMargin}, справа={rightMargin}, сверху={topMargin}, снизу={bottomMargin}");
 
                     // Начальная позиция с учетом верхнего отступа
-                    float yPos = topMargin;
-
-                    // Отступ между текстом и QR-кодом (в мм, конвертируем в 1/100 дюйма)
-                    int textQrSpacingMm = 5;
-                    float textQrSpacing = textQrSpacingMm / 25.4f * 100;
+                    float yPos = layout.TopMargin;
 
                     // Уменьшим размер шрифта до 6pt
                     Font textFont = new Font("Courier New", 6f, FontStyle.Regular);
 
-                    // Разбиваем текст на строки и печатаем с учетом ширины
-                    string[] lines = _check.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    IEnumerable<string> lines = NormalizeLines(_check ?? string.Empty, e.Graphics, textFont, layout.ContentWidth);
+                    DrawTextLines(e.Graphics, textFont, layout.ContentWidth, layout.LeftMargin, ref yPos, lines);
 
-                    // Проверим ширину самой длинной строки для отладки
-                    string longestLine = "";
-                    float maxLineWidth = 0;
+                    float textHeight = yPos - layout.TopMargin;
 
-                    foreach (string line in lines)
+                    bool includeQr = !string.IsNullOrWhiteSpace(_url);
+                    bool qrDrawn = false;
+                    float qrX = 0f;
+                    float qrY = 0f;
+                    float qrWidth = 0f;
+
+                    if (includeQr)
                     {
-                        string trimmedLine = line.Trim();
-                        if (!string.IsNullOrEmpty(trimmedLine))
+                        yPos += layout.TextQrSpacing;
+                        using Bitmap qrCodeImage = GenerateQrCodeForThermalPrinter(_url, layout.TargetQrSize);
+                        if (qrCodeImage != null)
                         {
-                            SizeF lineSize = e.Graphics.MeasureString(trimmedLine, textFont);
-                            if (lineSize.Width > maxLineWidth)
-                            {
-                                maxLineWidth = lineSize.Width;
-                                longestLine = trimmedLine;
-                            }
+                            DrawQr(e.Graphics, qrCodeImage, layout.ContentWidth, layout.LeftMargin, layout.BottomMargin, layout.PrinterDpi, ref yPos,
+                                out qrX, out qrY, out qrWidth);
+                            qrDrawn = true;
+                        }
+                        else
+                        {
+                            yPos += layout.BottomMargin;
                         }
                     }
-
-                    _logger.Information($"Самая длинная строка: '{longestLine}'");
-                    _logger.Information($"Ширина самой длинной строки: {maxLineWidth}, доступная ширина: {contentWidth}");
-
-                    if (maxLineWidth > contentWidth)
+                    else
                     {
-                        _logger.Warning($"Строка не помещается! Превышение: {maxLineWidth - contentWidth}");
+                        yPos += layout.BottomMargin;
                     }
 
-                    // Печатаем все строки
-                    foreach (string line in lines)
+                    // Логируем итоговые параметры
+                    _logger.Information($"Расположение элементов:");
+                    _logger.Information($"- Текст: начальная позиция {layout.TopMargin}, высота {textHeight}");
+                    if (qrDrawn)
                     {
-                        string trimmedLine = line.Trim();
-
-                        if (string.IsNullOrEmpty(trimmedLine))
-                        {
-                            yPos += textFont.GetHeight(e.Graphics);
-                            continue;
-                        }
-
-                        // Измеряем строку
-                        SizeF lineSize = e.Graphics.MeasureString(trimmedLine, textFont);
-
-                        // Для строк-разделителей (состоящих из тире) обрезаем до нужной длины
-                        if (trimmedLine.StartsWith("-") && trimmedLine.Length > 1 && trimmedLine.All(c => c == '-'))
-                        {
-                            // Это строка-разделитель, создаем её нужной длины
-                            int targetChars = (int)(contentWidth / (lineSize.Width / trimmedLine.Length));
-                            if (targetChars < 3) targetChars = 3;
-                            trimmedLine = new string('-', targetChars);
-                            lineSize = e.Graphics.MeasureString(trimmedLine, textFont);
-                        }
-
-                        // Если строка слишком длинная, обрезаем её
-                        if (lineSize.Width > contentWidth)
-                        {
-                            // Находим максимальное количество символов, которые помещаются
-                            string currentText = trimmedLine;
-                            while (currentText.Length > 3)
-                            {
-                                // Укорачиваем строку на 1 символ
-                                currentText = currentText.Substring(0, currentText.Length - 1);
-                                lineSize = e.Graphics.MeasureString(currentText, textFont);
-                                if (lineSize.Width <= contentWidth)
-                                {
-                                    trimmedLine = currentText;
-                                    break;
-                                }
-                            }
-
-                            _logger.Information($"Обрезана строка до: '{trimmedLine}'");
-                        }
-
-                        // Печатаем строку
-                        e.Graphics.DrawString(trimmedLine, textFont, Brushes.Black, leftMargin, yPos);
-                        yPos += lineSize.Height;
+                        _logger.Information($"- QR-код: x={qrX:F2}, y={qrY:F2}, размер={qrWidth:F2}x{qrWidth:F2}");
                     }
+                    else
+                    {
+                        _logger.Information("- QR-код: не печатается");
+                    }
+                    _logger.Information($"- Общая высота чека: {yPos:F2} (1/100 дюйма)");
+                    _logger.Information($"- Это примерно: {yPos / 100 * 25.4:F1} мм");
+
+                    textFont.Dispose();
+
+                    e.HasMorePages = false; // Только одна страница
+                };
+
+                printDoc.Print();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Ошибка во время печати страницы");
+            }
+        }
+
+        private LayoutInfo CalculateLayout(int printerDpi)
+        {
+            // Немного уменьшим отступы
+            int leftRightMarginMm = 6;   // 6мм слева и справа (было 8)
+            int topBottomMarginMm = 10;  // 10мм сверху и снизу
+
+            // Конвертируем мм в единицы принтера (dots)
+            int leftMarginDots = (int)(leftRightMarginMm * printerDpi / 25.4);
+            int rightMarginDots = (int)(leftRightMarginMm * printerDpi / 25.4);
+            int topMarginDots = (int)(topBottomMarginMm * printerDpi / 25.4);
+            int bottomMarginDots = (int)(topBottomMarginMm * printerDpi / 25.4);
+
+            // Конвертируем dots в 1/100 дюйма для Graphics
+            float leftMargin = leftMarginDots / (float)printerDpi * 100;
+            float rightMargin = rightMarginDots / (float)printerDpi * 100;
+            float topMargin = topMarginDots / (float)printerDpi * 100;
+            float bottomMargin = bottomMarginDots / (float)printerDpi * 100;
 
                     if (shouldPrintQr)
                     {
@@ -831,16 +825,122 @@ namespace KIT.GasStation.EKassa
 
                     textFont.Dispose();
 
-                    e.HasMorePages = false; // Только одна страница
-                };
-
-                printDoc.Print();
-            }
-            catch (Exception ex)
+            foreach (string line in lines)
             {
-                _logger.Error(ex, "Ошибка во время печати страницы");
+                string trimmedLine = line.Trim();
+                if (!string.IsNullOrEmpty(trimmedLine))
+                {
+                    SizeF lineSize = graphics.MeasureString(trimmedLine, font);
+                    if (lineSize.Width > maxLineWidth)
+                    {
+                        maxLineWidth = lineSize.Width;
+                        longestLine = trimmedLine;
+                    }
+                }
+            }
+
+            _logger.Information($"Самая длинная строка: '{longestLine}'");
+            _logger.Information($"Ширина самой длинной строки: {maxLineWidth}, доступная ширина: {contentWidth}");
+
+            if (maxLineWidth > contentWidth)
+            {
+                _logger.Warning($"Строка не помещается! Превышение: {maxLineWidth - contentWidth}");
+            }
+
+            foreach (string line in lines)
+            {
+                string trimmedLine = line.Trim();
+
+                if (string.IsNullOrEmpty(trimmedLine))
+                {
+                    yield return string.Empty;
+                    continue;
+                }
+
+                SizeF lineSize = graphics.MeasureString(trimmedLine, font);
+
+                if (trimmedLine.StartsWith("-") && trimmedLine.Length > 1 && trimmedLine.All(c => c == '-'))
+                {
+                    int targetChars = (int)(contentWidth / (lineSize.Width / trimmedLine.Length));
+                    if (targetChars < 3) targetChars = 3;
+                    trimmedLine = new string('-', targetChars);
+                    lineSize = graphics.MeasureString(trimmedLine, font);
+                }
+
+                if (lineSize.Width > contentWidth)
+                {
+                    string currentText = trimmedLine;
+                    while (currentText.Length > 3)
+                    {
+                        currentText = currentText.Substring(0, currentText.Length - 1);
+                        lineSize = graphics.MeasureString(currentText, font);
+                        if (lineSize.Width <= contentWidth)
+                        {
+                            trimmedLine = currentText;
+                            break;
+                        }
+                    }
+
+                    _logger.Information($"Обрезана строка до: '{trimmedLine}'");
+                }
+
+                yield return trimmedLine;
             }
         }
+
+        private void DrawTextLines(Graphics graphics, Font font, float contentWidth, float leftMargin, ref float yPos, IEnumerable<string> lines)
+        {
+            foreach (string line in lines)
+            {
+                if (string.IsNullOrEmpty(line))
+                {
+                    yPos += font.GetHeight(graphics);
+                    continue;
+                }
+
+                SizeF lineSize = graphics.MeasureString(line, font);
+                graphics.DrawString(line, font, Brushes.Black, leftMargin, yPos);
+                yPos += lineSize.Height;
+            }
+        }
+
+        private void DrawQr(
+            Graphics graphics,
+            Bitmap qrCodeImage,
+            float contentWidth,
+            float leftMargin,
+            float bottomMargin,
+            int printerDpi,
+            ref float yPos,
+            out float qrX,
+            out float qrY,
+            out float qrWidth)
+        {
+            qrWidth = qrCodeImage.Width / (float)printerDpi * 100;
+            float qrHeight = qrWidth;
+
+            qrX = leftMargin + (contentWidth - qrWidth) / 2;
+            qrY = yPos;
+
+            graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+
+            graphics.DrawImage(qrCodeImage, qrX, qrY, qrWidth, qrHeight);
+            yPos += qrHeight + bottomMargin;
+        }
+
+        private sealed record LayoutInfo(
+            int PrinterDpi,
+            float LeftMargin,
+            float RightMargin,
+            float TopMargin,
+            float BottomMargin,
+            float ContentWidth,
+            float PrintWidth,
+            float TextQrSpacing,
+            int TargetQrSize);
 
         private Bitmap GenerateQrCodeForThermalPrinter(string url, int sizeInPixels)
         {
