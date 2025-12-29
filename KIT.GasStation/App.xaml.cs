@@ -264,8 +264,8 @@ namespace KIT.GasStation
                 userStore.OnLogout += UserStore_OnLogout;
 
                 _splashScreenViewModel.Status = "Запуск сервисов...";
-                await Services.ServiceManager.StartWebAsync();
-                await Services.ServiceManager.StartWorkerAsync();
+                //await ServiceManager.StartWebAsync();
+                //await ServiceManager.StartWorkerAsync();
 
                 _splashScreenViewModel.Status = "Загрузка основного окна...";
                 // Получаем главное окно из DI и устанавливаем DataContext

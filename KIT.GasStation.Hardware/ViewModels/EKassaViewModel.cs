@@ -86,9 +86,7 @@ namespace KIT.GasStation.Hardware.ViewModels
 
                 string? message = await cashRegisterService.GetShiftStateAsync();
 
-                File.WriteAllText(Path.Combine(@"D:\Чеки", $"чек_{Guid.NewGuid()}"), message);
-
-                if (message != null)
+                if (!string.IsNullOrEmpty(message))
                 {
                     _ = MessageBoxService.ShowMessage(message, "Статус ККМ", MessageButton.OK, MessageIcon.Information);
                 }

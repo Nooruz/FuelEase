@@ -654,45 +654,16 @@ namespace KIT.GasStation.EKassa
                 printDoc.PrinterSettings.PrinterName = _settings.DefaultPrinterName;
 
                 // Установим размер бумаги: 80мм × большая высота (не ограничиваем)
-                int paperWidthMm = GetPaperWidthMm(_settings.TapeType);
-                int paperWidth = (int)(paperWidthMm / 25.4 * 100); // 315 (1/100 дюйма)
+                int paperWidth = (int)(80 / 25.4 * 100); // 315 (1/100 дюйма)
                 int paperHeight = 800; // 50 дюймов - достаточно для любого чека
                 printDoc.DefaultPageSettings.PaperSize = new PaperSize("Custom", paperWidth, paperHeight);
 
                 printDoc.PrintPage += (sender, e) =>
                 {
                     int printerDpi = 203;
-                    bool shouldPrintQr = includeQr && !string.IsNullOrWhiteSpace(_url);
 
-                    // Немного уменьшим отступы
-                    int leftRightMarginMm = 6;   // 6мм слева и справа (было 8)
-                    int topBottomMarginMm = 10;  // 10мм сверху и снизу
+                    LayoutInfo layout = CalculateLayout(printerDpi);
 
-                    // Конвертируем мм в единицы принтера (dots)
-                    int leftMarginDots = (int)(leftRightMarginMm * printerDpi / 25.4);
-                    int rightMarginDots = (int)(leftRightMarginMm * printerDpi / 25.4);
-                    int topMarginDots = (int)(topBottomMarginMm * printerDpi / 25.4);
-                    int bottomMarginDots = (int)(topBottomMarginMm * printerDpi / 25.4);
-
-                    // Конвертируем dots в 1/100 дюйма для Graphics
-                    float leftMargin = leftMarginDots / (float)printerDpi * 100;
-                    float rightMargin = rightMarginDots / (float)printerDpi * 100;
-                    float topMargin = topMarginDots / (float)printerDpi * 100;
-                    float bottomMargin = bottomMarginDots / (float)printerDpi * 100;
-
-                    // Ширина бумаги в 1/100 дюйма
-                    float paperWidthInches = paperWidthMm / 25.4f;
-                    float printWidth = paperWidthInches * 100;
-
-                    // Уменьшим коэффициент безопасности
-                    float safetyFactor = 0.98f; // Уменьшили до 0.98
-                    float contentWidth = (printWidth - leftMargin - rightMargin) * safetyFactor;
-
-                    _logger.Information($"Ширина бумаги: {printWidth} (1/100 дюйма)");
-                    _logger.Information($"Доступная ширина контента: {contentWidth} (с учетом коэффициента безопасности {safetyFactor})");
-                    _logger.Information($"Отступы: слева={leftMargin}, справа={rightMargin}, сверху={topMargin}, снизу={bottomMargin}");
-
-                    // Начальная позиция с учетом верхнего отступа
                     float yPos = layout.TopMargin;
 
                     // Уменьшим размер шрифта до 6pt
@@ -740,6 +711,7 @@ namespace KIT.GasStation.EKassa
                     {
                         _logger.Information("- QR-код: не печатается");
                     }
+
                     _logger.Information($"- Общая высота чека: {yPos:F2} (1/100 дюйма)");
                     _logger.Information($"- Это примерно: {yPos / 100 * 25.4:F1} мм");
 
@@ -774,56 +746,36 @@ namespace KIT.GasStation.EKassa
             float topMargin = topMarginDots / (float)printerDpi * 100;
             float bottomMargin = bottomMarginDots / (float)printerDpi * 100;
 
-                    if (shouldPrintQr)
-                    {
-                        // Размер QR-кода - занимает всю доступную ширину (но не более 300 точек)
-                        int maxQrSize = 250; // Уменьшили до 300
-                        int targetQrSize = Math.Min((int)(contentWidth / 100 * printerDpi), maxQrSize);
+            // Ширина бумаги в 1/100 дюйма
+            float paperWidthInches = 80f / 25.4f;
+            float printWidth = paperWidthInches * 100;
 
-                        _logger.Information($"Размер QR-кода: {targetQrSize}x{targetQrSize} dots");
+            // Уменьшим коэффициент безопасности
+            float safetyFactor = 0.98f; // Уменьшили до 0.98
+            float contentWidth = (printWidth - leftMargin - rightMargin) * safetyFactor;
 
-                        // Генерация QR-кода
-                        Bitmap qrCodeImage = GenerateQrCodeForThermalPrinter(_url, targetQrSize);
+            _logger.Information($"Ширина бумаги: {printWidth} (1/100 дюйма)");
+            _logger.Information($"Доступная ширина контента: {contentWidth} (с учетом коэффициента безопасности {safetyFactor})");
+            _logger.Information($"Отступы: слева={leftMargin}, справа={rightMargin}, сверху={topMargin}, снизу={bottomMargin}");
 
-                        if (qrCodeImage == null) return;
+            // Размер QR-кода - занимает всю доступную ширину (но не более 300 точек)
+            int maxQrSize = 250; // Уменьшили до 300
+            int targetQrSize = Math.Min((int)(contentWidth / 100 * printerDpi), maxQrSize);
 
-                        // Отступ после текста
-                        yPos += textQrSpacing;
+            _logger.Information($"Размер QR-кода: {targetQrSize}x{targetQrSize} dots");
 
-                        // Размер QR-кода в 1/100 дюйма
-                        float qrWidth = targetQrSize / (float)printerDpi * 100;
-                        float qrHeight = qrWidth;
+            // Отступ между текстом и QR-кодом (в мм, конвертируем в 1/100 дюйма)
+            int textQrSpacingMm = 5;
+            float textQrSpacing = textQrSpacingMm / 25.4f * 100;
 
-                        // Центрирование QR-кода по горизонтали (в пределах доступной ширины)
-                        float qrX = leftMargin + (contentWidth - qrWidth) / 2;
+            return new LayoutInfo(printerDpi, leftMargin, rightMargin, topMargin, bottomMargin, contentWidth, printWidth, textQrSpacing, targetQrSize);
+        }
 
-                        // Настройки для печати QR-кода
-                        e.Graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
-                        e.Graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-                        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
-                        e.Graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
-
-                        // Рисуем QR-код
-                        e.Graphics.DrawImage(qrCodeImage, qrX, yPos, qrWidth, qrHeight);
-
-                        // Высота после QR-кода с учетом нижнего отступа
-                        yPos += qrHeight + bottomMargin;
-
-                        // Логируем итоговые параметры
-                        _logger.Information($"Расположение элементов:");
-                        _logger.Information($"- Текст: начальная позиция {topMargin}, высота {yPos - topMargin - textQrSpacing - qrHeight - bottomMargin}");
-                        _logger.Information($"- QR-код: x={qrX:F2}, y={yPos - qrHeight - bottomMargin:F2}, размер={qrWidth:F2}x{qrHeight:F2}");
-                        _logger.Information($"- Общая высота чека: {yPos:F2} (1/100 дюйма)");
-                        _logger.Information($"- Это примерно: {yPos / 100 * 25.4:F1} мм");
-
-                        qrCodeImage.Dispose();
-                    }
-                    else
-                    {
-                        yPos += bottomMargin;
-                    }
-
-                    textFont.Dispose();
+        private IEnumerable<string> NormalizeLines(string text, Graphics graphics, Font font, float contentWidth)
+        {
+            string[] lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            string longestLine = "";
+            float maxLineWidth = 0;
 
             foreach (string line in lines)
             {
