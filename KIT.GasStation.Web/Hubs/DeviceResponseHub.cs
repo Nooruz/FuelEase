@@ -86,6 +86,9 @@ namespace KIT.GasStation.Web.Hubs
         public Task StopFuelingAsync(string groupName) =>
             Clients.Group(groupName).StopFuelingAsync(groupName);
 
+        public Task ResumeFuelingAsync(string groupName) =>
+            Clients.Group(groupName).ResumeFuelingAsync(groupName);
+
         public Task ColumnLiftedChanged(string groupName, bool isLifted) =>
             Clients.Group(groupName).ColumnLiftedChanged(groupName, isLifted);
         public Task CompleteFuelingAsync(string groupName) =>

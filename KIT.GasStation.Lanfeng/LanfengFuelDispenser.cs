@@ -119,6 +119,11 @@ namespace KIT.GasStation.Lanfeng
                     await StopFuelingAsync(groupName);
                 });
 
+                _hub.On<string>("ResumeFuelingAsync", async (groupName) =>
+                {
+                    await ResumeFuelingAsync(groupName);
+                });
+
                 _hub.On<string>("GetCountersAsync", async (groupName) =>
                 {
                     _stopTickStatus = true;
@@ -406,6 +411,29 @@ namespace KIT.GasStation.Lanfeng
                     return;
                 }
                 await ExecuteCommandAsync(Command.StopFueling, Address, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
+            }
+            finally
+            {
+                _stopTickStatus = false;
+            }
+        }
+
+        private async Task ResumeFuelingAsync(string groupName)
+        {
+            try
+            {
+                _stopTickStatus = true;
+                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
+                if (column is null)
+                {
+                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.ContinueFueling, Address, column.LanfengAddress);
             }
             catch (Exception e)
             {

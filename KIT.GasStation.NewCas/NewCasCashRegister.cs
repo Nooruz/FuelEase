@@ -63,7 +63,6 @@ namespace KIT.GasStation.NewCas
                 var request = new
                 {
                     cashierName = cashierName,
-                    printToBitmaps = true
                 };
 
                 var response = await SendRequest("/fiscal/shifts/closeDay", request);
@@ -118,7 +117,6 @@ namespace KIT.GasStation.NewCas
                 var request = new
                 {
                     cashierName = cashierName,
-                    printToBitmaps = true
                 };
 
                 var response = await SendRequest("/fiscal/shifts/openDay", request);
@@ -187,7 +185,7 @@ namespace KIT.GasStation.NewCas
         {
             var request = new
             {
-                printToBitmaps = true,
+
             };
 
             var response = await SendRequest("/fiscal/shifts/printXReport", request);
@@ -216,7 +214,6 @@ namespace KIT.GasStation.NewCas
             var openAndCloseRec = new OpenAndCloseRec()
             {
                 RecType = RecType.ReturnComing,
-                PrintToBitmaps = true,
                 SourceFDNumber = fuelSale.FiscalData.FiscalDocument,
                 SourceFMNumber = fuelSale.FiscalData.FiscalModule,
                 Goods = new[]
@@ -275,7 +272,6 @@ namespace KIT.GasStation.NewCas
             {
                 RecType = RecType.Coming,
                 CashierName = cashierName,
-                PrintToBitmaps = true,
                 Goods = new[]
                 {
                         new Goods()

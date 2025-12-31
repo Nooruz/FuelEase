@@ -1,7 +1,6 @@
 ﻿using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Domain.Models;
-using KIT.GasStation.EKassa.Helpers;
 using KIT.GasStation.EKassa.Models;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
@@ -314,7 +313,7 @@ namespace KIT.GasStation.EKassa
                 fiscalNumber.txt80 = true;
             }
 
-            _cashRegister.Status = await ExecuteOperationAsync($"/api/{_xReport}", fiscalNumber);
+            _cashRegister.Status = await ExecuteOperationAsync($"/api/{_xReport}", fiscalNumber, printReceipt: false);
             _logger.Information("Статус кассы: {Status}", _cashRegister.Status);
             OnStatusChanged?.Invoke(_cashRegister.Status);
 
@@ -653,8 +652,9 @@ namespace KIT.GasStation.EKassa
                 printDoc.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
                 printDoc.PrinterSettings.PrinterName = _settings.DefaultPrinterName;
 
-                // Установим размер бумаги: 80мм × большая высота (не ограничиваем)
-                int paperWidth = (int)(80 / 25.4 * 100); // 315 (1/100 дюйма)
+                // Установим размер бумаги: 58мм или 80мм × большая высота (не ограничиваем)
+                int paperWidthMm = GetPaperWidthMm(_settings.TapeType);
+                int paperWidth = (int)(paperWidthMm / 25.4 * 100); // 1/100 дюйма
                 int paperHeight = 800; // 50 дюймов - достаточно для любого чека
                 printDoc.DefaultPageSettings.PaperSize = new PaperSize("Custom", paperWidth, paperHeight);
 
@@ -662,7 +662,7 @@ namespace KIT.GasStation.EKassa
                 {
                     int printerDpi = 203;
 
-                    LayoutInfo layout = CalculateLayout(printerDpi);
+                    LayoutInfo layout = CalculateLayout(printerDpi, paperWidthMm);
 
                     float yPos = layout.TopMargin;
 
@@ -674,13 +674,13 @@ namespace KIT.GasStation.EKassa
 
                     float textHeight = yPos - layout.TopMargin;
 
-                    bool includeQr = !string.IsNullOrWhiteSpace(_url);
+                    bool canIncludeQr = includeQr && !string.IsNullOrWhiteSpace(_url);
                     bool qrDrawn = false;
                     float qrX = 0f;
                     float qrY = 0f;
                     float qrWidth = 0f;
 
-                    if (includeQr)
+                    if (canIncludeQr)
                     {
                         yPos += layout.TextQrSpacing;
                         using Bitmap qrCodeImage = GenerateQrCodeForThermalPrinter(_url, layout.TargetQrSize);
@@ -728,10 +728,10 @@ namespace KIT.GasStation.EKassa
             }
         }
 
-        private LayoutInfo CalculateLayout(int printerDpi)
+        private LayoutInfo CalculateLayout(int printerDpi, int paperWidthMm)
         {
             // Немного уменьшим отступы
-            int leftRightMarginMm = 6;   // 6мм слева и справа (было 8)
+            int leftRightMarginMm = paperWidthMm <= 58 ? 3 : 6;
             int topBottomMarginMm = 10;  // 10мм сверху и снизу
 
             // Конвертируем мм в единицы принтера (dots)
@@ -747,7 +747,7 @@ namespace KIT.GasStation.EKassa
             float bottomMargin = bottomMarginDots / (float)printerDpi * 100;
 
             // Ширина бумаги в 1/100 дюйма
-            float paperWidthInches = 80f / 25.4f;
+            float paperWidthInches = paperWidthMm / 25.4f;
             float printWidth = paperWidthInches * 100;
 
             // Уменьшим коэффициент безопасности
@@ -759,7 +759,7 @@ namespace KIT.GasStation.EKassa
             _logger.Information($"Отступы: слева={leftMargin}, справа={rightMargin}, сверху={topMargin}, снизу={bottomMargin}");
 
             // Размер QR-кода - занимает всю доступную ширину (но не более 300 точек)
-            int maxQrSize = 250; // Уменьшили до 300
+            int maxQrSize = paperWidthMm <= 58 ? 200 : 250; // Уменьшили до 300
             int targetQrSize = Math.Min((int)(contentWidth / 100 * printerDpi), maxQrSize);
 
             _logger.Information($"Размер QR-кода: {targetQrSize}x{targetQrSize} dots");
@@ -872,6 +872,10 @@ namespace KIT.GasStation.EKassa
             float qrHeight = qrWidth;
 
             qrX = leftMargin + (contentWidth - qrWidth) / 2;
+            if (qrX < leftMargin)
+            {
+                qrX = leftMargin;
+            }
             qrY = yPos;
 
             graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;

@@ -73,6 +73,14 @@ namespace KIT.GasStation.State.CashRegisters
             _userStore = userStore;
         }
 
+        private void CashRegisterService_OnStatusChanged(CashRegisterStatus status)
+        {
+            if (CashRegister != null)
+            {
+                CashRegister.Status = status;
+            }
+        }
+
         #endregion
 
         #region Public Voids
@@ -218,6 +226,7 @@ namespace KIT.GasStation.State.CashRegisters
                 _cashRegisterService.OnReturning += CashRegisterService_OnReturning;
                 _cashRegisterService.OnShiftClosed += CashRegisterService_OnShiftClosed;
                 _cashRegisterService.OnUnknownError += CashRegisterService_OnUnknownError;
+                _cashRegisterService.OnStatusChanged += CashRegisterService_OnStatusChanged;
 
                 await _cashRegisterService.InitializationAsync(CashRegister.Id);
 

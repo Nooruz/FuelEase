@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics;
 using System.IO.Ports;
 
 namespace KIT.GasStation.HardwareConfigurations.Services
@@ -15,6 +17,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         private volatile bool _isOpen;
         private PortKey _key;
         private SerialPortOptions? _options;
+        private readonly ILogger<SharedSerialPortService> _logger;
 
         #endregion
 
@@ -22,6 +25,15 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
         public bool IsOpen => _isOpen;
         public string PortName => _key.PortName;
+
+        #endregion
+
+        #region Constructors
+
+        public SharedSerialPortService(ILogger<SharedSerialPortService>? logger = null)
+        {
+            _logger = logger ?? NullLogger<SharedSerialPortService>.Instance;
+        }
 
         #endregion
 
@@ -75,19 +87,28 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             int maxRetries = 2,
             CancellationToken ct = default)
         {
+            var portLabel = _key.PortName ?? "<unset>";
+            _logger.LogDebug("Serial {Port}: waiting for I/O lock.", portLabel);
             await _io.WaitAsync(ct);
             try
             {
+                _logger.LogDebug("Serial {Port}: acquired I/O lock.", portLabel);
                 if (PortRequiresReopen())
+                {
+                    _logger.LogWarning("Serial {Port}: port requires reopen before I/O.", portLabel);
                     await RecoverPortAsync(ct);
+                }
                 // Простой retry-цикл: если таймаут/IO — ещё попытки (maxRetries).
                 for (int attempt = 1; ; attempt++)
                 {
                     try
                     {
+                        _logger.LogDebug("Serial {Port}: write {TxLength} bytes (attempt {Attempt}/{MaxRetries}).",
+                            portLabel, tx.Length, attempt, maxRetries);
                         // === WRITE ===
                         await _port.BaseStream.WriteAsync(tx, 0, tx.Length, ct);
                         await _port.BaseStream.FlushAsync(ct);
+                        _logger.LogDebug("Serial {Port}: write completed.", portLabel);
 
                         if (writeToReadDelayMs > 0)
                             await Task.Delay(writeToReadDelayMs, ct);
@@ -96,6 +117,8 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                         var buf = new byte[expectedRxLength];
                         var sw = Stopwatch.StartNew();
                         var total = 0;
+                        _logger.LogDebug("Serial {Port}: read {ExpectedLength} bytes with timeout {ReadTimeoutMs}ms.",
+                            portLabel, expectedRxLength, readTimeoutMs);
 
                         while (total < expectedRxLength)
                         {
@@ -112,6 +135,8 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                             if (n > 0)
                             {
                                 total += n;
+                                _logger.LogDebug("Serial {Port}: read {ReadBytes}/{ExpectedLength} bytes.",
+                                    portLabel, total, expectedRxLength);
                                 continue;
                             }
                             // n == 0 — просто ждём дальше до дедлайна
@@ -119,23 +144,31 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
                         // подчистим возможные лишние байты
                         if (_port.BytesToRead > 0) _port.DiscardInBuffer();
+                        _logger.LogDebug("Serial {Port}: read completed ({ExpectedLength} bytes).", portLabel, expectedRxLength);
 
                         return buf;
                     }
-                    catch (TimeoutException) when (attempt <= maxRetries)
+                    catch (TimeoutException ex) when (attempt <= maxRetries)
                     {
+                        _logger.LogWarning(ex,
+                            "Serial {Port}: read timeout after {ReadTimeoutMs}ms (attempt {Attempt}/{MaxRetries}).",
+                            portLabel, readTimeoutMs, attempt, maxRetries);
                         // небольшой экспоненциальный бэкофф
                         await Task.Delay(50 * attempt, ct);
                         continue;
                     }
-                    catch (IOException) when (attempt <= maxRetries)
+                    catch (IOException ex) when (attempt <= maxRetries)
                     {
+                        _logger.LogWarning(ex, "Serial {Port}: IO error, recovering port (attempt {Attempt}/{MaxRetries}).",
+                            portLabel, attempt, maxRetries);
                         await RecoverPortAsync(ct);
                         await Task.Delay(50 * attempt, ct);
                         continue;
                     }
-                    catch (InvalidOperationException) when (attempt <= maxRetries)
+                    catch (InvalidOperationException ex) when (attempt <= maxRetries)
                     {
+                        _logger.LogWarning(ex, "Serial {Port}: invalid operation, recovering port (attempt {Attempt}/{MaxRetries}).",
+                            portLabel, attempt, maxRetries);
                         await RecoverPortAsync(ct);
                         await Task.Delay(50 * attempt, ct);
                         continue;

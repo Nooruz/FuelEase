@@ -280,6 +280,17 @@ namespace KIT.GasStation.ViewModels
                             fuelSale.FiscalData = await fiscalData;
                             await _fuelSaleService.CreateAsync(fuelSale);
                         }
+                        else
+                        {
+                            if (fuelSale.FiscalData is not null)
+                            {
+                                await _fuelSaleService.CreateAsync(fuelSale);
+                            }
+                            else
+                            {
+                                MessageBoxService.ShowMessage("Не удалось получить фискальные данные от ККМ.", "Ошибка", MessageButton.OK, MessageIcon.Error);
+                            }
+                        }
                     }
                     else
                     {
@@ -519,10 +530,16 @@ namespace KIT.GasStation.ViewModels
                     await OnCompletedFueling(nozzle, deviceResponse);
                     break;
                 case Command.ProgramControlMode:
-                    var sa = 0;
+                    foreach (var item in Nozzles)
+                    {
+                        item.IsProgramControl = false;
+                    }
                     break;
                 case Command.KeyboardControlMode:
-                    var sass = 0;
+                    foreach (var item in Nozzles)
+                    {
+                        item.IsProgramControl = true;
+                    }
                     break;
             }
 
@@ -547,7 +564,10 @@ namespace KIT.GasStation.ViewModels
             nozzle.LastCounter = deviceResponse.Quantity;
 
             var shift = _shiftStore.CurrentShift;
-            if (shift == null || _shiftStore.CurrentShiftState is not (ShiftState.Open or ShiftState.Exceeded24Hours))
+            if (shift == null)
+                return;
+
+            if (_shiftStore.CurrentShiftState is ShiftState.Closed)
                 return;
 
             await CheckUncompletedSales();
@@ -560,8 +580,8 @@ namespace KIT.GasStation.ViewModels
                 return;
 
             // Расчёт отклонения от начальных показаний
-            decimal unregisteredSalesSum = unregisteredSales != null ? unregisteredSales.Sum(u => u.Quantity) : 0;
-            decimal expectedCounter = shiftCounter.BeginSaleCounter + totalSales + unregisteredSalesSum;
+            decimal unregisteredSalesQuantity = unregisteredSales != null ? unregisteredSales.Sum(u => u.Quantity) : 0;
+            decimal expectedCounter = shiftCounter.BeginSaleCounter + totalSales + unregisteredSalesQuantity;
             decimal unregisteredQuantity = nozzle.LastCounter - (shiftCounter.BeginNozzleCounter + expectedCounter);
 
             if (unregisteredQuantity != 0)
@@ -893,61 +913,55 @@ namespace KIT.GasStation.ViewModels
 
         #region Shift
 
-        private void ShiftStore_OnClosed(Shift shift)
+        private async void ShiftStore_OnClosed(Shift shift)
         {
-            Task.Run(async () =>
+            foreach (var nozzle in Nozzles)
             {
-                foreach (var nozzle in Nozzles)
+                await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
+            }
+
+            //Ждем пол секунды
+            await Task.Delay(1500);
+
+            foreach (var nozzle in Nozzles)
+            {
+                ShiftCounter? nozzleCounter = await _shiftCounterService.GetAsync(nozzle.Id, shift.Id);
+
+                if (nozzleCounter != null)
                 {
-                    //await _fuelDispenserService.GetCountersAsync(nozzle);
+                    nozzleCounter.EndNozzleCounter = nozzle.LastCounter;
+                    nozzleCounter.EndSaleCounter = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, shift.Id);
+                    await _shiftCounterService.UpdateAsync(nozzleCounter.Id, nozzleCounter);
                 }
-
-                //Ждем пол секунды
-                await Task.Delay(1000);
-
-                foreach (var nozzle in Nozzles)
-                {
-                    ShiftCounter? nozzleCounter = await _shiftCounterService.GetAsync(nozzle.Id, shift.Id);
-
-                    if (nozzleCounter != null)
-                    {
-                        nozzleCounter.EndNozzleCounter = nozzle.LastCounter;
-                        nozzleCounter.EndSaleCounter = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, shift.Id);
-                        await _shiftCounterService.UpdateAsync(nozzleCounter.Id, nozzleCounter);
-                    }
-                }
-            });
+            }
         }
 
-        private void ShiftStore_OnOpened(Shift shift)
+        private async void ShiftStore_OnOpened(Shift shift)
         {
-            Task.Run(async () =>
+            foreach (var nozzle in Nozzles)
             {
-                foreach (var nozzle in Nozzles)
+                await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
+            }
+
+            // Ждем пол секунды
+            await Task.Delay(1500);
+
+            foreach (var nozzle in Nozzles)
+            {
+                ShiftCounter? nozzleCounter = await _shiftCounterService.GetAsync(nozzle.Id, shift.Id);
+
+                if (nozzleCounter == null)
                 {
-                    //await _fuelDispenserService.GetCountersAsync(nozzle);
-                }
-
-                // Ждем пол секунды
-                await Task.Delay(1000);
-
-                foreach (var nozzle in Nozzles)
-                {
-                    ShiftCounter? nozzleCounter = await _shiftCounterService.GetAsync(nozzle.Id, shift.Id);
-
-                    if (nozzleCounter == null)
+                    var shiftCounter = new ShiftCounter
                     {
-                        var shiftCounter = new ShiftCounter
-                        {
-                            NozzleId = nozzle.Id,
-                            ShiftId = _shiftStore.CurrentShift.Id,
-                            BeginNozzleCounter = nozzle.LastCounter,
-                            BeginSaleCounter = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, shift.Id)
-                        };
-                        await _shiftCounterService.CreateAsync(shiftCounter);
-                    }
+                        NozzleId = nozzle.Id,
+                        ShiftId = _shiftStore.CurrentShift.Id,
+                        BeginNozzleCounter = nozzle.LastCounter,
+                        BeginSaleCounter = await _fuelSaleService.GetReceivedQuantityAsync(nozzle.Id, shift.Id)
+                    };
+                    await _shiftCounterService.CreateAsync(shiftCounter);
                 }
-            });
+            }
         }
 
         private async Task CheckUncompletedSales()

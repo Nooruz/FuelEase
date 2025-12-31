@@ -208,10 +208,7 @@ namespace KIT.GasStation.ViewModels
                 {
                     if (SelectedFuel.Tanks == null || !SelectedFuel.Tanks.Any())
                     {
-                        if (await _fuelService.DeleteAsync(SelectedFuel.Id))
-                        {
-                            _ = Fuels.Remove(SelectedFuel);
-                        }
+                        await _fuelService.DeleteAsync(SelectedFuel.Id);
                     }
                 }
             }
@@ -234,7 +231,6 @@ namespace KIT.GasStation.ViewModels
                                 _ = item.Tanks.Remove(tank);
                             }
                         }
-                        _ = Tanks.Remove(SelectedTank);
                     }
                 }
             }

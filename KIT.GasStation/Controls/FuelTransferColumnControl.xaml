@@ -126,10 +126,14 @@
                 </Border>
 
                 <Border CornerRadius="10"
-                BorderBrush="#B0B0B0"
-                BorderThickness="2"
-                Padding="5"
-                Grid.Column="2">
+                        BorderBrush="#B0B0B0"
+                        BorderThickness="2"
+                        Padding="5"
+                        Grid.Column="2">
+
+                    <Border.ToolTip>
+                        <control:NozzleToolTip/>
+                    </Border.ToolTip>
 
                     <Grid>
                         <Grid.RowDefinitions>

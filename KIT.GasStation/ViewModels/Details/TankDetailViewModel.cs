@@ -76,13 +76,6 @@ namespace KIT.GasStation.ViewModels.Details
                 return;
             }
 
-            if (await _tankService.IsNumberAvailableAsync(Tank.Number))
-            {
-                MessageBoxService.ShowMessage($"Резервуар с кодом {Tank.Number} уже существует. Укажите другой код.",
-                    "Предупреждение", MessageButton.OK, MessageIcon.Warning);
-                return;
-            }
-
             if (Tank.FuelId == 0)
             {
                 MessageBoxService.ShowMessage(
@@ -105,6 +98,12 @@ namespace KIT.GasStation.ViewModels.Details
 
             if (Tank.Id == 0)
             {
+                if (await _tankService.IsNumberAvailableAsync(Tank.Number))
+                {
+                    MessageBoxService.ShowMessage($"Резервуар с кодом {Tank.Number} уже существует. Укажите другой код.",
+                        "Предупреждение", MessageButton.OK, MessageIcon.Warning);
+                    return;
+                }
                 _ = await _tankService.CreateAsync(Tank);
             }
             else

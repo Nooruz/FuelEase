@@ -42,7 +42,19 @@ namespace KIT.GasStation.Worker
                 foreach (var addr in addresses)
                 {
                     var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                    var t = RunControllerLoopAsync(ctrl, addr, linkedCts.Token);
+
+                    var controller = new Controller()
+                    {
+                        Id = ctrl.Id,
+                        Name = ctrl.Name,
+                        Type = ctrl.Type,
+                        ComPort = ctrl.ComPort,
+                        BaudRate = ctrl.BaudRate,
+                        Settings = ctrl.Settings,
+                        Columns = new(ctrl.Columns.Where(c => c.Address == addr).ToList())
+                    };
+
+                    var t = RunControllerLoopAsync(controller, addr, linkedCts.Token);
                     tasks.Add(t);
                 }
 
