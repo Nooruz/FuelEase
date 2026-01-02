@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+﻿using KIT.GasStation.HardwareConfigurations.Models;
+using Serilog;
 using System.Diagnostics;
 using System.IO.Ports;
+using System.Text.RegularExpressions;
 
 namespace KIT.GasStation.HardwareConfigurations.Services
 {
@@ -17,7 +18,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         private volatile bool _isOpen;
         private PortKey _key;
         private SerialPortOptions? _options;
-        private readonly ILogger<SharedSerialPortService> _logger;
+        private ILogger _logger;
 
         #endregion
 
@@ -30,9 +31,9 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
         #region Constructors
 
-        public SharedSerialPortService(ILogger<SharedSerialPortService>? logger = null)
+        public SharedSerialPortService()
         {
-            _logger = logger ?? NullLogger<SharedSerialPortService>.Instance;
+            CreateLogger();
         }
 
         #endregion
@@ -88,27 +89,32 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             CancellationToken ct = default)
         {
             var portLabel = _key.PortName ?? "<unset>";
-            _logger.LogDebug("Serial {Port}: waiting for I/O lock.", portLabel);
+            _logger.Debug("Serial {Port}: waiting for I/O lock.", portLabel);
+            var lockWait = Stopwatch.StartNew();
             await _io.WaitAsync(ct);
             try
             {
-                _logger.LogDebug("Serial {Port}: acquired I/O lock.", portLabel);
+                lockWait.Stop();
+                _logger.Information("Serial {Port}: acquired I/O lock after {ElapsedMs}ms.",
+                    portLabel, lockWait.ElapsedMilliseconds);
+                _logger.Debug("Serial {Port}: acquired I/O lock.", portLabel);
                 if (PortRequiresReopen())
                 {
-                    _logger.LogWarning("Serial {Port}: port requires reopen before I/O.", portLabel);
+                    _logger.Warning("Serial {Port}: port requires reopen before I/O.", portLabel);
                     await RecoverPortAsync(ct);
                 }
                 // Простой retry-цикл: если таймаут/IO — ещё попытки (maxRetries).
                 for (int attempt = 1; ; attempt++)
                 {
+                    var attemptTimer = Stopwatch.StartNew();
                     try
                     {
-                        _logger.LogDebug("Serial {Port}: write {TxLength} bytes (attempt {Attempt}/{MaxRetries}).",
+                        _logger.Debug("Serial {Port}: write {TxLength} bytes (attempt {Attempt}/{MaxRetries}).",
                             portLabel, tx.Length, attempt, maxRetries);
                         // === WRITE ===
                         await _port.BaseStream.WriteAsync(tx, 0, tx.Length, ct);
                         await _port.BaseStream.FlushAsync(ct);
-                        _logger.LogDebug("Serial {Port}: write completed.", portLabel);
+                        _logger.Debug("Serial {Port}: write completed.", portLabel);
 
                         if (writeToReadDelayMs > 0)
                             await Task.Delay(writeToReadDelayMs, ct);
@@ -117,7 +123,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                         var buf = new byte[expectedRxLength];
                         var sw = Stopwatch.StartNew();
                         var total = 0;
-                        _logger.LogDebug("Serial {Port}: read {ExpectedLength} bytes with timeout {ReadTimeoutMs}ms.",
+                        _logger.Debug("Serial {Port}: read {ExpectedLength} bytes with timeout {ReadTimeoutMs}ms.",
                             portLabel, expectedRxLength, readTimeoutMs);
 
                         while (total < expectedRxLength)
@@ -135,7 +141,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                             if (n > 0)
                             {
                                 total += n;
-                                _logger.LogDebug("Serial {Port}: read {ReadBytes}/{ExpectedLength} bytes.",
+                                _logger.Debug("Serial {Port}: read {ReadBytes}/{ExpectedLength} bytes.",
                                     portLabel, total, expectedRxLength);
                                 continue;
                             }
@@ -144,13 +150,17 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
                         // подчистим возможные лишние байты
                         if (_port.BytesToRead > 0) _port.DiscardInBuffer();
-                        _logger.LogDebug("Serial {Port}: read completed ({ExpectedLength} bytes).", portLabel, expectedRxLength);
+                        _logger.Debug("Serial {Port}: read completed ({ExpectedLength} bytes).", portLabel, expectedRxLength);
 
+                        attemptTimer.Stop();
+                        _logger.Information(
+                            "Serial {Port}: I/O completed in {ElapsedMs}ms (attempt {Attempt}/{MaxRetries}).",
+                            portLabel, attemptTimer.ElapsedMilliseconds, attempt, maxRetries);
                         return buf;
                     }
                     catch (TimeoutException ex) when (attempt <= maxRetries)
                     {
-                        _logger.LogWarning(ex,
+                        _logger.Warning(ex,
                             "Serial {Port}: read timeout after {ReadTimeoutMs}ms (attempt {Attempt}/{MaxRetries}).",
                             portLabel, readTimeoutMs, attempt, maxRetries);
                         // небольшой экспоненциальный бэкофф
@@ -159,7 +169,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                     }
                     catch (IOException ex) when (attempt <= maxRetries)
                     {
-                        _logger.LogWarning(ex, "Serial {Port}: IO error, recovering port (attempt {Attempt}/{MaxRetries}).",
+                        _logger.Warning(ex, "Serial {Port}: IO error, recovering port (attempt {Attempt}/{MaxRetries}).",
                             portLabel, attempt, maxRetries);
                         await RecoverPortAsync(ct);
                         await Task.Delay(50 * attempt, ct);
@@ -167,7 +177,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                     }
                     catch (InvalidOperationException ex) when (attempt <= maxRetries)
                     {
-                        _logger.LogWarning(ex, "Serial {Port}: invalid operation, recovering port (attempt {Attempt}/{MaxRetries}).",
+                        _logger.Warning(ex, "Serial {Port}: invalid operation, recovering port (attempt {Attempt}/{MaxRetries}).",
                             portLabel, attempt, maxRetries);
                         await RecoverPortAsync(ct);
                         await Task.Delay(50 * attempt, ct);
@@ -274,6 +284,40 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
             await CloseAsync();
             await OpenWithRetriesAsync(_key, _options, ct);
+        }
+
+        private void CreateLogger()
+        {
+            // создаём общую папку для логов ТРК
+            var logRoot = Path.Combine(AppContext.BaseDirectory, "logs", "ports");
+            Directory.CreateDirectory(logRoot);
+
+            // безопасное имя файла (уникальное для экземпляра)
+            string fileName = Sanitize($"Port_{new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day)}");
+            string path = Path.Combine(logRoot, fileName + ".log");
+
+            // отдельный Serilog для файла инстанса
+            _logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.File(
+                    path: path,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 14,
+                    shared: true,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+                )
+                .CreateLogger();
+
+            _logger.Information("Инициализация SharedSerialPort");
+        }
+
+        // sanitization для имени файла
+        private static string Sanitize(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return "UNNAMED";
+            s = s.Trim();
+            s = Regex.Replace(s, @"[^\w\-\.\(\) ]+", "_"); // заменяем недопустимые символы
+            return s.Length > 80 ? s[..80] : s;
         }
 
         #endregion

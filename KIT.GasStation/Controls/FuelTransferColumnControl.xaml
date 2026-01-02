@@ -131,10 +131,6 @@
                         Padding="5"
                         Grid.Column="2">
 
-                    <Border.ToolTip>
-                        <control:NozzleToolTip/>
-                    </Border.ToolTip>
-
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />

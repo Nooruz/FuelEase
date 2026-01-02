@@ -21,8 +21,9 @@
                          LabelPosition="Top">
             <dxe:TextEdit EditValue="{Binding Tube, UpdateSourceTrigger=PropertyChanged}">
                 <dxmvvm:Interaction.Behaviors>
-                    <dxmvvm:KeyToCommand KeyGesture="Enter"
-                                         Command="{Binding TubeEnterCommand}"/>
+                    <dxmvvm:EventToCommand EventName="Loaded"
+                                           Command="{Binding TubeTextEditLoadingCommand}"
+                                           PassEventArgsToCommand="True"/>
                 </dxmvvm:Interaction.Behaviors>
             </dxe:TextEdit>
         </dxlc:LayoutItem>

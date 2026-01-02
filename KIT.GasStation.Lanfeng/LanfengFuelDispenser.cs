@@ -9,6 +9,7 @@ using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
+using System.Diagnostics;
 using System.IO.Ports;
 using System.Text.RegularExpressions;
 
@@ -216,10 +217,15 @@ namespace KIT.GasStation.Lanfeng
             if (_sharedSerialPortService is null)
                 throw new InvalidOperationException("Последовательный порт еще не получен.");
 
+            _logger.Information(
+                "ExecuteCommandAsync start: {Command} addr={ControllerAddress} nozzle={NozzleMask} expected={ExpectedLength} timeoutMs={ReadTimeoutMs}",
+                cmd, controllerAddress, nozzleMask, expectedLength, readTimeoutMs);
+
             await _pauseGate.WaitAsync(ct);     // уважаем паузу
             await _exclusive.WaitAsync(ct);     // логически сериализуем окно команд
             try
             {
+                var commandStart = Stopwatch.StartNew();
                 var sd = _controllerType;
                 var frame = _protocolParser.BuildRequest(cmd, controllerAddress, nozzleMask, value, controllerType: _controllerType);
                 _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
@@ -227,6 +233,9 @@ namespace KIT.GasStation.Lanfeng
                 byte[] rx;
                 try
                 {
+                    _logger.Information(
+                        "Serial write/read begin: {Command} port={Port} retries={MaxRetries}",
+                        cmd, _sharedSerialPortService.PortName, maxRetries);
                     rx = await _sharedSerialPortService.WriteReadAsync(
                         frame,
                         expectedRxLength: expectedLength,
@@ -284,6 +293,9 @@ namespace KIT.GasStation.Lanfeng
                 }
 
                 _logger.Information("[Rx] {Rx}", BitConverter.ToString(rx));
+                _logger.Information(
+                    "ExecuteCommandAsync completed: {Command} in {ElapsedMs}ms",
+                    cmd, commandStart.ElapsedMilliseconds);
             }
             finally
             {

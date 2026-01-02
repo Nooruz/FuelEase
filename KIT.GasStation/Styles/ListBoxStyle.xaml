@@ -30,7 +30,6 @@
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
         <Setter Property="ToolTipService.ShowDuration" Value="8000"/>
-        <Setter Property="ToolTip" Value="{Binding Name}"/>
         <Setter Property="BorderBrush" Value="{StaticResource TankForegroundColorBrush}"/>
         <Setter Property="Margin">
             <Setter.Value>

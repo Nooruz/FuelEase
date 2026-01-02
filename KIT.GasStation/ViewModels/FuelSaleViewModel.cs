@@ -45,6 +45,7 @@ namespace KIT.GasStation.ViewModels
         private decimal _sum;
         private decimal _quantity;
         private TextEdit _sumTextEdit;
+        private TextEdit _tubeTextEdit;
 
         #endregion
 
@@ -59,7 +60,6 @@ namespace KIT.GasStation.ViewModels
             {
                 _tube = value;
                 OnPropertyChanged(nameof(Tube));
-                SetFuelNozzle();
             }
         }
         public Nozzle? SelectedNozzle
@@ -70,7 +70,6 @@ namespace KIT.GasStation.ViewModels
                 _selectedNozzle = value;
                 OnPropertyChanged(nameof(SelectedNozzle));
                 NozzleSelectionChanged();
-                FocusSumTextEdit();
             }
         }
         public FuelSale CreateFuelSale
@@ -199,6 +198,15 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        [Command]
+        public void TubeTextEditLoading(RoutedEventArgs args)
+        {
+            if (args.Source is TextEdit textEdit)
+            {
+                _tubeTextEdit = textEdit;
+            }
+        }
+
         #endregion
 
         #region Hot Keys
@@ -208,7 +216,7 @@ namespace KIT.GasStation.ViewModels
             switch (hotKeyAction)
             {
                 case HotKeyAction.FuelSale:
-                    await OpenPayView();
+                    OnFuelSale();
                     break;
                 case HotKeyAction.FuelSaleCashless:
                     CreateFuelSale.PaymentType = PaymentType.Cashless;
@@ -300,16 +308,29 @@ namespace KIT.GasStation.ViewModels
             WindowService.Show(nameof(PayView), viewModel);
         }
 
+        private async Task OnFuelSale()
+        {
+            if (Tube == null || Tube == 0)
+            {
+                _tubeTextEdit?.Dispatcher.BeginInvoke(new Action(() => _tubeTextEdit.Focus()), DispatcherPriority.Background);
+            }
+            else
+            {
+                SetFuelNozzle();
+            }
+
+            if (Sum > 0)
+            {
+                await OpenPayView();
+            }
+        }
+
         private void SetFuelNozzle()
         {
             if (Tube == null)
             {
                 return;
             }
-
-            Quantity = 0;
-
-            SelectedNozzle = null;
 
             Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.Tube == Tube);
 
@@ -318,6 +339,10 @@ namespace KIT.GasStation.ViewModels
                 SelectedNozzle = nozzle;
 
                 _nozzleStore.SelectNozzle(Tube.Value);
+            }
+            else
+            {
+                MessageBoxService.ShowMessage("ТРК с таким номером не найдена!", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
             }
         }
 
@@ -373,8 +398,6 @@ namespace KIT.GasStation.ViewModels
             {
                 return false;
             }
-
-
 
             return true;
         }
@@ -580,8 +603,7 @@ namespace KIT.GasStation.ViewModels
         {
             if (SelectedNozzle != null && _sumTextEdit != null)
             {
-                _sumTextEdit.Dispatcher.BeginInvoke(new Action(() => _sumTextEdit.Focus()),
-                    DispatcherPriority.Background);
+                _sumTextEdit.Dispatcher.BeginInvoke(new Action(() => _sumTextEdit.Focus()), DispatcherPriority.Background);
             }
         }
 
