@@ -2,12 +2,12 @@
 
 namespace KIT.GasStation.EKassa.Models
 {
-    public class Login
+    public sealed record AuthLoginRequest
     {
         [JsonPropertyName("email")]
-        public string Email { get; set; }
+        public string Email { get; init; } = default!;
 
         [JsonPropertyName("password")]
-        public string Password { get; set; }
+        public string Password { get; init; } = default!;
     }
 }

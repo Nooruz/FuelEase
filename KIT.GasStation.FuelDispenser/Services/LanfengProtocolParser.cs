@@ -122,6 +122,11 @@ namespace KIT.GasStation.FuelDispenser.Services
                 _controllerType = (LanfengControllerType)rawResponse[3];
             }
 
+            if (receivedcmd == Command.CounterLiter)
+            {
+                quantityValue = ParseBcdQuantity(rawResponse, offset: 6, endIndex: 5);
+            }
+
             return new ControllerResponse
             {
                 Address = address,
@@ -142,7 +147,7 @@ namespace KIT.GasStation.FuelDispenser.Services
         /// <summary>
         /// Считывает 4 BCD-байта (offset … offset+3) из rawResponse и возвращает decimal = (BCD-значение) / 100.
         /// </summary>
-        private decimal ParseBcdQuantity(byte[] rawResponse, int offset)
+        private decimal ParseBcdQuantity(byte[] rawResponse, int offset, int endIndex = 4)
         {
             if (rawResponse == null || rawResponse.Length < offset + 4)
                 throw new ArgumentException("Недостаточно байт для BCD-парсинга");
@@ -150,7 +155,7 @@ namespace KIT.GasStation.FuelDispenser.Services
             uint combined = 0;
 
             // Читаем 4 байта подряд
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < endIndex; i++)
             {
                 byte b = rawResponse[offset + i];
                 // старший полубайт = десятки, младший = единицы

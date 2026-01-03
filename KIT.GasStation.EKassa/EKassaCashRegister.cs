@@ -1,7 +1,6 @@
 ﻿using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Domain.Models;
-using KIT.GasStation.EKassa.Models;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using QRCoder;

@@ -172,14 +172,19 @@ namespace KIT.GasStation.Lanfeng
                 try
                 {
                     // опрос — одна команда через универсальный метод
-                    if (Status is NozzleStatus.Ready or 
-                        NozzleStatus.PumpWorking or
-                        NozzleStatus.WaitingRemoved && !_stopTickStatus)
+                    if (!_stopTickStatus)
                     {
                         await ExecuteCommandAsync(Command.Status, Address, 0, null, ct: token);
                     }
+                    else
+                    {
+                        await Task.Delay(50, token);
+                    }
                 }
-                catch (OperationCanceledException) { /* штатно */ }
+                catch (OperationCanceledException ex)
+                {
+                    _logger.Information("Опрос ТРК Lanfeng отменён: {Message}", ex.Message);
+                }
                 catch (Exception e)
                 {
                     _logger.Error(e, e.Message, e.StackTrace);
@@ -217,10 +222,6 @@ namespace KIT.GasStation.Lanfeng
             if (_sharedSerialPortService is null)
                 throw new InvalidOperationException("Последовательный порт еще не получен.");
 
-            _logger.Information(
-                "ExecuteCommandAsync start: {Command} addr={ControllerAddress} nozzle={NozzleMask} expected={ExpectedLength} timeoutMs={ReadTimeoutMs}",
-                cmd, controllerAddress, nozzleMask, expectedLength, readTimeoutMs);
-
             await _pauseGate.WaitAsync(ct);     // уважаем паузу
             await _exclusive.WaitAsync(ct);     // логически сериализуем окно команд
             try
@@ -233,9 +234,6 @@ namespace KIT.GasStation.Lanfeng
                 byte[] rx;
                 try
                 {
-                    _logger.Information(
-                        "Serial write/read begin: {Command} port={Port} retries={MaxRetries}",
-                        cmd, _sharedSerialPortService.PortName, maxRetries);
                     rx = await _sharedSerialPortService.WriteReadAsync(
                         frame,
                         expectedRxLength: expectedLength,
@@ -293,9 +291,6 @@ namespace KIT.GasStation.Lanfeng
                 }
 
                 _logger.Information("[Rx] {Rx}", BitConverter.ToString(rx));
-                _logger.Information(
-                    "ExecuteCommandAsync completed: {Command} in {ElapsedMs}ms",
-                    cmd, commandStart.ElapsedMilliseconds);
             }
             finally
             {

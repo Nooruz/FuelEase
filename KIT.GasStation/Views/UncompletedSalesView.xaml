@@ -76,11 +76,11 @@
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
                 <dxg:GridColumn Header="Статус"
-                        FieldName="FuelSaleStatus">
+                                FieldName="FuelSaleStatus">
                     <dxg:GridColumn.EditSettings>
                         <dxe:ComboBoxEditSettings ItemsSource="{Binding FuelSaleStatuses}"
-                                          ValueMember="Key"
-                                          DisplayMember="Value"/>
+                                                  ValueMember="Key"
+                                                  DisplayMember="Value"/>
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
                 <dxg:GridColumn Header="Чек"
