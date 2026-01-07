@@ -89,18 +89,26 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             CancellationToken ct = default)
         {
             var portLabel = _key.PortName ?? "<unset>";
+
+#if DEBUG
             _logger.Debug("Serial {Port}: waiting for I/O lock.", portLabel);
+#endif
+
             var lockWait = Stopwatch.StartNew();
             await _io.WaitAsync(ct);
             try
             {
                 lockWait.Stop();
+#if DEBUG
                 _logger.Information("Serial {Port}: acquired I/O lock after {ElapsedMs}ms.",
-                    portLabel, lockWait.ElapsedMilliseconds);
+                   portLabel, lockWait.ElapsedMilliseconds);
                 _logger.Debug("Serial {Port}: acquired I/O lock.", portLabel);
+#endif
                 if (PortRequiresReopen())
                 {
+#if DEBUG
                     _logger.Warning("Serial {Port}: port requires reopen before I/O.", portLabel);
+#endif
                     await RecoverPortAsync(ct);
                 }
                 // Простой retry-цикл: если таймаут/IO — ещё попытки (maxRetries).
@@ -109,12 +117,17 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                     var attemptTimer = Stopwatch.StartNew();
                     try
                     {
+#if DEBUG
                         _logger.Debug("Serial {Port}: write {TxLength} bytes (attempt {Attempt}/{MaxRetries}).",
                             portLabel, tx.Length, attempt, maxRetries);
+#endif
                         // === WRITE ===
                         await _port.BaseStream.WriteAsync(tx, 0, tx.Length, ct);
                         await _port.BaseStream.FlushAsync(ct);
+
+#if DEBUG
                         _logger.Debug("Serial {Port}: write completed.", portLabel);
+#endif
 
                         if (writeToReadDelayMs > 0)
                             await Task.Delay(writeToReadDelayMs, ct);
@@ -123,8 +136,11 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                         var buf = new byte[expectedRxLength];
                         var sw = Stopwatch.StartNew();
                         var total = 0;
+
+#if DEBUG
                         _logger.Debug("Serial {Port}: read {ExpectedLength} bytes with timeout {ReadTimeoutMs}ms.",
                             portLabel, expectedRxLength, readTimeoutMs);
+#endif
 
                         while (total < expectedRxLength)
                         {
@@ -141,8 +157,10 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                             if (n > 0)
                             {
                                 total += n;
+#if DEBUG
                                 _logger.Debug("Serial {Port}: read {ReadBytes}/{ExpectedLength} bytes.",
                                     portLabel, total, expectedRxLength);
+#endif
                                 continue;
                             }
                             // n == 0 — просто ждём дальше до дедлайна
@@ -150,12 +168,17 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
                         // подчистим возможные лишние байты
                         if (_port.BytesToRead > 0) _port.DiscardInBuffer();
+#if DEBUG
                         _logger.Debug("Serial {Port}: read completed ({ExpectedLength} bytes).", portLabel, expectedRxLength);
+#endif
 
                         attemptTimer.Stop();
+
+#if DEBUG
                         _logger.Information(
                             "Serial {Port}: I/O completed in {ElapsedMs}ms (attempt {Attempt}/{MaxRetries}).",
                             portLabel, attemptTimer.ElapsedMilliseconds, attempt, maxRetries);
+#endif
                         return buf;
                     }
                     catch (TimeoutException ex) when (attempt <= maxRetries)
@@ -185,10 +208,15 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Serial {Port}: I/O operation failed.", portLabel);
+            }
             finally
             {
                 _io.Release();
             }
+            return null;
         }
 
         public async ValueTask DisposeAsync()

@@ -1,5 +1,6 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
+using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Common.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
@@ -90,6 +91,10 @@ namespace KIT.GasStation.Hardware.ViewModels
                 {
                     _ = MessageBoxService.ShowMessage(message, "Статус ККМ", MessageButton.OK, MessageIcon.Information);
                 }
+            }
+            catch (CashRegisterException ex)
+            {
+                MessageBoxService.ShowMessage(ex.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
             }
             catch (Exception e)
             {

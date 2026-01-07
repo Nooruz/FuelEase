@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace KIT.GasStation.EKassa
 {
-    internal sealed class EkassaLoginApi
+    public sealed class EkassaLoginApi
     {
         private readonly HttpClient _http;
         private readonly EkassaOptions _options;

@@ -2,7 +2,7 @@
 
 namespace KIT.GasStation.EKassa
 {
-    internal sealed class EkassaTokenStore
+    public sealed class EkassaTokenStore
     {
         private readonly SemaphoreSlim _lock = new(1, 1);
 

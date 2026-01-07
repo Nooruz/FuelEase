@@ -12,7 +12,10 @@
         <dxlc:LayoutControl Orientation="Vertical">
 
             <Label Content="{Binding ShiftStatus}"
-           VerticalAlignment="Top"/>
+                   VerticalAlignment="Top"/>
+
+            <Label Content="{Binding CashRegisterShiftStatus}"
+                   VerticalAlignment="Top"/>
 
             <dxlc:LayoutItem Label="Наличные">
                 <dxe:TextEdit IsReadOnly="True"

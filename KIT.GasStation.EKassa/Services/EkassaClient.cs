@@ -78,7 +78,7 @@ namespace KIT.GasStation.EKassa.Services
             var payload = await resp.Content.ReadFromJsonAsync<EkassaResponse<TData>>(EkassaJson.Options, ct)
                           .ConfigureAwait(false);
 
-            if (resp.IsSuccessStatusCode && payload?.Data is not null)
+            if (resp.IsSuccessStatusCode && payload.Data is not null)
                 return (true, payload.Data, null, resp.StatusCode);
 
             var ex = EkassaHttpException.From(resp, payload);

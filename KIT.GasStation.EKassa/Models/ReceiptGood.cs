@@ -13,7 +13,7 @@ namespace KIT.GasStation.EKassa.Models
 
         /// <summary>Код товара (в PDF называется sgtin).</summary>
         [JsonPropertyName("sgtin")]
-        public string Sgtin { get; init; } = default!;
+        public string? Sgtin { get; init; } = default!;
 
         /// <summary>Цена в копейках.</summary>
         [JsonPropertyName("price")]

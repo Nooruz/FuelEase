@@ -1,8 +1,6 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Xpf.Core;
-using KIT.GasStation.ViewModels.Factories;
 using System;
-using System.Threading.Tasks;
 using System.Windows.Media;
 
 namespace KIT.GasStation.ViewModels.Base

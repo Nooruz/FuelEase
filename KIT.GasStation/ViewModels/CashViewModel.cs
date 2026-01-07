@@ -1,23 +1,22 @@
 ﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.State.Shifts;
+using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels
 {
-    public class CashViewModel : PanelViewModel
+    public class CashViewModel : PanelViewModel, IUserSessionService
     {
         #region Private Members
 
-        private string _shiftStatus = string.Empty;
         private readonly IShiftStore _shiftStore;
         private readonly IFuelSaleService _fuelSaleService;
         private ObservableCollection<FuelSale> _fuelSales = new();
-        private decimal _cash;
-        private decimal _cashless;
-        private decimal _arbitrary;
 
         #endregion
 
@@ -47,6 +46,20 @@ namespace KIT.GasStation.ViewModels
             _shiftStore.OnOpened += shift => OnShiftUpdated(shift);
             _shiftStore.OnLogin += shift => OnShiftUpdated(shift);
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
+        }
+
+        #endregion
+
+        #region UserSessionService
+
+        public async Task OnLoginAsync(User user, CancellationToken ct)
+        {
+            
+        }
+
+        public async Task OnLogoutAsync(CancellationToken ct)
+        {
+            
         }
 
         #endregion
@@ -107,16 +120,16 @@ namespace KIT.GasStation.ViewModels
         {
             if (CurrentShift == null)
             {
-                return "Откройте смену.";
+                return "Смена СУ: Откройте смену.";
             }
 
             return CurrentShift.ShiftState switch
             {
-                ShiftState.None => string.Empty,
-                ShiftState.Open => $"Смена №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (24 часа не прошли)",
-                ShiftState.Closed => $"Смена №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (смена закрыта {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm})",
-                ShiftState.Exceeded24Hours => $"Смена №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (прошло более 24 часов)",
-                _ => string.Empty,
+                ShiftState.None => "Смена СУ: Откройте смену.",
+                ShiftState.Open => $"Смена СУ: №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (24 часа не прошли)",
+                ShiftState.Closed => $"Смена СУ: №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (смена закрыта {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm})",
+                ShiftState.Exceeded24Hours => $"Смена СУ: №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (прошло более 24 часов)",
+                _ => "Смена СУ: Откройте смену.",
             };
         }
 
