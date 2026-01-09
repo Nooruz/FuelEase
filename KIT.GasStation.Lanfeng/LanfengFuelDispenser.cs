@@ -75,8 +75,7 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
-                _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}",
-    Controller.Id, _hub?.State.ToString() ?? "null");
+                _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
 
                 _portKey = new PortKey(
                     portName: Controller.ComPort,                // например, "COM3"
@@ -263,96 +262,79 @@ namespace KIT.GasStation.Lanfeng
                 _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
 
                 byte[] rx;
-                try
-                {
-                    rx = await _sharedSerialPortService.WriteReadAsync(
-                        frame,
-                        expectedRxLength: expectedLength,
-                        writeToReadDelayMs: writeToReadDelayMs,
-                        readTimeoutMs: readTimeoutMs,
-                        maxRetries: maxRetries,
-                        ct: ct);
-                    await BroadcastWorkerAvailabilityAsync(true);
-                }
-                catch (Exception ex) when (IsCriticalSerialException(ex))
-                {
-                    _logger.Error(ex, "Ошибка обмена с COM-портом, колонка будет отмечена как недоступная");
-                    await BroadcastWorkerAvailabilityAsync(false, ex.Message);
-                    throw;
-                }
 
-                var resp = _protocolParser.ParseResponse(rx);
+                ControllerResponse controllerResponse = new();
 
-                if (resp is not null)
+                while (true)
                 {
-                    Column? column = null;
-
-                    if (resp.Command is Command.CounterLiter)
+                    try
                     {
-                        if (_controllerType == LanfengControllerType.Single)
+                        rx = await _sharedSerialPortService.WriteReadAsync(
+                            frame,
+                            expectedRxLength: expectedLength,
+                            writeToReadDelayMs: writeToReadDelayMs,
+                            readTimeoutMs: readTimeoutMs,
+                            maxRetries: maxRetries,
+                            ct: ct);
+                        await BroadcastWorkerAvailabilityAsync(true);
+
+                        controllerResponse = _protocolParser.ParseResponse(rx);
+
+                        if (controllerResponse.IsValid)
                         {
-                            column = Columns.FirstOrDefault();
+                            await BroadcastWorkerAvailabilityAsync(true);
+                            break; // всё ок, выходим из цикла
                         }
-                        else
-                        {
-                            column = Columns.FirstOrDefault(c => c.LanfengAddress == resp.Address);
-                        }
+                    }
+                    catch (Exception ex) when (IsCriticalSerialException(ex))
+                    {
+                        _logger.Error(ex, "Ошибка обмена с COM-портом, колонка будет отмечена как недоступная");
+                        await BroadcastWorkerAvailabilityAsync(false, ex.Message);
+                        throw;
+                    }
+                }
+
+                Column? column = null;
+
+                if (controllerResponse.Command is Command.CounterLiter)
+                {
+                    if (_controllerType == LanfengControllerType.Single)
+                    {
+                        column = Columns.FirstOrDefault();
                     }
                     else
                     {
-                        if (_controllerType == LanfengControllerType.Single)
-                        {
-                            column = Columns.FirstOrDefault();
-                        }
-                        else
-                        {
-                            column = Columns.FirstOrDefault(c => c.LanfengAddress == resp.StatusAddress);
-                        }
+                        column = Columns.FirstOrDefault(c => c.LanfengAddress == controllerResponse.Address);
                     }
-
-                    if (column is not null)
-                    {
-                        resp.Group = column.GroupName;
-                        await _hub.InvokeAsync("PublishStatus", resp, column.GroupName);
-                    }
-
-                    await HandleColumnLiftedAsync(resp);
-
-                    Status = resp.Status;
                 }
-
-                _logger.Information("[Rx] {Rx}", BitConverter.ToString(rx));
-            }
-            finally
-            {
-                _exclusive.Release();
-            }
-        }
-
-        private async Task ExecuteSequenceAsync(
-            Func<Func<Command, int, int, decimal?, Task<byte[]>>, Task> body,
-            CancellationToken ct = default)
-        {
-            if (_sharedSerialPortService is null)
-                throw new InvalidOperationException("Последовательный порт еще не получен.");
-
-            await _pauseGate.WaitAsync(ct);
-            await _exclusive.WaitAsync(ct);
-            try
-            {
-                // локальная отправка без повторного захвата _exclusive
-                async Task<byte[]> send(Command c, int addr, int mask, decimal? val)
+                else
                 {
-                    var frame = _protocolParser.BuildRequest(c, addr, mask, val);
-                    _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
-
-                    var rx = await _sharedSerialPortService.WriteReadAsync(
-                        frame, expectedRxLength: _frameLen, writeToReadDelayMs: 0, readTimeoutMs: 3000, maxRetries: 2, ct);
-                    _logger.Information("[Rx] {Rx}", BitConverter.ToString(rx));
-                    return rx;
+                    if (_controllerType == LanfengControllerType.Single)
+                    {
+                        column = Columns.FirstOrDefault();
+                    }
+                    else
+                    {
+                        column = Columns.FirstOrDefault(c => c.LanfengAddress == controllerResponse.StatusAddress);
+                    }
                 }
 
-                await body(send); // твоя последовательность (например: A4 -> A2)
+                if (column is not null)
+                {
+                    controllerResponse.Group = column.GroupName;
+                    await _hub.InvokeAsync("PublishStatus", controllerResponse, column.GroupName);
+                }
+
+                await HandleColumnLiftedAsync(controllerResponse);
+
+                Status = controllerResponse.Status;
+
+                _logger.Information("[Rx] {Rx}", BitConverter.ToString(controllerResponse.Data));
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, "Ошибка ExecuteCommandAsync: {Message}", e.Message);
+                throw;
             }
             finally
             {
