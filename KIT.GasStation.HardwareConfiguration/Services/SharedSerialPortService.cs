@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.HardwareConfigurations.Models;
-using Serilog;
+﻿using Serilog;
 using System.Diagnostics;
 using System.IO.Ports;
 using System.Text.RegularExpressions;
@@ -107,39 +106,56 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         {
             var portLabel = _key.PortName ?? "<unset>";
             byte[]? result = null;
-            Exception? capturedException = null;
 
-#if DEBUG
             _logger.Debug("Serial {Port}: waiting for I/O lock.", portLabel);
-#endif
             await _io.WaitAsync(ct);
 
             try
             {
-#if DEBUG
                 _logger.Debug("Serial {Port}: acquired I/O lock.", portLabel);
-#endif
+
                 if (PortRequiresReopen())
                 {
-#if DEBUG
                     _logger.Warning("Serial {Port}: port requires reopen before I/O.", portLabel);
-#endif
                     await RecoverPortAsync(ct);
                 }
 
-                // Основная логика с ретраями...
+                // Используем Task.Run для вызова синхронного метода в фоновом потоке
                 for (int attempt = 1; attempt <= maxRetries; attempt++)
                 {
                     try
                     {
-                        result = await WriteReadOnceAsync(tx, expectedRxLength, writeToReadDelayMs, readTimeoutMs, attempt, maxRetries, portLabel, ct);
-                        break; // Успех
+                        _logger.Debug("Serial {Port}: starting operation (attempt {Attempt}/{MaxRetries})",
+                            portLabel, attempt, maxRetries);
+
+                        // Выполняем синхронную операцию в фоновом потоке
+                        result = await Task.Run(() =>
+                            WriteReadOnce(tx, expectedRxLength, writeToReadDelayMs,
+                                readTimeoutMs, attempt, maxRetries, portLabel, ct), ct);
+
+                        _logger.Debug("Serial {Port}: operation successful (attempt {Attempt})",
+                            portLabel, attempt);
+                        break;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.Warning("Serial {Port}: operation cancelled", portLabel);
+                        throw;
+                    }
+                    catch (TimeoutException ex) when (attempt < maxRetries)
+                    {
+                        _logger.Warning(ex, "Serial {Port}: timeout (attempt {Attempt}/{MaxRetries})",
+                            portLabel, attempt, maxRetries);
+
+                        // Небольшая задержка перед повторной попыткой
+                        await Task.Delay(100, ct);
                     }
                     catch (Exception ex) when (attempt < maxRetries && IsRecoverableException(ex))
                     {
                         _logger.Warning(ex, "Serial {Port}: recoverable error (attempt {Attempt}/{MaxRetries})",
                             portLabel, attempt, maxRetries);
-                        await Task.Delay(TimeSpan.FromMilliseconds(50 * attempt), ct);
+
+                        await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), ct);
                     }
                 }
 
@@ -149,11 +165,9 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                 }
 
                 return result;
-
             }
             catch (Exception ex)
             {
-                capturedException = ex;
                 _logger.Error(ex, "Serial {Port}: I/O operation failed.", portLabel);
                 throw;
             }
@@ -259,12 +273,46 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         {
             try
             {
-                return !_isOpen || _port is null || !_port.IsOpen;
+                if (!_isOpen || _port is null)
+                    return true;
+
+                if (!_port.IsOpen)
+                    return true;
+
+                // Дополнительная проверка: если порт отключен физически
+                return IsPortDisconnected();
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
-                _logger.Error(ex, "Serial {Port}: port in invalid state.", _key.PortName);
-                // Порт в недопустимом состоянии (например, был удален из системы)
+                // Порт в недопустимом состоянии
+                return true;
+            }
+        }
+
+        private bool IsPortDisconnected()
+        {
+            if (_port == null || !_port.IsOpen)
+                return true;
+
+            try
+            {
+                // Пытаемся получить свойства порта - если порт отключен, это вызовет исключение
+                var portName = _port.PortName;
+                var baudRate = _port.BaudRate;
+
+                // Дополнительная проверка: пытаемся прочитать доступные байты
+                // Если порт отключен, это может вызвать исключение
+                var bytesToRead = _port.BytesToRead;
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                // Порт был отключен или находится в недопустимом состоянии
+                return true;
+            }
+            catch (IOException)
+            {
+                // Ошибка ввода-вывода, вероятно порт отключен
                 return true;
             }
         }
@@ -326,44 +374,66 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             return s.Length > 80 ? s[..80] : s;
         }
 
-        private async Task<byte[]> WriteReadOnceAsync(byte[] tx, int expectedRxLength,
+        private byte[] WriteReadOnce(byte[] tx, int expectedRxLength,
             int writeToReadDelayMs, int readTimeoutMs, int attempt, int maxRetries,
             string portLabel, CancellationToken ct)
         {
-            // Вынесенная логика одной попытки чтения/записи
+            // Устанавливаем таймауты
+            _port.ReadTimeout = readTimeoutMs;
+            _port.WriteTimeout = 1000; // 1 секунда на запись
+
             _logger.Debug("Serial {Port}: write {TxLength} bytes (attempt {Attempt}/{MaxRetries}).",
                 portLabel, tx.Length, attempt, maxRetries);
 
-            await _port.BaseStream.WriteAsync(tx, 0, tx.Length, ct);
-            await _port.BaseStream.FlushAsync(ct);
+            // Записываем данные (синхронно)
+            _port.Write(tx, 0, tx.Length);
+            _port.BaseStream.Flush();
 
             if (writeToReadDelayMs > 0)
-                await Task.Delay(writeToReadDelayMs, ct);
+            {
+                Thread.Sleep(writeToReadDelayMs);
+            }
 
+            // Читаем ответ (синхронно)
             var buf = new byte[expectedRxLength];
-            var sw = Stopwatch.StartNew();
             var total = 0;
+
+            _logger.Debug("Serial {Port}: reading {ExpectedLength} bytes with timeout {ReadTimeoutMs}ms",
+                portLabel, expectedRxLength, readTimeoutMs);
+
+            var stopwatch = Stopwatch.StartNew();
 
             while (total < expectedRxLength)
             {
                 ct.ThrowIfCancellationRequested();
 
-                var leftMs = readTimeoutMs - (int)sw.ElapsedMilliseconds;
-                if (leftMs <= 0)
-                    throw new TimeoutException($"Истёк таймаут чтения ответа от устройства (ожидалось {expectedRxLength} байт, получено {total})");
-
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                cts.CancelAfter(leftMs);
-
-                var n = await _port.BaseStream.ReadAsync(buf.AsMemory(total, expectedRxLength - total), cts.Token);
-                if (n > 0)
+                try
                 {
-                    total += n;
-                    continue;
+                    var bytesToRead = expectedRxLength - total;
+                    var read = _port.Read(buf, total, bytesToRead);
+
+                    if (read > 0)
+                    {
+                        total += read;
+                        _logger.Debug("Serial {Port}: read {ReadBytes}/{ExpectedLength} bytes",
+                            portLabel, total, expectedRxLength);
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    var elapsed = stopwatch.ElapsedMilliseconds;
+                    _logger.Warning("Serial {Port}: read timeout after {ElapsedMs}ms (got {Total}/{Expected} bytes)",
+                        portLabel, elapsed, total, expectedRxLength);
+
+                    throw new TimeoutException($"Таймаут чтения: получено {total}/{expectedRxLength} байт за {elapsed}мс");
                 }
 
-                // Если n == 0 и мы все еще ждем данных, делаем небольшую паузу
-                await Task.Delay(10, ct);
+                // Если мы получили хоть какие-то данные, но не все, продолжаем пытаться
+                // Но проверяем общий таймаут
+                if (stopwatch.ElapsedMilliseconds > readTimeoutMs)
+                {
+                    throw new TimeoutException($"Общий таймаут чтения: {readTimeoutMs}мс");
+                }
             }
 
             // Очищаем буфер, если есть лишние данные
@@ -371,9 +441,12 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             {
                 var extraBytes = _port.BytesToRead;
                 _port.DiscardInBuffer();
-                _logger.Warning("Serial {Port}: discarded {ExtraBytes} extra bytes from buffer.",
+                _logger.Warning("Serial {Port}: discarded {ExtraBytes} extra bytes from buffer",
                     portLabel, extraBytes);
             }
+
+            _logger.Debug("Serial {Port}: successfully read {Total} bytes in {ElapsedMs}ms",
+                portLabel, total, stopwatch.ElapsedMilliseconds);
 
             return buf;
         }
