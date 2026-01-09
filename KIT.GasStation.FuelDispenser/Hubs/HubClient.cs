@@ -32,11 +32,21 @@ namespace KIT.GasStation.FuelDispenser.Hubs
 
         public async Task EnsureStartedAsync(CancellationToken ct = default)
         {
-            if (Interlocked.Exchange(ref _started, 1) == 1)
+            if (_hub.State == HubConnectionState.Connected)
                 return;
 
+            if (_hub.State != HubConnectionState.Disconnected)
+            {
+                // Если соединение в промежуточном состоянии, ждем или останавливаем
+                try
+                {
+                    await _hub.StopAsync(ct);
+                }
+                catch { /* Игнорируем ошибки остановки */ }
+            }
+
             var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(30)); // 30 секунд таймаут
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(30));
 
             try
             {
@@ -44,7 +54,6 @@ namespace KIT.GasStation.FuelDispenser.Hubs
             }
             catch (Exception ex)
             {
-                Interlocked.Exchange(ref _started, 0); // Сбрасываем флаг при ошибке
                 _logger?.Error(ex, "Ошибка запуска HubConnection");
                 throw;
             }

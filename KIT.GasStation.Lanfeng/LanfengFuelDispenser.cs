@@ -75,6 +75,9 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
+                _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}",
+    Controller.Id, _hub?.State.ToString() ?? "null");
+
                 _portKey = new PortKey(
                     portName: Controller.ComPort,                // например, "COM3"
                     baudRate: Controller.BaudRate,               // напр., 9600
@@ -85,6 +88,11 @@ namespace KIT.GasStation.Lanfeng
 
                 _hub = _hubClient.Connection;
                 RegisterHubConnectionHandlers();
+
+
+                _logger.Debug("EnsureStartedAsync вызван. Текущее состояние: {State}", _hub.State);
+                // 1. СНАЧАЛА запускаем SignalR (синхронно)
+                await _hubClient.EnsureStartedAsync(token);
 
                 _hub.On<StartPollingCommand>("StartPolling", async e =>
                 {
@@ -137,18 +145,7 @@ namespace KIT.GasStation.Lanfeng
                     _stopTickStatus = false;
                 });
 
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await _hubClient.EnsureStartedAsync(token);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Error(ex, "Ошибка запуска SignalR соединения");
-                    }
-                }, token);
-
+                // 3. Присоединяемся к группам
                 await JoinWorkerGroupsAsync();
                 await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
             }
@@ -703,6 +700,18 @@ namespace KIT.GasStation.Lanfeng
         {
             if (_hub is null || Controller?.Columns is null)
                 return;
+
+            // Ждем, пока соединение станет активным
+            var timeout = TimeSpan.FromSeconds(10);
+            var stopwatch = Stopwatch.StartNew();
+
+            while (_hub.State != HubConnectionState.Connected && stopwatch.Elapsed < timeout)
+            {
+                await Task.Delay(100);
+            }
+
+            if (_hub.State != HubConnectionState.Connected)
+                throw new InvalidOperationException("Не удалось подключиться к SignalR за отведенное время");
 
             foreach (var item in Controller.Columns)
             {
