@@ -151,17 +151,34 @@ namespace KIT.GasStation
             _splashScreenViewModel.Status = "Настройки подключения к серверу...";
             host.ConfigureServices((hostContext, services) =>
             {
-                var cfg = hostContext.Configuration;
-                var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-                var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-                var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+                //var cfg = hostContext.Configuration;
+                //var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+                //var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+                //var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 
-                // 1) Само соединение — Singleton
-                services.AddTransient(sp =>
-                    new HubConnectionBuilder()
+                //// 1) Само соединение — Singleton
+                //services.AddTransient(sp =>
+                //    new HubConnectionBuilder()
+                //        .WithUrl(hubUrl)
+                //        .WithAutomaticReconnect()
+                //        .Build());
+
+                services.AddSingleton(sp =>
+                {
+                    var cfg = sp.GetRequiredService<IConfiguration>();
+                    var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+                    var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+                    var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+
+                    return new HubConnectionBuilder()
                         .WithUrl(hubUrl)
-                        .WithAutomaticReconnect()
-                        .Build());
+                        .WithAutomaticReconnect(new[] {
+                            TimeSpan.Zero, 
+                            TimeSpan.FromSeconds(2), 
+                            TimeSpan.FromSeconds(10), 
+                            TimeSpan.FromSeconds(30)})
+                        .Build();
+                });
 
                 services.AddTransient<IHubClient, HubClient>();
             });
@@ -199,14 +216,14 @@ namespace KIT.GasStation
 
             // Добавление логирования после проверки базы данных
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.MSSqlServer(
-                    connectionString: _host.Services.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection"),
-                    sinkOptions: new MSSqlServerSinkOptions
-                    {
-                        TableName = "LogEvents",
-                        AutoCreateSqlTable = true,
-                    })
+                .MinimumLevel.Debug()
+                .WriteTo.File("logs/wpf-.log",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
+
+
         }
 
         protected override async void OnStartup(StartupEventArgs e)
@@ -233,7 +250,7 @@ namespace KIT.GasStation
                 else
                 {
                     // Проверяем возможность подключения к серверу (через базу master)
-                    _splashScreenViewModel.Status = "Проверка подключения к серверу...";
+                    _splashScreenViewModel.Status = "Проверка подключения к серверу БД...";
                     if (!await WaitForSqlServerAsync(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)))
                     {
                         SplashScreenManager.CloseAll();
@@ -278,6 +295,8 @@ namespace KIT.GasStation
                 await Task.Delay(5000);
 #endif
                 Login();
+
+                Log.Information("WPF приложение запущено");
             }
             catch (Exception exc)
             {
@@ -449,6 +468,8 @@ namespace KIT.GasStation
             Try(() => _host.StopAsync(TimeSpan.FromSeconds(3)).Wait(TimeSpan.FromSeconds(4)));
             Try(() => _host.Dispose());
 
+            Log.Information("WPF приложение завершено");
+            Log.CloseAndFlush();
             base.OnExit(e);
         }
 
@@ -457,8 +478,7 @@ namespace KIT.GasStation
             try { a(); }
             catch (Exception ex)
             {
-                // ЛОГ сюда. Главное — не блокировать выход приложения.
-                // Logger.Error(ex, "Shutdown error");
+                Log.Error(ex, "Ошибка при завершении приложения: {Message}", ex.Message);
             }
         }
     }

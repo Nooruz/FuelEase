@@ -122,7 +122,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IHubClient>(),
                 services.GetRequiredService<IViewService<TankFuelQuantityView>>(),
                 services.GetRequiredService<IHotKeysService>(),
-                services.GetRequiredService<INozzleService>());
+                services.GetRequiredService<INozzleService>(),
+                services.GetRequiredService<ILogger<FuelDispenserViewModel>>());
         }
 
         private static DiscountViewModel CreateDiscountViewModel(IServiceProvider services)

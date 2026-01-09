@@ -12,7 +12,9 @@ using KIT.GasStation.State.Nozzles;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -43,6 +45,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IHotKeysService _hotKeysService;
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
         private readonly INozzleService _nozzleService;
+        private readonly ILogger<FuelDispenserViewModel> _logger;
         private HubConnection _hub;
         private int _side;
         private NozzleStatus _status;
@@ -118,7 +121,8 @@ namespace KIT.GasStation.ViewModels
             IHubClient hubClient,
             IViewService<TankFuelQuantityView> tankFuelQuantityView,
             IHotKeysService hotKeysService,
-            INozzleService nozzleService)
+            INozzleService nozzleService,
+            ILogger<FuelDispenserViewModel> logger)
         {
             _nozzleStore = nozzleStore;
             _fuelSaleService = fuelSaleService;
@@ -132,6 +136,7 @@ namespace KIT.GasStation.ViewModels
             _tankFuelQuantityView = tankFuelQuantityView;
             _hotKeysService = hotKeysService;
             _nozzleService = nozzleService;
+            _logger = logger;
 
             _shiftStore.OnLogin += ShiftStore_OnLogin;
             _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
@@ -147,6 +152,8 @@ namespace KIT.GasStation.ViewModels
             _nozzleService.OnCreated += NozzleService_OnCreated;
             _nozzleService.OnUpdated += NozzleService_OnUpdated;
             _nozzleService.OnDeleted += NozzleService_OnDeleted;
+
+            _logger.LogInformation("Создание FuelDispenserViewModel для стороны {Side}", Side);
         }
 
         #endregion
@@ -162,11 +169,31 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                await _hub.InvokeAsync("ResumeFuelingAsync", SelectedNozzle.Group);
-            }
-            catch (Exception)
-            {
+                if (SelectedNozzle == null)
+                {
+                    _logger.LogWarning("Попытка продолжить заправку без выбранного пистолета");
+                    return;
+                }
 
+                if (_hub?.State != HubConnectionState.Connected)
+                {
+                    _logger.LogError("HubConnection не активен. Состояние: {State}", _hub?.State);
+                    return;
+                }
+
+                _logger.LogDebug("Вызов ResumeFueling для пистолета {NozzleGroup}", SelectedNozzle?.Group ?? "null");
+
+                await _hub.InvokeAsync("ResumeFuelingAsync", SelectedNozzle?.Group);
+
+                _logger.LogInformation("Команда ResumeFueling отправлена для группы {Group}", SelectedNozzle?.Group);
+            }
+            catch(HubException ex)
+            {
+                _logger.LogError(ex, "HubException при вызове ResumeFuelingAsync: {Message}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при вызове ResumeFuelingAsync для пистолета {NozzleGroup}", SelectedNozzle?.Group ?? "null");
             }
         }
 
@@ -368,7 +395,16 @@ namespace KIT.GasStation.ViewModels
         /// </summary>
         private async Task OnCompletedFueling(Nozzle nozzle, ControllerResponse response)
         {
+            _logger.LogDebug("OnCompletedFueling для пистолета {NozzleId}, статус: {Status}", nozzle.Id, response.Status);
+
             var fuelSale = SelectedNozzle?.FuelSale;
+
+            if (fuelSale == null)
+            {
+                _logger.LogWarning("Нет активной продажи для завершения заправки на пистолете {NozzleId}",
+                    nozzle.Id);
+                return;
+            }
 
             try
             {
@@ -407,16 +443,16 @@ namespace KIT.GasStation.ViewModels
                         }
                     }
                 }
-            }
-            catch (Exception e)
-            {
 
-            }
-            finally
-            {
                 fuelSale.FuelSaleStatus = FuelSaleStatus.Completed;
                 await _fuelSaleService.UpdateAsync(fuelSale.Id, fuelSale);
+
+                _logger.LogInformation("Продажа {SaleId} завершена успешно", fuelSale.Id);
                 await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при завершении заправки для продажи {SaleId}", fuelSale.Id);
             }
         }
 
