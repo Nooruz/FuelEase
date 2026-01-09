@@ -4,7 +4,7 @@ using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace KIT.GasStation.FuelDispenser
 {
@@ -14,6 +14,7 @@ namespace KIT.GasStation.FuelDispenser
         protected readonly IProtocolParserFactory _protocolParserFactory;
         protected readonly IPortManager _portManager;
         protected readonly IHubClient _hubClient;
+        protected readonly ILogger _logger;
         protected readonly int Address;
         protected readonly IReadOnlyList<Column> Columns;
 
@@ -38,6 +39,8 @@ namespace KIT.GasStation.FuelDispenser
             _protocolParserFactory = protocolParserFactory;
             _portManager = portManager;
             _hubClient = hubClient;
+
+
         }
 
         public async Task RunAsync(CancellationToken token)
@@ -49,17 +52,40 @@ namespace KIT.GasStation.FuelDispenser
                 await OnOpenAsync(token);
                 opened = true;
 
+                while (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await OnTickAsync(token);
+                        // Краткая задержка между тиками, если OnTickAsync завершается быстро
+                        await Task.Delay(TimeSpan.FromMilliseconds(100), token);
+                    }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested)
+                    {
+                        // Ожидаем штатное завершение по токену отмены
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Логируем ошибку, но продолжаем цикл
+                        // Реализуйте ILogger в базовом классе или передайте его через конструктор
+                        //_logger.Error(ex, "Ошибка в OnTickAsync");
+                        await Task.Delay(TimeSpan.FromSeconds(1), token);
+                    }
+                }
+
                 await Task.Delay(Timeout.Infinite, token);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
-                // ожидаем штатное завершение по токену отмены
+                _logger.Information("Цикл ТРК отменен по токену");
             }
             finally
             {
                 if (opened)
                 {
                     await OnCloseAsync();
+                    _logger.Information("Цикл ТРК завершен");
                 }
             }
         }

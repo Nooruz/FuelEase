@@ -1,9 +1,10 @@
 ﻿using KIT.GasStation.CashRegisters.Exceptions;
+using KIT.GasStation.CashRegisters.Models;
 using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Domain.Models;
-using KIT.GasStation.NewCas.Models;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
+using KIT.GasStation.NewCas.Models;
 using Serilog;
 using System.Drawing;
 using System.Drawing.Printing;
@@ -24,17 +25,6 @@ namespace KIT.GasStation.NewCas
         private CashRegister _cashRegister;
         private HttpClient _client;
         private NewCasCashRegisterSettings _settings;
-
-        #endregion
-
-        #region Actions
-
-        public event Action OnShiftOpened;
-        public event Action OnShiftClosed;
-        public event Action OnReceiptPrinting;
-        public event Action<FuelSale> OnReturning;
-        public event Action<string> OnUnknownError;
-        public event Action<CashRegisterStatus> OnStatusChanged;
 
         #endregion
 
@@ -78,7 +68,6 @@ namespace KIT.GasStation.NewCas
 
                 CreateJGP(message.Bitmaps);
 
-                OnShiftClosed?.Invoke();
                 return;
             }
 
@@ -132,7 +121,6 @@ namespace KIT.GasStation.NewCas
 
                 CreateJGP(message.Bitmaps);
 
-                OnShiftOpened?.Invoke();
                 return;
             }
 
@@ -246,16 +234,18 @@ namespace KIT.GasStation.NewCas
         }
 
         /// <inheritdoc/>
-        public async Task<string?> GetShiftStateAsync()
+        public async Task<CashRegisterState> GetShiftStateAsync()
         {
             var state = await GetStateAsync(); // при ошибке уже бросит CashRegisterException
 
-            return state switch
-            {
-                DayStateNewCas.ShiftOpened => "Открыта",
-                DayStateNewCas.ShiftClosed => "Закрыта",
-                _ => "Неизвестно"
-            };
+            //return state switch
+            //{
+            //    DayStateNewCas.ShiftOpened => "Открыта",
+            //    DayStateNewCas.ShiftClosed => "Закрыта",
+            //    _ => "Неизвестно"
+            //};
+
+            return new CashRegisterState();
         }
 
         /// <inheritdoc/>

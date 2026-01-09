@@ -18,7 +18,7 @@ namespace KIT.GasStation.Common.Factories
                 ControllerType.Lanfeng => ActivatorUtilities.CreateInstance<LanfengFuelDispenser>(sp, controller, address, hubClient),
                 ControllerType.Gilbarco => throw new NotSupportedException($"Тип контроллера {controller.Type} не поддерживается."),
                 //ControllerType.Emulator => _createEmulatorFuelDispenser(),
-                ControllerType.PKElectronics => ActivatorUtilities.CreateInstance<PKElectronicsFuelDispenser>(sp, controller, address),
+                ControllerType.PKElectronics => ActivatorUtilities.CreateInstance<PKElectronicsFuelDispenser>(sp, controller, address, hubClient),
                 //ControllerType.TechnoProjekt => _createTechnoProjektFuelDispenser(),
                 _ => throw new NotSupportedException($"Тип контроллера {controller.Type} не поддерживается."),
             };

@@ -80,17 +80,12 @@ namespace KIT.GasStation.Hardware.ViewModels
                     return;
                 }
 
-                cashRegisterService.OnShiftOpened += OnShiftOpened;
-                cashRegisterService.OnStatusChanged += CashRegisterService_OnStatusChanged;
 
                 await cashRegisterService.InitializationAsync(SelectedCashRegister.Id);
 
-                string? message = await cashRegisterService.GetShiftStateAsync();
+                var state = await cashRegisterService.GetShiftStateAsync();
 
-                if (!string.IsNullOrEmpty(message))
-                {
-                    _ = MessageBoxService.ShowMessage(message, "Статус ККМ", MessageButton.OK, MessageIcon.Information);
-                }
+                //_ = MessageBoxService.ShowMessage(, "Статус ККМ", MessageButton.OK, MessageIcon.Information);
             }
             catch (CashRegisterException ex)
             {
@@ -118,8 +113,6 @@ namespace KIT.GasStation.Hardware.ViewModels
                     return;
                 }
 
-                cashRegisterService.OnShiftOpened += OnShiftOpened;
-                cashRegisterService.OnStatusChanged += CashRegisterService_OnStatusChanged;
 
                 await cashRegisterService.InitializationAsync(SelectedCashRegister.Id);
 
@@ -148,8 +141,6 @@ namespace KIT.GasStation.Hardware.ViewModels
                     return;
                 }
 
-                cashRegisterService.OnShiftClosed += OnShiftClosed;
-                cashRegisterService.OnStatusChanged += CashRegisterService_OnStatusChanged;
 
                 await cashRegisterService.InitializationAsync(SelectedCashRegister.Id);
 
@@ -226,34 +217,6 @@ namespace KIT.GasStation.Hardware.ViewModels
         private void ShowErrorMessage(string message)
         {
             _ = MessageBoxService.ShowMessage(message, "Внимание", MessageButton.OK, MessageIcon.Exclamation);
-        }
-
-        private void OnShiftOpened()
-        {
-            MessageBoxService.ShowMessage("Смена открыта", "Информация", MessageButton.OK, MessageIcon.Information);
-        }
-
-        private void OnShiftClosed()
-        {
-            MessageBoxService.ShowMessage("Смена закрыта", "Информация", MessageButton.OK, MessageIcon.Information);
-        }
-
-        private void CashRegisterService_OnStatusChanged(CashRegisterStatus status)
-        {
-            string? message = status switch
-            {
-                CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
-                CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
-                CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
-                CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
-                CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
-                _ => null
-            };
-
-            if (message != null)
-            {
-                _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
-            }
         }
 
         #endregion

@@ -13,10 +13,8 @@ using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
-using KIT.GasStation.ViewModels.Info;
 using KIT.GasStation.Views;
 using KIT.GasStation.Views.Details;
-using KIT.GasStation.Views.Info;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
@@ -172,17 +170,7 @@ namespace KIT.GasStation.ViewModels
             _cashRegisterStore = cashRegisterStore;
             _notificationStore = notificationStore;
             
-
-            _shiftStore.OnClosed += (shift) => ShowOpenShiftView();
-            _shiftStore.OnLogin += (shift) => ShowOpenShiftView();
             _notificationStore.OnShowing += NotificationStore_OnShowing;
-            _cashRegisterStore.OnShiftOpened += CashRegisterStore_OnShiftOpened;
-            _cashRegisterStore.OnShiftClosed += CashRegisterStore_OnShiftClosed;
-            //_cashRegisterStore.OnStatusChanged += CashRegisterStore_OnStatusChanged;
-            _cashRegisterStore.OnUnknownError += CashRegisterStore_OnUnknownError;
-
-            _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
-
             _userStore.OnLogin += UserStore_OnLogin;
         }
 
@@ -620,17 +608,12 @@ namespace KIT.GasStation.ViewModels
             try
             {
                 _splashScreenService.Show("Получение состояние ККМ...");
-                string? state = await _cashRegisterStore.GetShiftStateAsync();
+                var state = await _cashRegisterStore.GetShiftStateAsync();
 
-                if (string.IsNullOrEmpty(state))
-                {
-                    return;
-                }
+                //var viewModel = new CashRegisterStateInfoViewModel(state);
 
-                var viewModel = new CashRegisterStateInfoViewModel(state);
-
-                WindowService.Title = "Состояние ККМ";
-                WindowService.Show(nameof(CashRegisterStateInfoView), viewModel);
+                //WindowService.Title = "Состояние ККМ";
+                //WindowService.Show(nameof(CashRegisterStateInfoView), viewModel);
             }
             catch (CashRegisterException e)
             {
@@ -682,39 +665,6 @@ namespace KIT.GasStation.ViewModels
         {
             OnPropertyChanged(nameof(IsCurrentUserAdmin));
         }
-
-        private async Task GetViewModelAsync(ViewType viewType)
-        {
-            await _navigator.GetViewModelAsync(viewType);
-        }
-
-        //private void CashRegisterManager_OnShiftClose(CashRegister cashRegister)
-        //{
-        //    Application.Current.Dispatcher.Invoke(() =>
-        //    {
-        //        ShowNotification("Информация", "Смена ККМ закрыта.");
-        //    });
-        //}
-
-        //private void CashRegisterManager_OnCashRegisterState(CashRegisterType type, string state)
-        //{
-        //    try
-        //    {
-        //        MessageBoxService.ShowMessage(state, $"Инормация по {EnumHelper.GetEnumDisplayName(type)}", MessageButton.OK, MessageIcon.Information);
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        _logger?.LogError(e, e.Message);
-        //    }
-        //}
-
-        //private void CashRegisterManager_OnError(CashRegister cashRegister, string message)
-        //{
-        //    Application.Current.Dispatcher.Invoke(() =>
-        //    {
-        //        ShowNotification("Информация", message);
-        //    });
-        //}
 
         private async Task<bool> CheckUncompletedSale()
         {
@@ -820,133 +770,6 @@ namespace KIT.GasStation.ViewModels
                 return true;
             }
             return false;
-        }
-
-        private void ShowOpenShiftView()
-        {
-            //var viewModel = new OpenShiftViewModel(_shiftStore,
-            //_splashScreenService);
-
-            //if (_shiftStore == null) return;
-
-            //if (_shiftStore.CurrentShift == null)
-            //{
-            //    DialogService.ShowDialog(MessageButton.OK, "Смена закрыта", "Смена не открыта", MessageIcon.Information);
-            //    windowService.Show(nameof(OpenShiftView), viewModel);
-            //    // Запускаем цикл обработки сообщений
-            //    System.Windows.Threading.Dispatcher.Run();
-            //    return;
-            //}
-
-            //if (_shiftStore.CurrentShiftState is ShiftState.Exceeded24Hours or ShiftState.Closed)
-            //{
-            //    windowService.Show(nameof(OpenShiftView), viewModel);
-            //    // Запускаем цикл обработки сообщений
-            //    System.Windows.Threading.Dispatcher.Run();
-            //    return;
-            //}
-
-            //Thread uiThread = new(() =>
-            //{
-            //    try
-            //    {
-            //        IWindowService windowService = new WindowService()
-            //        {
-            //            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            //            AllowSetWindowOwner = true,
-            //            WindowShowMode = WindowShowMode.Dialog,
-            //            Name = "DialogService",
-            //            WindowStyle = new Style
-            //            {
-            //                TargetType = typeof(ThemedWindow),
-            //                BasedOn = Application.Current.TryFindResource("DialogService") as Style
-            //            }
-            //        };
-
-            //        if (windowService == null) return;
-
-            //        var viewModel = new OpenShiftViewModel(_shiftStore,
-            //        _splashScreenService);
-            //        windowService.Title = "Смена закрыта";
-
-            //        if (windowService.IsWindowAlive) return;
-
-            //        if (_shiftStore == null) return;
-
-            //        if (_shiftStore.CurrentShift == null)
-            //        {
-            //            windowService.Show(nameof(OpenShiftView), viewModel);
-            //            // Запускаем цикл обработки сообщений
-            //            System.Windows.Threading.Dispatcher.Run();
-            //            return;
-            //        }
-
-            //        if (_shiftStore.CurrentShiftState is ShiftState.Exceeded24Hours or ShiftState.Closed)
-            //        {
-            //            windowService.Show(nameof(OpenShiftView), viewModel);
-            //            // Запускаем цикл обработки сообщений
-            //            System.Windows.Threading.Dispatcher.Run();
-            //            return;
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        _logger.LogError(ex, ex.Message);
-            //    }
-            //});
-            //uiThread.SetApartmentState(ApartmentState.STA); // Обязательно устанавливаем STA
-            //uiThread.Start();
-        }
-
-        private void CashRegisterStore_OnShiftClosed()
-        {
-            MessageBoxService.ShowMessage("Смена на ККМ успешно закрыта. Не забудьте открыть новую смену перед началом работы.", 
-                "Смена закрыта",
-                MessageButton.OK,
-                MessageIcon.Information);
-        }
-
-        private void CashRegisterStore_OnShiftOpened()
-        {
-            MessageBoxService.ShowMessage("Смена на ККМ успешно открыта.",
-                "Смена открыта",
-                MessageButton.OK,
-                MessageIcon.Information);
-        }
-
-        //private void CashRegisterStore_OnStatusChanged(CashRegisterStatus status)
-        //{
-        //    //string? message = status switch
-        //    //{
-        //    //    CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
-        //    //    CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
-        //    //    CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
-        //    //    CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
-        //    //    CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
-        //    //    _ => null
-        //    //};
-
-        //    //if (message != null)
-        //    //{
-        //    //    _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
-        //    //}
-        //}
-
-        private void CashRegisterStore_OnUnknownError(string errorMessage)
-        {
-
-            _ = MessageBoxService.ShowMessage(errorMessage, "Внимание!", MessageButton.OK, MessageIcon.Error);
-        }
-
-        private async void FuelSaleService_OnCreated(FuelSale fuelSale)
-        {
-            _splashScreenService.Show("Идёт оформление топлива...");
-
-            // Даём пользователю увидеть splash
-            await Task.Delay(2000);
-
-
-            _splashScreenService.Close();
         }
 
         #endregion

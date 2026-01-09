@@ -41,7 +41,8 @@ namespace KIT.GasStation.Lanfeng
         private volatile bool _hardwareAvailable = true;
         private string? _lastAvailabilityReason;
         private bool _hubHandlersRegistered;
-        private int _hubRestartLoop;    
+        private int _hubRestartLoop;
+        private PortKey _portKey;
 
         #endregion
 
@@ -74,7 +75,7 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
-                var key = new PortKey(
+                _portKey = new PortKey(
                     portName: Controller.ComPort,                // например, "COM3"
                     baudRate: Controller.BaudRate,               // напр., 9600
                     parity: Parity.None,                // System.IO.Ports.Parity
@@ -87,12 +88,12 @@ namespace KIT.GasStation.Lanfeng
 
                 _hub.On<StartPollingCommand>("StartPolling", async e =>
                 {
-                    await StartPollingAsync(key, token);
+                    await StartPollingAsync(_portKey, token);
                 });
 
                 _hub.On<StopPollingCommand>("StopPolling", async e =>
                 {
-                    await StopPollingAsync(key);
+                    await StopPollingAsync(_portKey);
                 });
 
                 _hub.On<string, decimal>("SetPriceAsync", async (groupName, price) =>
@@ -136,14 +137,25 @@ namespace KIT.GasStation.Lanfeng
                     _stopTickStatus = false;
                 });
 
-                await _hubClient.EnsureStartedAsync(token);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _hubClient.EnsureStartedAsync(token);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Ошибка запуска SignalR соединения");
+                    }
+                }, token);
 
                 await JoinWorkerGroupsAsync();
                 await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
             }
             catch (Exception e)
             {
-                _logger.Error(e, e.Message);
+                _logger.Error(e, "Ошибка в OnOpenAsync: {Message}", e.Message);
+                throw;
             }
         }
 
@@ -193,9 +205,31 @@ namespace KIT.GasStation.Lanfeng
             }
         }
 
-        protected override Task OnCloseAsync()
+        protected override async Task OnCloseAsync()
         {
-            return Task.CompletedTask;
+            // Отписываемся от событий хаба
+            if (_hubHandlersRegistered && _hub != null)
+            {
+                _hub.Reconnecting -= OnHubReconnecting;
+                _hub.Reconnected -= OnHubReconnected;
+                _hub.Closed -= OnHubClosed;
+                _hubHandlersRegistered = false;
+            }
+
+            // Останавливаем опрос
+            if (_pollingEnabled)
+            {
+                await StopPollingAsync(_portKey);
+            }
+
+            // Освобождаем порт
+            if (_lease != null)
+            {
+                await _lease.DisposeAsync();
+                _lease = null;
+            }
+
+            await base.OnCloseAsync();
         }
 
         public override async ValueTask DisposeAsync()

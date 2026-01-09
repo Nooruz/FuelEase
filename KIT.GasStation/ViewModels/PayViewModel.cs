@@ -114,9 +114,6 @@ namespace KIT.GasStation.ViewModels
             _fuelSaleService = fuelSaleService;
             _disсountStore = disсountStore;
             _cashRegisterStore = cashRegisterStore;
-
-            //_cashRegisterStore.OnStatusChanged += CashRegisterStore_OnStatusChanged;
-            _cashRegisterStore.OnReceiptPrinting += CashRegisterStore_OnReceiptPrinting;
         }
 
         #endregion
@@ -161,36 +158,7 @@ namespace KIT.GasStation.ViewModels
                     }
                     else
                     {
-                        await _cashRegisterStore.GetShiftStateAsync();
-                        if (_cashRegisterStore.CashRegister.Status == CashRegisterStatus.Open)
-                        {
-                            await _fuelSaleService.CreateAsync(CreateFuelSale);
-                        }
-                        else
-                        {
-                            switch (_cashRegisterStore.CashRegister.Status)
-                            {
-                                case CashRegisterStatus.Unknown:
-                                    MessageBoxService.ShowMessage("Статус ККМ неизвестен. Проверьте работу ККМ.", "Внимание!", MessageButton.OK, MessageIcon.Warning);
-                                    break;
-                                case CashRegisterStatus.Open:
-                                    break;
-                                case CashRegisterStatus.Close:
-                                    MessageBoxService.ShowMessage("Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.", "Внимание!", MessageButton.OK, MessageIcon.Warning);
-                                    break;
-                                case CashRegisterStatus.Exceeded24Hours:
-                                    MessageBoxService.ShowMessage("Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.", "Внимание!", MessageButton.OK, MessageIcon.Warning);
-                                    break;
-                                case CashRegisterStatus.Error:
-                                    MessageBoxService.ShowMessage("Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.", "Внимание!", MessageButton.OK, MessageIcon.Warning);
-                                    break;
-                                case CashRegisterStatus.NoOpenedShift:
-                                    MessageBoxService.ShowMessage("Смена на ККМ не открыта. Откройте смену перед началом работы.", "Внимание!", MessageButton.OK, MessageIcon.Warning);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
+                        await _fuelSaleService.CreateAsync(CreateFuelSale);
                     }
                 }
                 // В противном случае создаем продажу через сервис продажи топлива
@@ -245,11 +213,6 @@ namespace KIT.GasStation.ViewModels
         //    }
         //}
 
-        private void CashRegisterStore_OnReceiptPrinting()
-        {
-            CurrentWindowService?.Close();
-        }
-
         #endregion
 
         #region Dispose
@@ -258,8 +221,7 @@ namespace KIT.GasStation.ViewModels
         {
             if (disposing)
             {
-                //_cashRegisterStore.OnStatusChanged -= CashRegisterStore_OnStatusChanged;
-                _cashRegisterStore.OnReceiptPrinting -= CashRegisterStore_OnReceiptPrinting;
+
             }
 
             base.Dispose(disposing);

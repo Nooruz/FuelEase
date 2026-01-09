@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.Domain.Models;
+﻿using KIT.GasStation.CashRegisters.Models;
+using KIT.GasStation.Domain.Models;
 using KIT.GasStation.HardwareConfigurations.Models;
 
 namespace KIT.GasStation.CashRegisters.Services
@@ -7,17 +8,6 @@ namespace KIT.GasStation.CashRegisters.Services
     public delegate TCashRegister CreateCashRegister<TCashRegister>() where TCashRegister : ICashRegisterService;
     public interface ICashRegisterService
     {
-        #region Actions
-
-        event Action OnShiftOpened;
-        event Action OnShiftClosed;
-        event Action OnReceiptPrinting;
-        event Action<FuelSale> OnReturning;
-        event Action<string> OnUnknownError;
-        event Action<CashRegisterStatus> OnStatusChanged;
-
-        #endregion
-
         #region Voids
 
         /// <summary>
@@ -55,7 +45,7 @@ namespace KIT.GasStation.CashRegisters.Services
         /// Получение статуса ККМ
         /// </summary>
         /// <returns></returns>
-        Task<string?> GetShiftStateAsync();
+        Task<CashRegisterState> GetShiftStateAsync();
 
         /// <summary>
         /// Возврат и продажа по полученными суммами

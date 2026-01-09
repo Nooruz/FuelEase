@@ -2,6 +2,7 @@
 using KIT.GasStation.Web.HostBuilders;
 using KIT.GasStation.Web.Hubs;
 using KIT.GasStation.Web.Services;
+using Microsoft.AspNetCore.Diagnostics;
 using Serilog;
 
 var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -20,6 +21,7 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     Log.Information("Starting up");
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,15 +66,55 @@ var builder = WebApplication.CreateBuilder(args);
         options.Configure(context.Configuration.GetSection("Kestrel"));
     });
 
+    builder.Services.AddHealthChecks();
+
+    Log.Information("Environment: {Env}", builder.Environment.EnvironmentName);
+    Log.Information("ContentRoot: {Root}", builder.Environment.ContentRootPath);
+    Log.Information("BaseDirectory: {Base}", AppContext.BaseDirectory);
+
+    AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+    {
+        var ex = args.ExceptionObject as Exception;
+
+        Log.Fatal(ex,
+            "🔥 UNHANDLED EXCEPTION (IsTerminating={IsTerminating})",
+            args.IsTerminating);
+    };
+
+    TaskScheduler.UnobservedTaskException += (sender, args) =>
+    {
+        Log.Fatal(args.Exception,
+            "🔥 UNOBSERVED TASK EXCEPTION");
+
+        args.SetObserved(); // иначе процесс может быть убит
+    };
+
     var app = builder.Build();
 
     //app.MapHub<DeviceHub>("/deviceHub");
 
     app.UseSerilogRequestLogging();
     app.UseCors(); // если включал CORS выше
-
+    app.MapHealthChecks("/health");
 
     app.MapHub<DeviceResponseHub>("/deviceresponse");
+
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            var feature = context.Features.Get<IExceptionHandlerFeature>();
+            if (feature?.Error != null)
+            {
+                Log.Error(feature.Error,
+                    "🔥 HTTP UNHANDLED EXCEPTION. Path={Path}",
+                    context.Request.Path);
+            }
+
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync("Internal server error");
+        });
+    });
 
     app.Run();
 }

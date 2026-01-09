@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.CashRegisters.Services;
+﻿using KIT.GasStation.CashRegisters.Models;
+using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Common.Factories;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Exceptions;
@@ -25,17 +26,9 @@ namespace KIT.GasStation.State.CashRegisters
         private CashRegister _cashRegister;
         private ObservableCollection<CashRegister> _cashRegisters = new();
         private readonly IUserStore _userStore;
-
-        #endregion
-
-        #region Actions
-
-        public event Action OnReceiptPrinting;
-        public event Action OnShiftOpened;
-        public event Action OnShiftClosed;
-        public event Action<FuelSale> OnReturning;
-        public event Action<string> OnUnknownError;
-        public event Action<CashRegisterStatus> OnStatusChanged;
+        private CashRegisterStatus _status;
+        private DateTime? _openAt;
+        private DateTime? _closeAt;
 
         #endregion
 
@@ -44,7 +37,7 @@ namespace KIT.GasStation.State.CashRegisters
         public CashRegister CashRegister
         {
             get => _cashRegister;
-            set
+            private set
             {
                 _cashRegister = value;
                 OnPropertyChanged(nameof(CashRegister));
@@ -59,6 +52,33 @@ namespace KIT.GasStation.State.CashRegisters
                 OnPropertyChanged(nameof(CashRegisters));
             }
         }
+        public CashRegisterStatus Status
+        {
+            get => _status;
+            private set
+            {
+                _status = value;
+                OnPropertyChanged(nameof(Status));
+            }
+        }
+        public DateTime? OpenAt
+        {
+            get => _openAt;
+            set
+            {
+                _openAt = value;
+                OnPropertyChanged(nameof(OpenAt));
+            }
+        }
+        public DateTime? CloseAt
+        {
+            get => _closeAt;
+            set
+            {
+                _closeAt = value;
+                OnPropertyChanged(nameof(CloseAt));
+            }
+        }
 
         #endregion
 
@@ -71,14 +91,6 @@ namespace KIT.GasStation.State.CashRegisters
             _hardwareConfigurationService = hardwareConfigurationService;
             _cashRegisterFactory = cashRegisterFactory;
             _userStore = userStore;
-        }
-
-        private void CashRegisterService_OnStatusChanged(CashRegisterStatus status)
-        {
-            if (CashRegister != null)
-            {
-                CashRegister.Status = status;
-            }
         }
 
         #endregion
@@ -106,9 +118,12 @@ namespace KIT.GasStation.State.CashRegisters
             await _cashRegisterService.XReportAsync();
         }
 
-        public async Task<string?> GetShiftStateAsync()
+        public async Task<CashRegisterState> GetShiftStateAsync()
         {
-            return await _cashRegisterService.GetShiftStateAsync();
+            var state = await _cashRegisterService.GetShiftStateAsync();
+            Status = state.Status;
+            OpenAt = state.OpenedAt;
+            return state;
         }
 
         public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, bool isBefore = true)
@@ -176,31 +191,6 @@ namespace KIT.GasStation.State.CashRegisters
             }
         }
 
-        private void CashRegisterService_OnReceiptPrinting()
-        {
-            OnReceiptPrinting?.Invoke();
-        }
-
-        private void CashRegisterService_OnShiftClosed()
-        {
-            OnShiftClosed?.Invoke();
-        }
-
-        private void CashRegisterService_OnUnknownError(string errorMessage)
-        {
-            OnUnknownError?.Invoke(errorMessage);
-        }
-
-        private void CashRegisterService_OnShiftOpened()
-        {
-            OnShiftOpened?.Invoke();
-        }
-
-        private void CashRegisterService_OnReturning(FuelSale fuelSale)
-        {
-            OnReturning?.Invoke(fuelSale);
-        }
-
         #endregion
 
         #region HostedService
@@ -220,19 +210,9 @@ namespace KIT.GasStation.State.CashRegisters
             {
                 _cashRegisterService = await _cashRegisterFactory.CreateAsync(CashRegister.Id);
 
-                _cashRegisterService.OnReceiptPrinting += CashRegisterService_OnReceiptPrinting;
-                //_cashRegisterService.OnStatusChanged += CashRegisterService_OnStatusChanged;
-                _cashRegisterService.OnShiftOpened += CashRegisterService_OnShiftOpened;
-                _cashRegisterService.OnReturning += CashRegisterService_OnReturning;
-                _cashRegisterService.OnShiftClosed += CashRegisterService_OnShiftClosed;
-                _cashRegisterService.OnUnknownError += CashRegisterService_OnUnknownError;
-                _cashRegisterService.OnStatusChanged += CashRegisterService_OnStatusChanged;
-
                 await _cashRegisterService.InitializationAsync(CashRegister.Id);
 
-                //await _cashRegisterService.XReportAsync(false);
-
-                return;
+                await GetShiftStateAsync();
             }
         }
 

@@ -248,7 +248,8 @@ namespace KIT.GasStation.HostBuilders
         private static CashViewModel CreateCashViewModel(IServiceProvider services)
         {
             return new CashViewModel(services.GetRequiredService<IShiftStore>(),
-                services.GetRequiredService<IFuelSaleService>());
+                services.GetRequiredService<IFuelSaleService>(),
+                services.GetRequiredService<ICashRegisterStore>());
         }
 
         private static TanksViewModel CreateTanksViewModel(IServiceProvider services)

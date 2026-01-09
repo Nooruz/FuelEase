@@ -73,7 +73,6 @@ namespace KIT.GasStation.ViewModels
 
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
             _fuelSaleService.OnDeleted += DeleteFuelSale;
-            _cashRegisterStore.OnReturning += CashRegisterStore_OnReturning;
         }
 
         #endregion
@@ -192,29 +191,6 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        private void CashRegisterStore_OnReturning(FuelSale returnedFuelSale)
-        {
-            try
-            {
-                FuelSale? fuelSale = FuelSales.FirstOrDefault(f => f.Id == returnedFuelSale.Id);
-
-                if (fuelSale == null) return;
-
-                fuelSale.FuelSaleStatus = FuelSaleStatus.Completed;
-
-                _ = Task.Run(async () =>
-                {
-                    _ = await _fuelSaleService.UpdateAsync(fuelSale.Id, fuelSale);
-                });
-
-                FuelSales.Remove(fuelSale);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e.Message, e);
-            }
-        }
-
         #endregion
 
         #region Dispose
@@ -225,7 +201,6 @@ namespace KIT.GasStation.ViewModels
             {
                 _fuelSaleService.OnUpdated -= FuelSaleService_OnUpdated;
                 _fuelSaleService.OnDeleted -= DeleteFuelSale;
-                _cashRegisterStore.OnReturning -= CashRegisterStore_OnReturning;
             }
 
             base.Dispose(disposing);

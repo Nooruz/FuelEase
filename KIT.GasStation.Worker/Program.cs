@@ -27,27 +27,52 @@ try
         {
             options.ServiceName = "KIT.GasStation.Worker";
         })
-        .AddHardwareConfigurationsServices() // Р вЂќР С•Р В±Р В°Р Р†Р В»Р ВµР Р…Р С‘Р Вµ РЎРѓР ВµРЎР‚Р Р†Р С‘РЎРѓР С•Р Р† Р Т‘Р В»РЎРЏ РЎР‚Р В°Р В±Р С•РЎвЂљРЎвЂ№ РЎРѓ Р С•Р В±Р С•РЎР‚РЎС“Р Т‘Р С•Р Р†Р В°Р Р…Р С‘Р ВµР С
-        .AddCashRegisters() // Р вЂќР С•Р В±Р В°Р Р†Р В»Р ВµР Р…Р С‘Р Вµ РЎРѓР ВµРЎР‚Р Р†Р С‘РЎРѓР С•Р Р† Р Т‘Р В»РЎРЏ РЎР‚Р В°Р В±Р С•РЎвЂљРЎвЂ№ РЎРѓ Р С”Р В°РЎРѓРЎРѓР С•Р Р†РЎвЂ№Р СР С‘ Р В°Р С—Р С—Р В°РЎР‚Р В°РЎвЂљР В°Р СР С‘
+        .AddHardwareConfigurationsServices() 
+        .AddCashRegisters() 
         .ConfigureServices((hostContext, services) =>
         {
-            var cfg = hostContext.Configuration;
-            var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-            var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-            var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+            //var cfg = hostContext.Configuration;
+            //var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+            //var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+            //var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 
-            // 1) Р РЋР В°Р СР С• РЎРѓР С•Р ВµР Т‘Р С‘Р Р…Р ВµР Р…Р С‘Р Вµ РІР‚вЂќ Singleton
-            services.AddTransient(sp =>
-                new HubConnectionBuilder()
+            //services.AddTransient(sp =>
+            //    new HubConnectionBuilder()
+            //        .WithUrl(hubUrl)
+            //        .WithAutomaticReconnect()
+            //        .Build());
+            //services.AddSignalR();                 
+            
+            //services.AddTransient<IHubClient, HubClient>();
+
+            services.AddSingleton(sp =>
+            {
+                var cfg = sp.GetRequiredService<IConfiguration>();
+                var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+                var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+                var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+
+                return new HubConnectionBuilder()
                     .WithUrl(hubUrl)
-                    .WithAutomaticReconnect()
-                    .Build());
-            services.AddSignalR();                 // <-- РЎвЂЎРЎвЂљР С•Р В±РЎвЂ№ IHubContext РЎР‚Р ВµР В·Р С•Р В»Р Р†Р С‘Р В»РЎРѓРЎРЏ
-            // 2) (Р С•Р С—РЎвЂ Р С‘Р С•Р Р…Р В°Р В»РЎРЉР Р…Р С•) Р В°Р Р†РЎвЂљР С•РЎРѓРЎвЂљР В°РЎР‚РЎвЂљ РЎРѓР С•Р ВµР Т‘Р С‘Р Р…Р ВµР Р…Р С‘РЎРЏ
+                    .WithAutomaticReconnect([TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30)])
+                    .Build();
+            });
+
             services.AddTransient<IHubClient, HubClient>();
 
-            services.AddHostedService<Worker>(); // Р вЂќР С•Р В±Р В°Р Р†Р В»Р ВµР Р…Р С‘Р Вµ РЎРѓР ВµРЎР‚Р Р†Р С‘РЎРѓР В° Worker Р Р† DI Р С”Р С•Р Р…РЎвЂљР ВµР в„–Р Р…Р ВµРЎР‚
+            services.AddHostedService<Worker>(); 
         });
+
+    AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+    {
+        Log.Fatal(e.ExceptionObject as Exception, "Необработанное исключение");
+    };
+
+    TaskScheduler.UnobservedTaskException += (sender, e) =>
+    {
+        Log.Fatal(e.Exception, "Необработанное исключение в задаче");
+        e.SetObserved();
+    };
 
     var host = builder.Build(); // Р СџР С•РЎРѓРЎвЂљРЎР‚Р С•Р ВµР Р…Р С‘Р Вµ РЎвЂ¦Р С•РЎРѓРЎвЂљР В°
     await host.RunAsync(); // Р вЂ”Р В°Р С—РЎС“РЎРѓР С” РЎвЂ¦Р С•РЎРѓРЎвЂљР В°

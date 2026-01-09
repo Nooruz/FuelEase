@@ -1,22 +1,23 @@
 ﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.HardwareConfigurations.Models;
+using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Shifts;
-using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels
 {
-    public class CashViewModel : PanelViewModel, IUserSessionService
+    public class CashViewModel : PanelViewModel
     {
         #region Private Members
 
         private readonly IShiftStore _shiftStore;
         private readonly IFuelSaleService _fuelSaleService;
+        private readonly ICashRegisterStore _cashRegisterStore;
         private ObservableCollection<FuelSale> _fuelSales = new();
+        private string _cashRegisterShiftStatus = string.Empty;
 
         #endregion
 
@@ -24,6 +25,15 @@ namespace KIT.GasStation.ViewModels
 
         public ObservableCollection<FuelSale> FuelSales => _fuelSales;
         public string ShiftStatus => GetShiftStatus();
+        public string CashRegisterShiftStatus
+        {
+            get => _cashRegisterShiftStatus;
+            set
+            {
+                _cashRegisterShiftStatus = value;
+                OnPropertyChanged(nameof(CashRegisterShiftStatus));
+            }
+        }
         public decimal Cash => FuelSales
                     .Where(f => f.PaymentType == PaymentType.Cash)
                     .Sum(f => f.ReceivedSum);
@@ -37,29 +47,17 @@ namespace KIT.GasStation.ViewModels
         #region Constructors
 
         public CashViewModel(IShiftStore shiftStore,
-            IFuelSaleService fuelSaleService)
+            IFuelSaleService fuelSaleService,
+            ICashRegisterStore cashRegisterStore)
         {
             _shiftStore = shiftStore;
             _fuelSaleService = fuelSaleService;
+            _cashRegisterStore = cashRegisterStore;
 
             _shiftStore.OnClosed += shift =>  OnShiftUpdated(shift);
             _shiftStore.OnOpened += shift => OnShiftUpdated(shift);
             _shiftStore.OnLogin += shift => OnShiftUpdated(shift);
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
-        }
-
-        #endregion
-
-        #region UserSessionService
-
-        public async Task OnLoginAsync(User user, CancellationToken ct)
-        {
-            
-        }
-
-        public async Task OnLogoutAsync(CancellationToken ct)
-        {
-            
         }
 
         #endregion
@@ -80,6 +78,25 @@ namespace KIT.GasStation.ViewModels
                         FuelSales.Add(sale);
                     }
                 }
+
+                switch (_cashRegisterStore.Status)
+                {
+                    case CashRegisterStatus.Unknown:
+                        CashRegisterShiftStatus = "Смена ККМ: неизвестен статус";
+                        break;
+                    case CashRegisterStatus.Open:
+                        CashRegisterShiftStatus = $"Смена ККМ: открыта {_cashRegisterStore.OpenAt:dd.MM.yyyy HH:mm}";
+                        break;
+                    case CashRegisterStatus.Close:
+                        CashRegisterShiftStatus = $"Смена ККМ: открыта {_cashRegisterStore.OpenAt:dd.MM.yyyy HH:mm}";
+                        break;
+                    case CashRegisterStatus.Exceeded24Hours:
+                        CashRegisterShiftStatus = $"Смена ККМ: превышено 24 часа с момента открытия {_cashRegisterStore.OpenAt:dd.MM.yyyy HH:mm}";
+                        break;
+                    default:
+                        break;
+                }
+
                 UpdateProperties();
             });
         }

@@ -1,4 +1,5 @@
 ﻿using KIT.GasStation.CashRegisters.Exceptions;
+using KIT.GasStation.CashRegisters.Models;
 using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.EKassa.Models;
@@ -9,13 +10,8 @@ using QRCoder;
 using Serilog;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Drawing.Printing;
-using System.Dynamic;
-using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
-using System.Text;
 using System.Text.Json;
-using System.Xml;
 
 
 namespace KIT.GasStation.EKassa
@@ -29,17 +25,6 @@ namespace KIT.GasStation.EKassa
         private CashRegister _cashRegister;
         private EKassaCashRegisterSettings _settings;
         private EkassaClient _client;
-
-        #endregion
-
-        #region Actions
-
-        public event Action OnShiftOpened;
-        public event Action OnShiftClosed;
-        public event Action OnReceiptPrinting;
-        public event Action<FuelSale> OnReturning;
-        public event Action<string> OnUnknownError;
-        public event Action<CashRegisterStatus> OnStatusChanged;
 
         #endregion
 
@@ -340,7 +325,7 @@ namespace KIT.GasStation.EKassa
         }
 
         /// <inheritdoc/>
-        public async Task<string?> GetShiftStateAsync()
+        public async Task<CashRegisterState> GetShiftStateAsync()
         {
             _logger.Information("Получения статуса Х-Отчет...");
 
@@ -355,7 +340,17 @@ namespace KIT.GasStation.EKassa
 
             var shiftReportData = await _client.ShiftStateAsync(request);
 
-            return shiftReportData.Txt;
+            if (shiftReportData.Fields?.Tags.TryGetValue("1012", out var tag1012) == true)
+            {
+                var openDate = DateTime.Parse(tag1012.GetString()!);
+
+                return new CashRegisterState
+                {
+                    OpenedAt = openDate
+                };
+            }
+
+            return new CashRegisterState();
         }
 
         /// <inheritdoc/>

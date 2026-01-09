@@ -1,5 +1,6 @@
 ﻿using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
+using Serilog;
 
 namespace KIT.GasStation.Common.Factories
 {

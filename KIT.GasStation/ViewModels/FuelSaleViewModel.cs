@@ -4,6 +4,7 @@ using DevExpress.Xpf.Editors;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Domain.Views;
+using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.Services;
 using KIT.GasStation.State.CashRegisters;
@@ -155,7 +156,6 @@ namespace KIT.GasStation.ViewModels
             _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
             _shiftStore.OnNozzleSelectionChanged += ShiftStore_OnNozzleSelectionChanged;
             _nozzleStore.OnNozzleSelected += OnNozzleSelected;
-            _cashRegisterStore.OnReceiptPrinting += CashRegisterStore_OnReceiptPrinting;
             _hotKeysService.OnHotKeyPressed += HotKeysService_OnHotKeyPressed;
         }
 
@@ -216,7 +216,7 @@ namespace KIT.GasStation.ViewModels
             switch (hotKeyAction)
             {
                 case HotKeyAction.FuelSale:
-                    OnFuelSale();
+                    await OnFuelSale();
                     break;
                 case HotKeyAction.FuelSaleCashless:
                     CreateFuelSale.PaymentType = PaymentType.Cashless;
@@ -346,11 +346,6 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        private void CashRegisterStore_OnReceiptPrinting()
-        {
-            _ = _fuelSaleService.CreateAsync(CreateFuelSale);
-        }
-
         private void FuelService_OnUpdated(Fuel fuel)
         {
             foreach (var item in Nozzles)
@@ -393,7 +388,7 @@ namespace KIT.GasStation.ViewModels
 
         private async Task<bool> CanFuelSale()
         {
-            if (!ValidateNozzleSelection() || !await ValidateShift() || !ValidateCashRegisterShift()
+            if (!ValidateNozzleSelection() || !ValidateShift() || !ValidateCashRegisterShift()
                 || !await ValidateFuelQuantity() || !ValidatePayment())
             {
                 return false;
@@ -402,40 +397,27 @@ namespace KIT.GasStation.ViewModels
             return true;
         }
 
-        private async Task<bool> ValidateShift()
+        private bool ValidateShift()
         {
-            MessageResult result = MessageResult.None;
             if (_shiftStore.CurrentShift == null)
             {
-                result = MessageBoxService.ShowMessage("Смена не открыта. Открыть новую смену?", "Внимание", MessageButton.YesNo, MessageIcon.Question);
+                MessageBoxService.ShowMessage("Смена СУ не открыта. Откройте новую смену!", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
+                return false;
             }
             else
             {
                 switch (_shiftStore.CurrentShiftState)
                 {
                     case ShiftState.Closed:
-                        result = MessageBoxService.ShowMessage("Смена закрыта. Открыть новую смену?", "Внимание", MessageButton.YesNo, MessageIcon.Question);
-                        break;
+                        MessageBoxService.ShowMessage("Смена СУ закрыта. Открыть новую смену!", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
+                        return false;
                     case ShiftState.Exceeded24Hours:
-                        result = MessageBoxService.ShowMessage("Смена работает более 24 часов. Закрыть текущую смену и открыть новую?", "Внимание", MessageButton.YesNo, MessageIcon.Question);
-                        if (result == MessageResult.Yes)
-                        {
-                            await _shiftStore.CloseShiftAsync();
-                        }
-                        break;
+                        MessageBoxService.ShowMessage("Смена СУ работает более 24 часов. Закройте текущую смену и откройте новую!", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
+                        return false;
+                    case ShiftState.Open:
+                        return true;
                 }
             }
-            if (result == MessageResult.Yes)
-            {
-                await _shiftStore.OpenShiftAsync();
-                return false;
-            }
-
-            if (result == MessageResult.No)
-            {
-                return false;
-            }
-
             return true;
         }
 
@@ -460,15 +442,13 @@ namespace KIT.GasStation.ViewModels
             }
 
             // Определяем сообщение в зависимости от текущего статуса ККМ
-            //string? message = _cashRegisterStore.CashRegister.Status switch
-            //{
-            //    CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
-            //    CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
-            //    CashRegisterStatus.Error => "Ошибка ККМ. Проверьте соединение с сервером или настройки кассы.",
-            //    CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
-            //    CashRegisterStatus.NoOpenedShift => "Смена на ККМ не открыта. Откройте смену перед началом работы.",
-            //    _ => null
-            //};
+            string? message = _cashRegisterStore.Status switch
+            {
+                CashRegisterStatus.Exceeded24Hours => "Смена на ККМ открыта более 24 часов. Пожалуйста, закройте смену и откройте новую.",
+                CashRegisterStatus.Close => "Смена на ККМ закрыта. Пожалуйста, откройте новую смену перед началом работы.",
+                CashRegisterStatus.Unknown => "Статус ККМ неизвестен. Проверьте работу ККМ.",
+                _ => null
+            };
 
             //// Если сообщение определено, выводим его пользователю
             //if (message != null)
@@ -619,7 +599,6 @@ namespace KIT.GasStation.ViewModels
                 _fuelSaleService.OnUpdated -= FuelSaleService_OnUpdated;
                 _shiftStore.OnNozzleSelectionChanged -= ShiftStore_OnNozzleSelectionChanged;
                 _nozzleStore.OnNozzleSelected -= OnNozzleSelected;
-                _cashRegisterStore.OnReceiptPrinting -= CashRegisterStore_OnReceiptPrinting;
                 _hotKeysService.OnHotKeyPressed -= HotKeysService_OnHotKeyPressed;
             }
 

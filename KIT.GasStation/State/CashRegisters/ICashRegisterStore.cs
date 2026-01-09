@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.Domain.Models;
+﻿using KIT.GasStation.CashRegisters.Models;
+using KIT.GasStation.Domain.Models;
 using KIT.GasStation.HardwareConfigurations.Models;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -13,15 +14,12 @@ namespace KIT.GasStation.State.CashRegisters
     /// </summary>
     public interface ICashRegisterStore : IHostedService, INotifyPropertyChanged
     {
-        event Action OnReceiptPrinting;
-        event Action OnShiftOpened;
-        event Action OnShiftClosed;
-        event Action<FuelSale> OnReturning;
-        event Action<string> OnUnknownError;
-        event Action<CashRegisterStatus> OnStatusChanged;
-
         CashRegister CashRegister { get; }
         ObservableCollection<CashRegister> CashRegisters { get; }
+
+        public CashRegisterStatus Status { get; }
+        public DateTime? OpenAt { get; }
+        public DateTime? CloseAt { get; }
 
         void ChangeDefaultCashRegister(Guid guid);
 
@@ -47,7 +45,7 @@ namespace KIT.GasStation.State.CashRegisters
         /// Получение статуса ККМ
         /// </summary>
         /// <returns></returns>
-        Task<string?> GetShiftStateAsync();
+        Task<CashRegisterState> GetShiftStateAsync();
 
         /// <summary>
         /// Продажа

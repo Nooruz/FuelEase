@@ -4,7 +4,7 @@ using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace KIT.GasStation.PKElectronics
 {
@@ -14,9 +14,10 @@ namespace KIT.GasStation.PKElectronics
 
         private readonly IProtocolParser _protocolParser;
         private readonly IHubClient _hubClient;
+        private readonly ILogger _logger;
 
         #endregion
-        
+
         #region Constructors
 
         public PKElectronicsFuelDispenser(Controller controller,

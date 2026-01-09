@@ -2,6 +2,9 @@ using KIT.GasStation.Common.Factories;
 using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
+using Serilog;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace KIT.GasStation.Worker
 {
@@ -26,42 +29,75 @@ namespace KIT.GasStation.Worker
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // 1) Читаем конфигурацию
-            var controllers = await _hardwareConfigurationService.GetControllersAsync();
-            var tasks = new List<Task>();
+            Log.Information("Worker started");
+            // Словарь для отслеживания активных задач по ключу (Controller.Id + Address)
+            var activeTasks = new ConcurrentDictionary<string, Task>();
+            // Источник токена для отмены всех текущих задач при перезагрузке конфигурации
+            var currentCycleCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 
-            foreach (var ctrl in controllers)
+            while (!stoppingToken.IsCancellationRequested)
             {
-                // Берём адреса из конфигурации колонки, исключаем отключённые и дубли
-                var addresses = ctrl.Columns
-                    .Select(c => c.Address)
-                    .Distinct()
-                    .OrderBy(a => a)
-                    .ToArray();
-
-                foreach (var addr in addresses)
+                try
                 {
-                    var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                    var controllers = await _hardwareConfigurationService.GetControllersAsync();
 
-                    var controller = new Controller()
+                    // 1. Отменяем ВСЕ предыдущие задачи циклов для перезапуска с новой конфигурацией
+                    currentCycleCts.Cancel();
+                    currentCycleCts.Dispose();
+                    // Ждем завершения всех предыдущих задач (безопасно)
+                    await Task.WhenAll(activeTasks.Values);
+                    activeTasks.Clear();
+
+                    // 2. Создаем новый токен для нового цикла
+                    currentCycleCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+
+                    foreach (var ctrl in controllers)
                     {
-                        Id = ctrl.Id,
-                        Name = ctrl.Name,
-                        Type = ctrl.Type,
-                        ComPort = ctrl.ComPort,
-                        BaudRate = ctrl.BaudRate,
-                        Settings = ctrl.Settings,
-                        Columns = new(ctrl.Columns.Where(c => c.Address == addr).ToList())
-                    };
+                        // Берём адреса из конфигурации колонки, исключаем отключённые и дубли
+                        var addresses = ctrl.Columns
+                            .Select(c => c.Address)
+                            .Distinct()
+                            .OrderBy(a => a)
+                            .ToArray();
 
-                    var t = RunControllerLoopAsync(controller, addr, linkedCts.Token);
-                    tasks.Add(t);
+                        foreach (var addr in addresses)
+                        {
+                            var controller = new Controller()
+                            {
+                                Id = ctrl.Id,
+                                Name = ctrl.Name,
+                                Type = ctrl.Type,
+                                ComPort = ctrl.ComPort,
+                                BaudRate = ctrl.BaudRate,
+                                Settings = ctrl.Settings,
+                                Columns = new(ctrl.Columns.Where(c => c.Address == addr).ToList())
+                            };
+
+                            var taskKey = $"{ctrl.Id}_{addr}";
+
+                            var task = RunControllerLoopAsync(controller, addr, currentCycleCts.Token);
+
+                            // Сохраняем задачу для последующего отслеживания
+                            activeTasks[taskKey] = task;
+                        }
+
+                    }
+
+                    // 4. Ожидаем отмены основного токена (остановки службы) БЕЗ активного цикла.
+                    // Перезапуск конфигурации теперь инициируется внешне (например, по таймеру или файлу).
+                    await Task.Delay(Timeout.Infinite, stoppingToken);
                 }
-
+                catch (TaskCanceledException) { /* Штатная остановка */ }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Ошибка в основном цикле Worker. Перезапуск через 30 сек.");
+                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                }
             }
 
-            try { await Task.WhenAll(tasks); }
-            catch (OperationCanceledException) { /* штатная отмена */ }
+            // Финализация: отмена всех задач при остановке службы
+            currentCycleCts?.Cancel();
+            await Task.WhenAll(activeTasks.Values);
         }
 
         /// <summary>
@@ -72,52 +108,34 @@ namespace KIT.GasStation.Worker
         /// <returns></returns>
         private async Task RunControllerLoopAsync(Controller ctrl, int address, CancellationToken token)
         {
-            var backoff = TimeSpan.FromSeconds(1);
-
-            var scope = _scopeFactory.CreateAsyncScope();
-            var sp = scope.ServiceProvider;
-
-            IFuelDispenserService? service = null;
-
-            try
+            while (!token.IsCancellationRequested)
             {
-                _logger.LogInformation("Старт цикла для ТРК {Id} (порт {Port}, тип {Type})",
-                ctrl.Id, ctrl.ComPort, ctrl.Type);
+                using var scope = _scopeFactory.CreateAsyncScope();
+                var sp = scope.ServiceProvider;
+                IFuelDispenserService? service = null;
 
-                service = _fuelDispenserFactory.Create(sp, ctrl, address);
-
-                // основной цикл сервиса (открытие порта, опрос и т.д.)
-                await service.RunAsync(token);
-
-                // Если RunAsync завершился без исключения — выходим (нормальная остановка)
-                _logger.LogInformation("ТРК {Id} завершил работу штатно", ctrl.Id);
-                return;
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
-                return;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Сбой в цикле ТРК {Id}. Повтор через {Backoff}", ctrl.Id, backoff);
                 try
                 {
-                    await Task.Delay(backoff, token);
+                    _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
+                    service = _fuelDispenserFactory.Create(sp, ctrl, address);
+                    await service.RunAsync(token);
                 }
                 catch (OperationCanceledException)
                 {
-                    return;
+                    _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
+                    break;
                 }
-
-                // экспоненциальный бэкофф до 30с
-                var next = backoff.TotalSeconds * 2;
-                backoff = TimeSpan.FromSeconds(next > 30 ? 30 : next);
-            }
-            finally
-            {
-                if (service != null)
-                    await service.DisposeAsync();
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Сбой в цикле ТРК {Id}", ctrl.Id);
+                    // Ждем перед перезапуском
+                    await Task.Delay(TimeSpan.FromSeconds(5), token);
+                }
+                finally
+                {
+                    if (service != null)
+                        await service.DisposeAsync();
+                }
             }
         }
     }

@@ -243,17 +243,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         /// <summary>
         /// Смена открыта более 24 часов
         /// </summary>
-        Exceeded24Hours,
-
-        /// <summary>
-        /// Ошибка при взаимодействии с ККМ
-        /// </summary>
-        Error,
-
-        /// <summary>
-        /// Нет открытой смены
-        /// </summary>
-        NoOpenedShift
+        Exceeded24Hours
     }
 
 }

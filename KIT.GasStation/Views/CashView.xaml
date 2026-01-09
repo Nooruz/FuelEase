@@ -5,48 +5,46 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
     x:Class="KIT.GasStation.Views.CashView"
-    Width="350">
+    MinWidth="250">
 
-    <Viewbox Stretch="Uniform">
+    <dxlc:LayoutControl Orientation="Vertical">
 
-        <dxlc:LayoutControl Orientation="Vertical">
+        <TextBlock Text="{Binding ShiftStatus}"
+               TextWrapping="Wrap"
+               VerticalAlignment="Top"/>
 
-            <Label Content="{Binding ShiftStatus}"
-                   VerticalAlignment="Top"/>
+        <TextBlock Text="{Binding CashRegisterShiftStatus}"
+               TextWrapping="Wrap"
+               VerticalAlignment="Top"/>
 
-            <Label Content="{Binding CashRegisterShiftStatus}"
-                   VerticalAlignment="Top"/>
+        <dxlc:LayoutItem Label="Наличные">
+            <dxe:TextEdit IsReadOnly="True"
+              EditValue="{Binding Cash, Mode=OneWay}" 
+              MaskUseAsDisplayFormat="True" 
+              MaskType="Numeric" 
+              Mask="n"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Наличные">
-                <dxe:TextEdit IsReadOnly="True"
-                      EditValue="{Binding Cash, Mode=OneWay}" 
-                      MaskUseAsDisplayFormat="True" 
-                      MaskType="Numeric" 
-                      Mask="n"/>
-            </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Безналичные">
+            <dxe:TextEdit IsReadOnly="True"
+              EditValue="{Binding Cashless, Mode=OneWay}"
+              MaskUseAsDisplayFormat="True" 
+              MaskType="Numeric" 
+              Mask="n"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Безналичные">
-                <dxe:TextEdit IsReadOnly="True"
-                      EditValue="{Binding Cashless, Mode=OneWay}"
-                      MaskUseAsDisplayFormat="True" 
-                      MaskType="Numeric" 
-                      Mask="n"/>
-            </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Произвольные">
+            <dxe:TextEdit IsReadOnly="True"
+              EditValue="{Binding Arbitrary, Mode=OneWay}" 
+              MaskUseAsDisplayFormat="True" 
+              MaskType="Numeric" 
+              Mask="n"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Произвольные">
-                <dxe:TextEdit IsReadOnly="True"
-                      EditValue="{Binding Arbitrary, Mode=OneWay}" 
-                      MaskUseAsDisplayFormat="True" 
-                      MaskType="Numeric" 
-                      Mask="n"/>
-            </dxlc:LayoutItem>
+        <dxlc:LayoutItem Label="Возвращено">
+            <dxe:TextEdit IsReadOnly="True"/>
+        </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Возвращено">
-                <dxe:TextEdit IsReadOnly="True"/>
-            </dxlc:LayoutItem>
-
-        </dxlc:LayoutControl>
-
-    </Viewbox>
+    </dxlc:LayoutControl>
 
 </UserControl>
