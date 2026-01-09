@@ -259,16 +259,22 @@ namespace KIT.GasStation.Lanfeng
                 var commandStart = Stopwatch.StartNew();
                 var sd = _controllerType;
                 var frame = _protocolParser.BuildRequest(cmd, controllerAddress, nozzleMask, value, controllerType: _controllerType);
-                _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
+                
 
                 byte[] rx;
+                var attempt = 0;
 
                 ControllerResponse controllerResponse = new();
 
                 while (true)
                 {
+                    ct.ThrowIfCancellationRequested();
+                    attempt++;
+
                     try
                     {
+                        _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
+
                         rx = await _sharedSerialPortService.WriteReadAsync(
                             frame,
                             expectedRxLength: expectedLength,
@@ -285,6 +291,8 @@ namespace KIT.GasStation.Lanfeng
                             await BroadcastWorkerAvailabilityAsync(true);
                             break; // всё ок, выходим из цикла
                         }
+
+                        _logger.Warning("Невалидный ответ от ТРК. Попытка {Attempt}. Повтор...", attempt);
                     }
                     catch (Exception ex) when (IsCriticalSerialException(ex))
                     {
@@ -292,6 +300,8 @@ namespace KIT.GasStation.Lanfeng
                         await BroadcastWorkerAvailabilityAsync(false, ex.Message);
                         throw;
                     }
+
+                    await Task.Delay(150, ct);
                 }
 
                 Column? column = null;
