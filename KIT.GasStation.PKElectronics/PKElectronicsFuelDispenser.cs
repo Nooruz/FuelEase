@@ -102,8 +102,8 @@ namespace KIT.GasStation.PKElectronics
             _logger.Information("SignalR переподключен. ConnectionId={ConnectionId}", connectionId);
             try
             {
-                await JoinWorkerGroupsAsync();
-                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+                //await JoinWorkerGroupsAsync();
+                //await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
             }
             catch (Exception ex)
             {
@@ -134,8 +134,8 @@ namespace KIT.GasStation.PKElectronics
                         try
                         {
                             await _hub.StartAsync();
-                            await JoinWorkerGroupsAsync();
-                            await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+                            //await JoinWorkerGroupsAsync();
+                            //await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
                             break;
                         }
                         catch (Exception ex)

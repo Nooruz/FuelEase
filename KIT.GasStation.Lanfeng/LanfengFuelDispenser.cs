@@ -301,7 +301,7 @@ namespace KIT.GasStation.Lanfeng
                         throw;
                     }
 
-                    await Task.Delay(150, ct);
+                    await Task.Delay(300, ct);
                 }
 
                 Column? column = null;
