@@ -80,6 +80,41 @@
         /// <summary>
         /// Данные дисплея
         /// </summary>
-        Screen
+        Screen,
+
+        /// <summary>
+        /// Установка (ТехноПроект)
+        /// </summary>
+        Setup,
+
+        /// <summary>
+        /// Пуск (ТехноПроект)
+        /// </summary>
+        Start,
+
+        /// <summary>
+        /// Сброс (ТехноПроект)
+        /// </summary>
+        Reset,
+
+        /// <summary>
+        /// Чтение параметров (ТехноПроект)
+        /// </summary>
+        ReadParams,
+
+        /// <summary>
+        /// Изм. Счетчиков на зад. дозу (ТехноПроект)
+        /// </summary>
+        SetCounters,
+
+        /// <summary>
+        /// Получение денег в реальном времени (Гильбарко)
+        /// </summary>
+        RealTimeMoney,
+
+        /// <summary>
+        /// Data Next (для пресетов, цен и т.д.) (Гильбарко)
+        /// </summary>
+        SendData
     }
 }

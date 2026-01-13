@@ -10,6 +10,8 @@ namespace KIT.GasStation.FuelDispenser.Services.Factories
             {
                 ControllerType.Lanfeng => new LanfengCommandEncoder(),
                 ControllerType.PKElectronics => new PkElectronicsCommandEncoder(),
+                ControllerType.TechnoProjekt => new TechnoprojectCommandEncoder(),
+                ControllerType.Gilbarco => new GilbarcoCommandEncoder(),
                 _ => throw new ArgumentException("Unknown controller type")
             };
         }

@@ -27,6 +27,8 @@ namespace KIT.GasStation.FuelDispenser.Services.Factories
                     new LanfengProtocolParser(_commandEncoderFactory.Create(ControllerType.Lanfeng)),
                 ControllerType.PKElectronics => 
                     new PKElectronicsProtocolParser(_commandEncoderFactory.Create(ControllerType.PKElectronics)),
+                ControllerType.TechnoProjekt => 
+                    new TechnoprojectProtocolParser(_commandEncoderFactory.Create(ControllerType.TechnoProjekt)),
                 _ => throw new ArgumentException("Unknown controller type"),
             };
         }

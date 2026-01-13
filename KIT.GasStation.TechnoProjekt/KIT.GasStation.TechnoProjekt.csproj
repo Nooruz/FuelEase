@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
+  </ItemGroup>
+
 </Project>
