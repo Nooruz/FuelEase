@@ -1,4 +1,6 @@
-﻿using KIT.GasStation.ViewModels.Base;
+﻿using KIT.GasStation.CashRegisters.Models;
+using KIT.GasStation.HardwareConfigurations.Models;
+using KIT.GasStation.ViewModels.Base;
 
 namespace KIT.GasStation.ViewModels.Info
 {
@@ -26,9 +28,25 @@ namespace KIT.GasStation.ViewModels.Info
 
         #region Constructors
 
-        public CashRegisterStateInfoViewModel(string? shiftState)
+        public CashRegisterStateInfoViewModel(CashRegisterState state)
         {
-            ShiftState = shiftState;
+            switch (state.Status)
+            {
+                case CashRegisterStatus.Unknown:
+                    ShiftState = "Смена ККМ: неизвестен статус";
+                    break;
+                case CashRegisterStatus.Open:
+                    ShiftState = $"Смена ККМ: открыта";
+                    break;
+                case CashRegisterStatus.Close:
+                    ShiftState = $"Смена ККМ: закрыта";
+                    break;
+                case CashRegisterStatus.Exceeded24Hours:
+                    ShiftState = $"Смена ККМ: превышено 24 часа с момента открытия";
+                    break;
+                default:
+                    break;
+            }
         }
 
         #endregion

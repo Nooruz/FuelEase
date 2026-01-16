@@ -4,25 +4,29 @@ namespace KIT.GasStation.CashRegisters.Models
 {
     public class CashRegisterState
     {
-        public DateTime? OpenedAt { get; set; }
-
-        public CashRegisterStatus Status
+        private DateTime? _openedAt;
+        public DateTime? OpenedAt
         {
-            get
+            get => _openedAt;
+            set
             {
-                if (OpenedAt == null)
-                {
-                    return CashRegisterStatus.Unknown;
-                }
-                var elapsed = DateTime.Now - OpenedAt.Value;
+                _openedAt = value;
+
+                if (_openedAt == null) return;
+
+                var elapsed = DateTime.Now - _openedAt.Value;
 
                 if (elapsed.TotalHours > 24)
                 {
-                    return CashRegisterStatus.Exceeded24Hours;
+                    Status = CashRegisterStatus.Exceeded24Hours;
                 }
-
-                return CashRegisterStatus.Open;
+                else
+                {
+                    Status = CashRegisterStatus.Open;
+                }
             }
         }
+
+        public CashRegisterStatus Status { get; set; } = CashRegisterStatus.Unknown;
     }
 }

@@ -8,7 +8,7 @@
                 Width="300">
 
     <dxlc:LayoutControl Orientation="Vertical" >
-        <dxlc:LayoutItem Label="Введите количество колонок"
+        <dxlc:LayoutItem Label="Введите количество пистолетов"
                          LabelPosition="Top">
             <dxe:TextEdit EditValue="{Binding Count, UpdateSourceTrigger=PropertyChanged}">
                 <dxmvvm:Interaction.Behaviors>

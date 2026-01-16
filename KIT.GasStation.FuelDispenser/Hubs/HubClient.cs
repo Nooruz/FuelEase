@@ -32,31 +32,33 @@ namespace KIT.GasStation.FuelDispenser.Hubs
 
         public async Task EnsureStartedAsync(CancellationToken ct = default)
         {
-            if (_hub.State == HubConnectionState.Connected)
-                return;
+            if (Interlocked.Exchange(ref _started, 1) == 1) return;
+            await _hub.StartAsync(ct);
+            //if (_hub.State == HubConnectionState.Connected)
+            //    return;
 
-            if (_hub.State != HubConnectionState.Disconnected)
-            {
-                // Если соединение в промежуточном состоянии, ждем или останавливаем
-                try
-                {
-                    await _hub.StopAsync(ct);
-                }
-                catch { /* Игнорируем ошибки остановки */ }
-            }
+            //if (_hub.State != HubConnectionState.Disconnected)
+            //{
+            //    // Если соединение в промежуточном состоянии, ждем или останавливаем
+            //    try
+            //    {
+            //        await _hub.StopAsync(ct);
+            //    }
+            //    catch { /* Игнорируем ошибки остановки */ }
+            //}
 
-            var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(30));
+            //var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            //timeoutCts.CancelAfter(TimeSpan.FromSeconds(30));
 
-            try
-            {
-                await _hub.StartAsync(timeoutCts.Token);
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error(ex, "Ошибка запуска HubConnection");
-                throw;
-            }
+            //try
+            //{
+            //    await _hub.StartAsync(timeoutCts.Token);
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger?.Error(ex, "Ошибка запуска HubConnection");
+            //    throw;
+            //}
         }
 
         #endregion

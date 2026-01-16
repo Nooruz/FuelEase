@@ -4,6 +4,7 @@ using DevExpress.Xpf.Docking;
 using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Authenticators;
 using KIT.GasStation.State.CashRegisters;
@@ -13,8 +14,10 @@ using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
+using KIT.GasStation.ViewModels.Info;
 using KIT.GasStation.Views;
 using KIT.GasStation.Views.Details;
+using KIT.GasStation.Views.Info;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
@@ -357,7 +360,7 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                WindowService.Title = "Незавершенные продажи";
+                WindowService.Title = "Незавершённые продажи";
                 WindowService.Show(nameof(UncompletedSalesView), await _navigator.GetViewModelAsync(ViewType.UncompletedSalesView));
             }
             catch (Exception e)
@@ -610,10 +613,21 @@ namespace KIT.GasStation.ViewModels
                 _splashScreenService.Show("Получение состояние ККМ...");
                 var state = await _cashRegisterStore.GetShiftStateAsync();
 
-                //var viewModel = new CashRegisterStateInfoViewModel(state);
-
-                //WindowService.Title = "Состояние ККМ";
-                //WindowService.Show(nameof(CashRegisterStateInfoView), viewModel);
+                switch (state.Status)
+                {
+                    case CashRegisterStatus.Unknown:
+                        MessageBoxService.ShowMessage("Статус ККМ неизвестен. Проверьте работу ККМ.", "Внимание!", MessageButton.OK, MessageIcon.Warning);
+                        break;
+                    case CashRegisterStatus.Open:
+                        MessageBoxService.ShowMessage("Смена ККМ открыта.", "Информация", MessageButton.OK, MessageIcon.Information);
+                        break;
+                    case CashRegisterStatus.Close:
+                        MessageBoxService.ShowMessage("Смена ККМ закрыта.", "Информация", MessageButton.OK, MessageIcon.Information);
+                        break;
+                    case CashRegisterStatus.Exceeded24Hours:
+                        MessageBoxService.ShowMessage("Смена ККМ превысила 24 часа. Необходимо закрыть смену ККМ.", "Внимание!", MessageButton.OK, MessageIcon.Warning);
+                        break;
+                }
             }
             catch (CashRegisterException e)
             {
@@ -804,6 +818,20 @@ namespace KIT.GasStation.ViewModels
                 INotification notification = NotificationService.CreateCustomNotification(viewModel);
                 notification.ShowAsync();
             });
+        }
+
+        #endregion
+
+        #region Dispose
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _notificationStore.OnShowing -= NotificationStore_OnShowing;
+                _userStore.OnLogin -= UserStore_OnLogin;
+            }
+            base.Dispose(disposing);
         }
 
         #endregion

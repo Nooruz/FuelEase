@@ -168,7 +168,12 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
+                var df = CreateFuelSale;
+
                 await OpenPayView();
+
+                var ss = CreateFuelSale;
+
             }
             catch (Exception e)
             {
@@ -288,6 +293,14 @@ namespace KIT.GasStation.ViewModels
                 return;
             }
 
+            bool hasUncompletedFuelSale = await CheckUncomplatedFuelSaleAsync(SelectedNozzle);
+
+            if (hasUncompletedFuelSale)
+            {
+                MessageBoxService.ShowMessage("Существует незавершенная продажа топлива по выбранной ТРК. Завершите ее в окне \"Незавершённые продажи\" .", "Внимание", MessageButton.OK, MessageIcon.Exclamation);
+                return;
+            }
+
             CreateFuelSale.TankId = SelectedNozzle.TankId;
             CreateFuelSale.ShiftId = _shiftStore.CurrentShift.Id;
             CreateFuelSale.NozzleId = SelectedNozzle.Id;
@@ -397,6 +410,13 @@ namespace KIT.GasStation.ViewModels
             return true;
         }
 
+        private async Task<bool> CheckUncomplatedFuelSaleAsync(Nozzle selectedNozzle)
+        {
+            var fuelSale = await _fuelSaleService.GetUncompletedFuelSaleAsync(selectedNozzle.Id, _shiftStore.CurrentShift.Id);
+
+            return fuelSale != null;
+        }
+
         private bool ValidateShift()
         {
             if (_shiftStore.CurrentShift == null)
@@ -450,12 +470,12 @@ namespace KIT.GasStation.ViewModels
                 _ => null
             };
 
-            //// Если сообщение определено, выводим его пользователю
-            //if (message != null)
-            //{
-            //    _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
-            //    return false;
-            //}
+            // Если сообщение определено, выводим его пользователю
+            if (message != null)
+            {
+                _ = MessageBoxService.ShowMessage(message, "Внимание!", MessageButton.OK, MessageIcon.Warning);
+                return false;
+            }
             return true;
         }
 

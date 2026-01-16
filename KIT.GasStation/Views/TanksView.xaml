@@ -176,55 +176,49 @@
                               Padding="0">
 
                         <dxb:ToolBarControl AllowCustomizationMenu="False"
-                                    AllowQuickCustomization="False" >
+                                            AllowQuickCustomization="False" >
                             <dxb:BarButtonItem Content="Создать" 
-                                       Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_AddCircled.svg}" 
-                                       BarItemDisplayMode="ContentAndGlyph"
-                                       Command="{Binding CreateNozzleCommand}"/>
+                                               Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_AddCircled.svg}" 
+                                               BarItemDisplayMode="ContentAndGlyph"
+                                               Command="{Binding CreateNozzleCommand}"/>
                             <dxb:BarButtonItem Content="Редактировать" 
-                                       Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_Edit.svg}" 
-                                       BarItemDisplayMode="ContentAndGlyph"
-                                       Command="{Binding EditNozzleCommand}"/>
+                                               Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_Edit.svg}" 
+                                               BarItemDisplayMode="ContentAndGlyph"
+                                               Command="{Binding EditNozzleCommand}"/>
                             <dxb:BarButtonItem Content="Удалить" 
-                                       Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_DeleteCircled.svg}" 
-                                       BarItemDisplayMode="ContentAndGlyph"
-                                       Command="{Binding DeleteNozzleCommand}"/>
+                                               Glyph="{dx:DXImage SvgImages/Icon Builder/Actions_DeleteCircled.svg}" 
+                                               BarItemDisplayMode="ContentAndGlyph"
+                                               Command="{Binding DeleteNozzleCommand}"/>
                         </dxb:ToolBarControl>
 
                         <dxg:GridControl ItemsSource="{Binding Nozzles}"
-                                 SelectedItem="{Binding SelectedNozzle}" 
-                                 SelectionMode="Row">
+                                         SelectedItem="{Binding SelectedNozzle}" 
+                                         SelectionMode="Row">
                             <dxg:GridControl.View>
                                 <dxg:TableView ShowGroupPanel="False" 
-                                       AllowEditing="False">
+                                               AllowEditing="False">
                                     <dxmvvm:Interaction.Behaviors>
                                         <dxmvvm:EventToCommand EventName="RowDoubleClick"
-                                                       Command="{Binding EditNozzleCommand}"/>
+                                                               Command="{Binding EditNozzleCommand}"/>
                                     </dxmvvm:Interaction.Behaviors>
                                 </dxg:TableView>
                             </dxg:GridControl.View>
                             <dxg:GridControl.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="Создать"
-                                      Command="{Binding CreateNozzleCommand}"/>
+                                              Command="{Binding CreateNozzleCommand}"/>
                                     <MenuItem Header="Редактировать"
-                                      Command="{Binding EditNozzleCommand}"/>
+                                              Command="{Binding EditNozzleCommand}"/>
                                     <MenuItem Header="Удалить"
-                                      Command="{Binding DeleteNozzleCommand}"/>
+                                              Command="{Binding DeleteNozzleCommand}"/>
                                 </ContextMenu>
                             </dxg:GridControl.ContextMenu>
-                            <dxg:GridColumn Header="Имя"
-                                    FieldName="Name"/>
-                            <dxg:GridColumn Header="Сторона"
-                                    FieldName="Side"/>
-                            <dxg:GridColumn Header="Шланг"
-                                    FieldName="Tube"/>
-                            <dxg:GridColumn Header="Топлива"
-                                    FieldName="Tank.Fuel.Name"/>
-                            <dxg:GridColumn Header="Резервуар"
-                                    FieldName="Tank.Name"/>
-                            <dxg:GridColumn Header="Устройство"
-                                    FieldName="Group"/>
+                            <dxg:GridColumn Header="Имя" FieldName="Name"/>
+                            <dxg:GridColumn Header="Сторона" FieldName="Side"/>
+                            <dxg:GridColumn Header="Шланг" FieldName="Tube"/>
+                            <dxg:GridColumn Header="Топлива" FieldName="Tank.Fuel.Name"/>
+                            <dxg:GridColumn Header="Резервуар" FieldName="Tank.Name"/>
+                            <dxg:GridColumn Header="Устройство" FieldName="Group"/>
                         </dxg:GridControl>
 
                     </dxlc:LayoutGroup>

@@ -105,7 +105,7 @@ namespace KIT.GasStation.NewCas
             {
                 var request = new
                 {
-                    cashierName = cashierName,
+                    cashierName,
                 };
 
                 var response = await SendRequest("/fiscal/shifts/openDay", request);
@@ -236,16 +236,31 @@ namespace KIT.GasStation.NewCas
         /// <inheritdoc/>
         public async Task<CashRegisterState> GetShiftStateAsync()
         {
-            var state = await GetStateAsync(); // при ошибке уже бросит CashRegisterException
+            var response = await SendRequest("/fiscal/shifts/getState", new { });
 
-            //return state switch
-            //{
-            //    DayStateNewCas.ShiftOpened => "Открыта",
-            //    DayStateNewCas.ShiftClosed => "Закрыта",
-            //    _ => "Неизвестно"
-            //};
+            var state = JsonSerializer.Deserialize<GetSateNewCas>(
+            await response.Content.ReadAsStringAsync()) ?? throw new CashRegisterException("ККМ вернула неверный формат состояния смены.");
 
-            return new CashRegisterState();
+            var shiftState = new CashRegisterState();
+
+            if (state.IsShiftExpired)
+            {
+                shiftState.Status = CashRegisterStatus.Exceeded24Hours;
+            }
+            else
+            {
+                switch (state.State)
+                {
+                    case DayStateNewCas.ShiftClosed:
+                        shiftState.Status = CashRegisterStatus.Close;
+                        break;
+                    case DayStateNewCas.ShiftOpened:
+                        shiftState.Status = CashRegisterStatus.Open;
+                        break;
+                }
+            }
+
+            return shiftState;
         }
 
         /// <inheritdoc/>

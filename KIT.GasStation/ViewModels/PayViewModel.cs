@@ -4,8 +4,6 @@ using DevExpress.Xpf.Editors;
 using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
-using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Discounts;
 using KIT.GasStation.ViewModels.Base;

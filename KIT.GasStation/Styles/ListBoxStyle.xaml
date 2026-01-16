@@ -30,7 +30,7 @@
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="ToolTipService.InitialShowDelay" Value="400"/>
         <Setter Property="ToolTipService.ShowDuration" Value="8000"/>
-        <Setter Property="BorderBrush" Value="{StaticResource TankForegroundColorBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource NozzleBlockColorBrush}"/>
         <Setter Property="Margin">
             <Setter.Value>
                 <MultiBinding Converter="{StaticResource NozzleMarginConverter}">
@@ -51,7 +51,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                     <Border Name="Border"
-                            BorderThickness="2"
+                            BorderThickness="4"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             SnapsToDevicePixels="True"
                             Background="{TemplateBinding Background}">

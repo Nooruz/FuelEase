@@ -224,6 +224,12 @@ namespace KIT.GasStation.EntityFramework.Services
             {
                 await using var context = _contextFactory.CreateDbContext();
                 return await context.FuelSales.Where(f => f.NozzleId == nozzleId)
+                    .Include(f => f.Nozzle)
+                    .Include(f => f.FiscalData)
+                    .Include(f => f.DiscountSale)
+                    .Include(f => f.Tank)
+                    .ThenInclude(t => t.Fuel)
+                    .ThenInclude(t => t.UnitOfMeasurement)
                     .OrderByDescending(f => f.Id)
                     .FirstOrDefaultAsync();
             }
@@ -253,6 +259,25 @@ namespace KIT.GasStation.EntityFramework.Services
             }
         }
 
+        public async Task<FuelSale?> GetUncompletedFuelSaleAsync(int nozzleId, int shiftId)
+        {
+            try
+            {
+                await using var context = _contextFactory.CreateDbContext();
+                return await context.FuelSales.Where(f => f.NozzleId == nozzleId && f.ShiftId == shiftId && f.FuelSaleStatus != FuelSaleStatus.Completed)
+                    .Include(f => f.Nozzle)
+                    .Include(f => f.FiscalData)
+                    .Include(f => f.Tank)
+                    .ThenInclude(t => t.Fuel)
+                    .ThenInclude(f => f.UnitOfMeasurement)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         public async Task<IEnumerable<FuelSale>> GetCompletedFuelSaleAsync(int shiftId)
         {
             try
@@ -265,8 +290,6 @@ namespace KIT.GasStation.EntityFramework.Services
                     .Include(f => f.Tank)
                     .ThenInclude(t => t.Fuel)
                     .ThenInclude(t => t.UnitOfMeasurement)
-                    .Include(s => s.Shift)
-                    .ThenInclude(u => u.User)
                     .ToListAsync();
             }
             catch (Exception)

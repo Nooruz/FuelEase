@@ -309,6 +309,7 @@ namespace KIT.GasStation.ViewModels.GlobalReports
                         Sum = 0
                     },
                 };
+                ChangeReport();
             }
             catch (Exception e)
             {

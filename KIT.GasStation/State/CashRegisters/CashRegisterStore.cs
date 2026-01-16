@@ -106,11 +106,13 @@ namespace KIT.GasStation.State.CashRegisters
         public async Task OpenShiftAsync()
         {
             await _cashRegisterService.OpenShiftAsync(_userStore.CurrentUser.FullName);
+            await GetShiftStateAsync();
         }
 
         public async Task CloseShiftAsync()
         {
             await _cashRegisterService.CloseShiftAsync(_userStore.CurrentUser.FullName);
+            await GetShiftStateAsync();
         }
 
         public async Task XReportAsync()

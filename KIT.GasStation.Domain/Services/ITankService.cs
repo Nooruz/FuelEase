@@ -7,7 +7,6 @@ namespace KIT.GasStation.Domain.Services
         /// <summary>
         /// Свободен ли код резервуара
         /// </summary>
-        /// <param name="number">Код резервуара</param>
-        Task<bool> IsNumberAvailableAsync(int number);
+        Task<bool> IsNumberAvailableAsync(Tank tank);
     }
 }

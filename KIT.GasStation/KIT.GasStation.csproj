@@ -13,12 +13,13 @@
 	<Authors>ОсОО "КИТ", Ашимжан уулу Ноорузбек</Authors>
 	<Company>ОсОО "КИТ"</Company>
 	<Product>КИТ-АЗС</Product>
-	<Copyright>© 2024 ОсОО "КИТ" Все права защищены.</Copyright>
+	<Copyright>© 2026 ОсОО "КИТ" Все права защищены.</Copyright>
 	<PackageIcon>logo.png</PackageIcon>
 	<PackageLicenseFile>License.rtf</PackageLicenseFile>
 	<AssemblyName>КИТ-АЗС</AssemblyName>
 	<AssemblyTitle>КИТ-АЗС</AssemblyTitle>
 	<Product>КИТ-АЗС</Product>
+	<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>

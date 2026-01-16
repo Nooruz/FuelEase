@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace KIT.GasStation.ViewModels
 {
@@ -28,7 +27,8 @@ namespace KIT.GasStation.ViewModels
         private readonly ICashRegisterStore _cashRegisterStore;
         private readonly IUserStore _userStore;
         private ObservableCollection<FuelSale> _fuelSales = new();
-        private FuelSale _selectedFuelSale;
+        private ObservableCollection<FuelSale> _selectedFuelSales = new();
+        private bool _showLoadingPanel;
 
         #endregion
 
@@ -43,17 +43,26 @@ namespace KIT.GasStation.ViewModels
                 OnPropertyChanged(nameof(FuelSales));
             }
         }
-        public FuelSale SelectedFuelSale
+        public ObservableCollection<FuelSale> SelectedFuelSales
         {
-            get => _selectedFuelSale;
+            get => _selectedFuelSales;
             set
             {
-                _selectedFuelSale = value;
-                OnPropertyChanged(nameof(SelectedFuelSale));
+                _selectedFuelSales = value;
+                OnPropertyChanged(nameof(SelectedFuelSales));
             }
         }
         public List<KeyValuePair<PaymentType, string>> PaymentTypes => new(EnumHelper.GetLocalizedEnumValues<PaymentType>());
         public List<KeyValuePair<FuelSaleStatus, string>> FuelSaleStatuses => new(EnumHelper.GetLocalizedEnumValues<FuelSaleStatus>());
+        public bool ShowLoadingPanel
+        {
+            get => _showLoadingPanel;
+            set
+            {
+                _showLoadingPanel = value;
+                OnPropertyChanged(nameof(ShowLoadingPanel));
+            }
+        }
 
         #endregion
 
@@ -70,9 +79,6 @@ namespace KIT.GasStation.ViewModels
             _fuelSaleService = fuelSaleService;
             _cashRegisterStore = cashRegisterStore;
             _userStore = userStore;
-
-            _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
-            _fuelSaleService.OnDeleted += DeleteFuelSale;
         }
 
         #endregion
@@ -86,23 +92,39 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public async Task CompleteFuelSale()
         {
-            if (SelectedFuelSale != null)
+            try
             {
-                var result = MessageBoxService.ShowMessage("Сделать возврат ККМ?", "Завершение", MessageButton.YesNoCancel);
-                if (result == MessageResult.Cancel)
+                if (SelectedFuelSales.Any())
                 {
-                    return;
+                    var result = MessageBoxService.ShowMessage("Сделать возврат ККМ?", "Завершение", MessageButton.YesNoCancel);
+                    if (result == MessageResult.Cancel)
+                    {
+                        return;
+                    }
+                    if (result == MessageResult.Yes)
+                    {
+                        ShowLoadingPanel = true;
+                        foreach (var item in SelectedFuelSales)
+                        {
+                            await _cashRegisterStore
+                            .ReturnAndReceivedSaleAsync(item, item.Tank.Fuel, _userStore.CurrentUser.FullName);
+                        }
+                    }
+                    else
+                    {
+                        ShowLoadingPanel = true;
+                        foreach (var item in SelectedFuelSales)
+                        {
+                            item.FuelSaleStatus = FuelSaleStatus.Completed;
+                            await _fuelSaleService.UpdateAsync(item.Id, item);
+                        }
+                    }
                 }
-                if (result == MessageResult.Yes)
-                {
-                    await _cashRegisterStore
-                        .ReturnAndReceivedSaleAsync(SelectedFuelSale, SelectedFuelSale.Tank.Fuel, _userStore.CurrentUser.FullName);
-                }
-                else 
-                {
-                    SelectedFuelSale.FuelSaleStatus = FuelSaleStatus.Completed;
-                    await _fuelSaleService.UpdateAsync(SelectedFuelSale.Id, SelectedFuelSale);
-                }
+            }
+            finally
+            {
+                ShowLoadingPanel = false;
+                await GetData();
             }
         }
 
@@ -113,9 +135,12 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public void ContinueFueling()
         {
-            if (SelectedFuelSale != null)
+            if (SelectedFuelSales.Any())
             {
-                _fuelSaleService.ResumeFueling(SelectedFuelSale);
+                foreach (var item in SelectedFuelSales)
+                {
+                    _fuelSaleService.ResumeFueling(item);
+                }
             }
         }
 
@@ -140,69 +165,12 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        private void FuelSaleService_OnUpdated(FuelSale updatedFuelSale)
-        {
-            FuelSale? fuelSale = FuelSales.FirstOrDefault(f => f.Id == updatedFuelSale.Id);
-            if (fuelSale != null)
-            {
-                fuelSale.Update(updatedFuelSale);
-            }
-            else
-            {
-                AddFuelSale(updatedFuelSale);
-            }
-            switch (updatedFuelSale.FuelSaleStatus)
-            {
-                case FuelSaleStatus.None:
-                    break;
-                case FuelSaleStatus.InProcessed:
-                    break;
-                case FuelSaleStatus.Completed:
-                    DeleteFuelSale(updatedFuelSale.Id);
-                    break;
-                case FuelSaleStatus.Uncompleted:
-                    AddFuelSale(updatedFuelSale);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void AddFuelSale(FuelSale fuelSale)
-        {
-            if (!FuelSales.Any(f => f.Id == fuelSale.Id))
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    FuelSales.Add(fuelSale);
-                });
-            }
-        }
-
-        private void DeleteFuelSale(int id)
-        {
-            FuelSale? deletingFuelSale = FuelSales.FirstOrDefault(f => f.Id == id);
-            if (deletingFuelSale != null)
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    _ = FuelSales.Remove(deletingFuelSale);
-                });
-            }
-        }
-
         #endregion
 
         #region Dispose
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                _fuelSaleService.OnUpdated -= FuelSaleService_OnUpdated;
-                _fuelSaleService.OnDeleted -= DeleteFuelSale;
-            }
-
             base.Dispose(disposing);
         }
 

@@ -4,6 +4,7 @@ using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -69,7 +70,7 @@ namespace KIT.GasStation.ViewModels.Details
                 return;
             }
 
-            if (Tank.Number == 0)
+            if (Tank.Number <= 0)
             {
                 MessageBoxService.ShowMessage("Код резервуара должен быть больше нуля.",
                     "Предупреждение", MessageButton.OK, MessageIcon.Warning);
@@ -96,21 +97,23 @@ namespace KIT.GasStation.ViewModels.Details
                 return;
             }
 
+            if (await _tankService.IsNumberAvailableAsync(Tank))
+            {
+                MessageBoxService.ShowMessage($"Резервуар с кодом \"{Tank.Number}\" уже существует. Укажите другой код.",
+                    "Предупреждение", MessageButton.OK, MessageIcon.Warning);
+                return;
+            }
+
             if (Tank.Id == 0)
             {
-                if (await _tankService.IsNumberAvailableAsync(Tank.Number))
-                {
-                    MessageBoxService.ShowMessage($"Резервуар с кодом {Tank.Number} уже существует. Укажите другой код.",
-                        "Предупреждение", MessageButton.OK, MessageIcon.Warning);
-                    return;
-                }
                 _ = await _tankService.CreateAsync(Tank);
+                CurrentWindowService?.Close();
             }
             else
             {
                 _ = await _tankService.UpdateAsync(Tank.Id, Tank);
+                CurrentWindowService?.Close();
             }
-            CurrentWindowService?.Close();
         }
 
         [Command]
@@ -124,15 +127,22 @@ namespace KIT.GasStation.ViewModels.Details
             try
             {
                 var tanks = await _tankService.GetAllAsync();
-                
-                if (tanks != null && tanks.Any() && Tank.Id == 0)
+
+                if (Tank.Id > 0) return;
+
+                if (tanks != null && tanks.Any())
                 {
                     int number = tanks.Count() + 1;
                     Tank.Name = $"Резервуар {number}";
                     Tank.Number = number;
                 }
+                else
+                {
+                    Tank.Name = "Резервуар 1";
+                    Tank.Number = 1;
+                }
             }
-            catch (System.Exception)
+            catch (Exception)
             {
 
             }

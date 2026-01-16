@@ -16,13 +16,11 @@
         <Setter Property="AllowContextMenu" Value="False"/>
         <!--<Setter Property="MinWidth" Value="300"/>-->
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="BorderThickness" Value="2"/>
-        <Setter Property="BorderBrush" Value="{StaticResource TankForegroundColorBrush}"/>
-        <Setter Property="Background" Value="#F8F8F8"/>
+        <Setter Property="MDIMergeStyle" Value="Always"/>
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate>
-                    <Border >
+                    <Border>
 
                         <controls:FuelTransferColumnControl/>
 

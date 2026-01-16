@@ -26,6 +26,7 @@ namespace KIT.GasStation.Domain.Models
         private string? _workerStateMessage;
         private DateTimeOffset _workerStateUpdatedAt;
         private bool _isDeleted;
+        private Tank? _tank;
 
         #endregion
 
@@ -124,7 +125,15 @@ namespace KIT.GasStation.Domain.Models
         /// </summary>
         public DateTime? DeletedAt { get; set; }
 
-        public Tank? Tank { get; set; }
+        public Tank? Tank
+        {
+            get => _tank;
+            set
+            {
+                _tank = value;
+                OnPropertyChanged(nameof(Tank));
+            }
+        }
 
         public ICollection<ShiftCounter> NozzleShiftCounters { get; set; }
 
@@ -282,6 +291,7 @@ namespace KIT.GasStation.Domain.Models
                 IsDeleted = updatedNozzle.IsDeleted;
                 UpdatedAt = updatedNozzle.UpdatedAt;
                 DeletedAt = updatedNozzle.DeletedAt;
+                Tank = updatedNozzle.Tank;
             }
         }
     }

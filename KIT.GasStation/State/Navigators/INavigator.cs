@@ -36,10 +36,13 @@ namespace KIT.GasStation.State.Navigators
         WorkPlaceView,
         SettingsView
     }
-    public interface INavigator
+    public interface INavigator : IDisposable
     {
         BaseViewModel CurrentViewModel { get; set; }
+
         event Action StateChanged;
+
+        event Action OnDispose;
 
         Task PreloadViewModelsAsync(IEnumerable<ViewType> viewTypes);
         Task<BaseViewModel> GetViewModelAsync(ViewType viewType);

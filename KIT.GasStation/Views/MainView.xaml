@@ -75,11 +75,11 @@
                     <Separator/>
                     <!--<MenuItem Header="Настройки"
                               Command="{Binding ConfigurationCommand}"/>-->
-                    <MenuItem Header="Экран"
-                              IsEnabled="{Binding IsCurrentUserAdmin}">
+                    <MenuItem Header="Экран">
                         <MenuItem Header="Восстановить расположение"
                                   Command="{Binding RestoreDockLayoutManagerPositionCommand}"/>
                         <MenuItem Header="Сохранить расположение панелей"
+                                  IsEnabled="{Binding IsCurrentUserAdmin}"
                                   Command="{Binding SaveDockLayoutManagerPositionCommand}"/>
                     </MenuItem>
                     <MenuItem Header="Настройки рабочего пространства"

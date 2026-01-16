@@ -80,7 +80,7 @@ namespace KIT.GasStation
                 {
                     Title = ProductName,
                     Status = "Инициализация приложения...",
-                    Copyright = $"Авторское право © 2024 {CompanyName} \n Все права защищены."
+                    Copyright = $"Авторское право © 2026 {CompanyName} \n Все права защищены."
                 };
                 SplashScreenManager.Create(() => new ApplicationSplashScreen(), _splashScreenViewModel).Show();
 
@@ -151,34 +151,34 @@ namespace KIT.GasStation
             _splashScreenViewModel.Status = "Настройки подключения к серверу...";
             host.ConfigureServices((hostContext, services) =>
             {
-                //var cfg = hostContext.Configuration;
-                //var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-                //var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-                //var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+                var cfg = hostContext.Configuration;
+                var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+                var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+                var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 
-                //// 1) Само соединение — Singleton
-                //services.AddTransient(sp =>
-                //    new HubConnectionBuilder()
-                //        .WithUrl(hubUrl)
-                //        .WithAutomaticReconnect()
-                //        .Build());
-
-                services.AddSingleton(sp =>
-                {
-                    var cfg = sp.GetRequiredService<IConfiguration>();
-                    var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-                    var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-                    var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
-
-                    return new HubConnectionBuilder()
+                // 1) Само соединение — Singleton
+                services.AddTransient(sp =>
+                    new HubConnectionBuilder()
                         .WithUrl(hubUrl)
-                        .WithAutomaticReconnect(new[] {
-                            TimeSpan.Zero, 
-                            TimeSpan.FromSeconds(2), 
-                            TimeSpan.FromSeconds(10), 
-                            TimeSpan.FromSeconds(30)})
-                        .Build();
-                });
+                        .WithAutomaticReconnect()
+                        .Build());
+
+                //services.AddSingleton(sp =>
+                //{
+                //    var cfg = sp.GetRequiredService<IConfiguration>();
+                //    var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+                //    var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+                //    var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+
+                //    return new HubConnectionBuilder()
+                //        .WithUrl(hubUrl)
+                //        .WithAutomaticReconnect(new[] {
+                //            TimeSpan.Zero, 
+                //            TimeSpan.FromSeconds(2), 
+                //            TimeSpan.FromSeconds(10), 
+                //            TimeSpan.FromSeconds(30)})
+                //        .Build();
+                //});
 
                 services.AddTransient<IHubClient, HubClient>();
             });
@@ -281,8 +281,8 @@ namespace KIT.GasStation
                 userStore.OnLogout += UserStore_OnLogout;
 
                 _splashScreenViewModel.Status = "Запуск сервисов...";
-                //await ServiceManager.StartWebAsync();
-                //await ServiceManager.StartWorkerAsync();
+                await ServiceManager.StartWebAsync();
+                await ServiceManager.StartWorkerAsync();
 
                 _splashScreenViewModel.Status = "Загрузка основного окна...";
                 // Получаем главное окно из DI и устанавливаем DataContext

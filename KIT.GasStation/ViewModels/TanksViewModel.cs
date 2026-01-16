@@ -317,15 +317,19 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        private void TankService_OnUpdated(Tank tank)
+        private void TankService_OnUpdated(Tank updatedTank)
         {
             try
             {
-                TankFuelQuantityView selectedTank = Tanks.First(t => t.Id == tank.Id);
-                selectedTank.Name = tank.Name;
-                selectedTank.Size = tank.Size;
-                selectedTank.FuelId = tank.FuelId;
-                selectedTank.MinimumSize = tank.MinimumSize;
+                TankFuelQuantityView selectedTank = Tanks.First(t => t.Id == updatedTank.Id);
+                selectedTank.Name = updatedTank.Name;
+                selectedTank.Size = updatedTank.Size;
+                selectedTank.Number = updatedTank.Number;
+                selectedTank.Fuel = updatedTank.Fuel.Name;
+                selectedTank.Size = updatedTank.Size;
+                selectedTank.FuelId = updatedTank.FuelId;
+                selectedTank.MinimumSize = updatedTank.MinimumSize;
+                selectedTank.ColorHex = updatedTank.Fuel.ColorHex;
             }
             catch (Exception e)
             {

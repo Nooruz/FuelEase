@@ -68,7 +68,7 @@ namespace KIT.GasStation.ViewModels.Details
         [Command]
         public async Task Save()
         {
-            if (CheckCreatedNozzle())
+            if (await CheckCreatedNozzle())
             {
                 if (CreatedNozzle.Id == 0)
                 {
@@ -104,7 +104,7 @@ namespace KIT.GasStation.ViewModels.Details
 
         #region Private Voids
 
-        private bool CheckCreatedNozzle()
+        private async Task<bool> CheckCreatedNozzle()
         {
             if (string.IsNullOrEmpty(CreatedNozzle.Name))
             {
@@ -127,6 +127,12 @@ namespace KIT.GasStation.ViewModels.Details
             if (CreatedNozzle.TankId == 0)
             {
                 MessageBoxService.ShowMessage("Выберите резервуар", "Ошибка", MessageButton.OK, MessageIcon.Error);
+                return false;
+            }
+
+            if (await _nozzleService.IsTubeAvailableAsync(CreatedNozzle.Id, CreatedNozzle.Tube))
+            {
+                MessageBoxService.ShowMessage("Данный номер шланга уже занят", "Ошибка", MessageButton.OK, MessageIcon.Error);
                 return false;
             }
 

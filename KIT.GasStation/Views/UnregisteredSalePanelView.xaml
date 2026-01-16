@@ -10,11 +10,11 @@
 
     <dxg:GridControl ItemsSource="{Binding UnregisteredSales}"
                      SelectionMode="Row"
-                     SelectedItem="{Binding SelectedUnregisteredSale}"
+                     SelectedItems="{Binding SelectedUnregisteredSales}"
                      ShowLoadingPanel="{Binding ShowLoadingPanel}">
         <dxg:GridControl.View>
             <dxg:TableView ShowGroupPanel="False"
-               AllowEditing="False">
+                           AllowEditing="False">
                 <dxg:TableView.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Зарегистрировать продажу"

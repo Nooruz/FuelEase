@@ -5,6 +5,7 @@ using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.ViewModels.Base;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 
 namespace KIT.GasStation.ViewModels
@@ -57,12 +58,37 @@ namespace KIT.GasStation.ViewModels
             _shiftStore.OnClosed += shift =>  OnShiftUpdated(shift);
             _shiftStore.OnOpened += shift => OnShiftUpdated(shift);
             _shiftStore.OnLogin += shift => OnShiftUpdated(shift);
+            _cashRegisterStore.PropertyChanged += CashRegisterStore_PropertyChanged;
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
         }
 
         #endregion
 
         #region Private Voids
+
+        private void CashRegisterStore_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ICashRegisterStore.Status))
+            {
+                switch (_cashRegisterStore.Status)
+                {
+                    case CashRegisterStatus.Unknown:
+                        CashRegisterShiftStatus = "Смена ККМ: неизвестен статус";
+                        break;
+                    case CashRegisterStatus.Open:
+                        CashRegisterShiftStatus = $"Смена ККМ: открыта";
+                        break;
+                    case CashRegisterStatus.Close:
+                        CashRegisterShiftStatus = $"Смена ККМ: закрыто";
+                        break;
+                    case CashRegisterStatus.Exceeded24Hours:
+                        CashRegisterShiftStatus = $"Смена ККМ: превышено 24 часа с момента открытия";
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
 
         private void OnShiftUpdated(Shift shift)
         {
@@ -85,13 +111,13 @@ namespace KIT.GasStation.ViewModels
                         CashRegisterShiftStatus = "Смена ККМ: неизвестен статус";
                         break;
                     case CashRegisterStatus.Open:
-                        CashRegisterShiftStatus = $"Смена ККМ: открыта {_cashRegisterStore.OpenAt:dd.MM.yyyy HH:mm}";
+                        CashRegisterShiftStatus = $"Смена ККМ: открыта";
                         break;
                     case CashRegisterStatus.Close:
-                        CashRegisterShiftStatus = $"Смена ККМ: открыта {_cashRegisterStore.OpenAt:dd.MM.yyyy HH:mm}";
+                        CashRegisterShiftStatus = $"Смена ККМ: закрыто";
                         break;
                     case CashRegisterStatus.Exceeded24Hours:
-                        CashRegisterShiftStatus = $"Смена ККМ: превышено 24 часа с момента открытия {_cashRegisterStore.OpenAt:dd.MM.yyyy HH:mm}";
+                        CashRegisterShiftStatus = $"Смена ККМ: превышено 24 часа с момента открытия";
                         break;
                     default:
                         break;

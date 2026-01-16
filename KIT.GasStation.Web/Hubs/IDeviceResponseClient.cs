@@ -14,6 +14,8 @@ namespace KIT.GasStation.Web.Hubs
         Task WorkerStateChanged(WorkerStateNotification notification);
         Task StartPolling(StartPollingCommand command);
         Task StopPolling(StopPollingCommand command);
+        Task PausePollingAsync(string groupName);
+        Task ResumePollingAsync(string groupName);
         Task SetPriceAsync(string groupName, decimal price);
 
         /// <summary>
@@ -33,6 +35,11 @@ namespace KIT.GasStation.Web.Hubs
         /// Продолжить заправку
         /// </summary>
         Task ResumeFuelingAsync(string groupName);
+
+        /// <summary>
+        /// Получить статус по адресу
+        /// </summary>
+        Task GetStatusByAddressAsync(string groupName);
 
         /// <summary>
         /// Завершить заправку

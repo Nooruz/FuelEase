@@ -33,7 +33,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IFuelSaleService _fuelSaleService;
         private readonly INavigator _navigation;
         private readonly IFuelService _fuelService;
-        private UnregisteredSale _selectedUnregisteredSale = new();
+        private ObservableCollection<UnregisteredSale> _selectedUnregisteredSales = new();
         private ObservableCollection<UnregisteredSale> _unregisteredSales = new();
         private bool _showLoadingPanel;
 
@@ -41,13 +41,13 @@ namespace KIT.GasStation.ViewModels
 
         #region Public Properties
 
-        public UnregisteredSale SelectedUnregisteredSale
+        public ObservableCollection<UnregisteredSale> SelectedUnregisteredSales
         {
-            get => _selectedUnregisteredSale;
+            get => _selectedUnregisteredSales;
             set
             {
-                _selectedUnregisteredSale = value;
-                OnPropertyChanged(nameof(SelectedUnregisteredSale));
+                _selectedUnregisteredSales = value;
+                OnPropertyChanged(nameof(SelectedUnregisteredSales));
             }
         }
         public ObservableCollection<UnregisteredSale> UnregisteredSales
@@ -96,7 +96,6 @@ namespace KIT.GasStation.ViewModels
             _fuelService = fuelService;
 
             _unregisteredSaleService.OnCreated += UnregisteredSaleService_OnCreated;
-            _unregisteredSaleService.OnUpdated += UnregisteredSaleService_OnUpdated;
             _shiftStore.OnLogin += ShiftStore_OnLogin;
         }
 
@@ -109,14 +108,25 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                WindowService.Title = "Регистрация продаж";
-
-                PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore)
+                if (SelectedUnregisteredSales.Any() && SelectedUnregisteredSales.Count > 1)
                 {
-                    CreateFuelSale = CreateFuelSale(SelectedUnregisteredSale),
-                    SelectedNozzle = SelectedUnregisteredSale.Nozzle
-                };
-                WindowService.Show(nameof(PayView), viewModel);
+                    MessageBoxService.ShowMessage("Для регистрации продажи выберите только один незарегистрированный отпуск.", "Внимание", MessageButton.OK, MessageIcon.Warning);
+                    return;
+                }
+
+                if (SelectedUnregisteredSales.Any() && SelectedUnregisteredSales.Count == 1)
+                {
+                    UnregisteredSale selectedUnregisteredSale = SelectedUnregisteredSales.First();
+
+                    WindowService.Title = "Регистрация продаж";
+
+                    PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore)
+                    {
+                        CreateFuelSale = CreateFuelSale(selectedUnregisteredSale),
+                        SelectedNozzle = selectedUnregisteredSale.Nozzle
+                    };
+                    WindowService.Show(nameof(PayView), viewModel);
+                }
             }
             catch (Exception ex)
             {
@@ -135,21 +145,29 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                if (SelectedUnregisteredSale != null)
+                ShowLoadingPanel = true;
+                if (SelectedUnregisteredSales.Any())
                 {
-                    Fuel? fuel = await _fuelService.GetAsync(SelectedUnregisteredSale.Nozzle.Tank.FuelId);
-
-                    if (fuel != null)
+                    foreach (var item in SelectedUnregisteredSales)
                     {
-                        SelectedUnregisteredSale.Sum = SelectedUnregisteredSale.Quantity * fuel.Price;
+                        Fuel? fuel = await _fuelService.GetAsync(item.Nozzle.Tank.FuelId);
 
-                        await _unregisteredSaleService.UpdateAsync(SelectedUnregisteredSale.Id, SelectedUnregisteredSale);
+                        if (fuel != null)
+                        {
+                            item.Sum = item.Quantity * fuel.Price;
+
+                            await _unregisteredSaleService.UpdateAsync(item.Id, item);
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError("Ошибка при установке цен незарегистрированного отпуска", ex);
+            }
+            finally
+            {
+                ShowLoadingPanel = false;
             }
         }
 
@@ -158,20 +176,33 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                var result = MessageBoxService
-                    .ShowMessage("Вы уверены, что хотите удалить незарегистрированного отпуска?", "Удаление незарегистрированного отпуска", 
-                    MessageButton.YesNo, MessageIcon.Question);
-
-                if (result == MessageResult.Yes)
+                if (SelectedUnregisteredSales.Any())
                 {
-                    SelectedUnregisteredSale.State = UnregisteredSaleState.Deleted;
-                    await _unregisteredSaleService.UpdateAsync(SelectedUnregisteredSale.Id, SelectedUnregisteredSale);
-                }
+                    var result = MessageBoxService.ShowMessage(
+                        "Вы уверены, что хотите удалить выбранные незарегистрированные отпуска?",
+                        "Подтверждение удаления",
+                        MessageButton.YesNo,
+                        MessageIcon.Question);
 
+
+                    if (result == MessageResult.Yes)
+                    {
+                        foreach (var item in SelectedUnregisteredSales)
+                        {
+                            item.State = UnregisteredSaleState.Deleted;
+                            await _unregisteredSaleService.UpdateAsync(item.Id, item);
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError("Ошибка при удалении незарегистрированного отпуска", ex);
+            }
+            finally
+            {
+                ShowLoadingPanel = false;
+                await GetData();
             }
         }
 
@@ -183,7 +214,7 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                ShowLoading();
+                ShowLoadingPanel = true;
                 if (_shiftStore.CurrentShift != null)
                 {
                     UnregisteredSales = new(await _unregisteredSaleService.GetUnregisteredSales());
@@ -195,13 +226,13 @@ namespace KIT.GasStation.ViewModels
             }
             finally
             {
-                CloseLoading();
+                ShowLoadingPanel = false;
             }
         }
 
-        private void ShiftStore_OnLogin(Shift shift)
+        private async void ShiftStore_OnLogin(Shift shift)
         {
-            _ = Task.Run(GetData);
+            await GetData();
         }
 
         private void UnregisteredSaleService_OnCreated(UnregisteredSale unregisteredSale)
@@ -216,21 +247,6 @@ namespace KIT.GasStation.ViewModels
             catch (Exception e)
             {
                 _logger.LogError("Ошибка при добавлении незарегистрированного отпуска в UnregisteredSaleService_OnCreated", e);
-            }
-        }
-
-        private void UnregisteredSaleService_OnUpdated(UnregisteredSale updatedUnregisteredSale)
-        {
-            try
-            {
-                UnregisteredSale unregisteredSale = UnregisteredSales
-                    .FirstOrDefault(us => us.Id == updatedUnregisteredSale.Id);
-
-                UnregisteredSales.Remove(unregisteredSale);
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("Ошибка при изменении незарегистрированного отпуска в UnregisteredSaleService_OnUpdated", e);
             }
         }
 
@@ -255,22 +271,6 @@ namespace KIT.GasStation.ViewModels
         public async Task StartAsync()
         {
             await GetData();
-        }
-
-        private void ShowLoading()
-        {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                ShowLoadingPanel = true;
-            });
-        }
-
-        private void CloseLoading()
-        {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                ShowLoadingPanel = false;
-            });
         }
 
         #endregion

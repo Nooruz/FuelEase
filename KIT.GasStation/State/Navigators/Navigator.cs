@@ -31,6 +31,7 @@ namespace KIT.GasStation.State.Navigators
         }
 
         public event Action StateChanged;
+        public event Action OnDispose;
 
         /// <summary>
         /// Предварительная загрузка определенных ViewModel.
@@ -104,6 +105,11 @@ namespace KIT.GasStation.State.Navigators
             // Получаем ViewModel (либо из кэша, либо создаем новую)
             var newViewModel = await GetViewModelAsync(viewType);
             CurrentViewModel = newViewModel;
+        }
+
+        public void Dispose()
+        {
+            OnDispose?.Invoke();
         }
     }
 }

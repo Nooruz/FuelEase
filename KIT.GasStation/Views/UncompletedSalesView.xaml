@@ -20,37 +20,39 @@
         <dxlc:LayoutControl Orientation="Vertical">
 
             <dxg:GridControl ItemsSource="{Binding FuelSales}"
-                     SelectedItem="{Binding SelectedFuelSale}">
+                             SelectionMode="Row"
+                             SelectedItems="{Binding SelectedFuelSales}"
+                             ShowLoadingPanel="{Binding ShowLoadingPanel}">
                 <dxg:GridControl.View>
                     <dxg:TableView ShowTotalSummary="True"
-                           AllowEditing="False">
+                                   AllowEditing="False">
                         <dxg:TableView.RowCellMenuCustomizations>
                             <dxb:BarButtonItem Content="Завершить"
-                                       Command="{Binding DataContext.CompleteFuelSaleCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
-                                       Glyph="{dx:DXImage SvgImages/Outlook Inspired/MarkComplete.svg}" 
-                                       BarItemDisplayMode="ContentAndGlyph"/>
+                                               Command="{Binding DataContext.CompleteFuelSaleCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
+                                               Glyph="{dx:DXImage SvgImages/Outlook Inspired/MarkComplete.svg}" 
+                                               BarItemDisplayMode="ContentAndGlyph"/>
                             <dxb:BarButtonItem Content="Завершить все"
-                                       Command="{Binding DataContext.CompleteAllFuelSaleCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
-                                       Glyph="{dx:DXImage SvgImages/Outlook Inspired/Tasks.svg}" 
-                                       BarItemDisplayMode="ContentAndGlyph"/>
+                                               Command="{Binding DataContext.CompleteAllFuelSaleCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
+                                               Glyph="{dx:DXImage SvgImages/Outlook Inspired/Tasks.svg}" 
+                                               BarItemDisplayMode="ContentAndGlyph"/>
 
                             <dxb:BarButtonItem Content="Продолжить"
-                                       Command="{Binding DataContext.ContinueFuelingCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
-                                       Glyph="{dx:DXImage SvgImages/XAF/Action_Debug_Start.svg}" 
-                                       BarItemDisplayMode="ContentAndGlyph"/>
+                                               Command="{Binding DataContext.ContinueFuelingCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
+                                               Glyph="{dx:DXImage SvgImages/XAF/Action_Debug_Start.svg}" 
+                                               BarItemDisplayMode="ContentAndGlyph"/>
                         </dxg:TableView.RowCellMenuCustomizations>
                     </dxg:TableView>
                 </dxg:GridControl.View>
                 <dxg:GridColumn Header="Время"
-                        FieldName="CreateDate">
+                                FieldName="CreateDate">
                     <dxg:GridColumn.EditSettings>
                         <dxe:DateEditSettings MaskUseAsDisplayFormat="True" Mask="u"/>
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
                 <dxg:GridColumn Header="Топлива"
-                        FieldName="Tank.Fuel.Name"/>
+                                FieldName="Tank.Fuel.Name"/>
                 <dxg:GridColumn Header="Цена"
-                        FieldName="Tank.Fuel.Price"/>
+                                FieldName="Tank.Fuel.Price"/>
                 <dxg:GridColumn Header="Количество">
                     <dxg:GridColumn.Binding>
                         <MultiBinding Converter="{StaticResource ReceivedQuantityAndQuantityToStringConverter}">
@@ -68,11 +70,11 @@
                     </dxg:GridColumn.Binding>
                 </dxg:GridColumn>
                 <dxg:GridColumn Header="Тип оплаты"
-                        FieldName="PaymentType">
+                                FieldName="PaymentType">
                     <dxg:GridColumn.EditSettings>
                         <dxe:ComboBoxEditSettings ItemsSource="{Binding PaymentTypes}"
-                                          ValueMember="Key"
-                                          DisplayMember="Value"/>
+                                                  ValueMember="Key"
+                                                  DisplayMember="Value"/>
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
                 <dxg:GridColumn Header="Статус"
@@ -84,16 +86,16 @@
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
                 <dxg:GridColumn Header="Чек"
-                        FieldName="FiscalData.FiscalDocument"/>
+                                FieldName="FiscalData.FiscalDocument"/>
             </dxg:GridControl>
 
             <dxlc:LayoutGroup VerticalAlignment="Top"
-                      HorizontalAlignment="Right">
+                              HorizontalAlignment="Right">
 
                 <Button Content="Завершить"
-                Command="{Binding CompleteFuelingCommand}"/>
+                        Command="{Binding CompleteFuelSaleCommand}"/>
                 <Button Content="Закрыть"
-                Command="{Binding CloseCommand}"/>
+                        Command="{Binding CloseCommand}"/>
 
             </dxlc:LayoutGroup>
 

@@ -26,6 +26,8 @@
         <dxmvvm:EventToCommand EventName="PreviewKeyDown"
                                Command="{Binding PreviewKeyDownCommand}"
                                PassEventArgsToCommand="True"/>
+        <dxmvvm:EventToCommand EventName="Closed"
+                               Command="{Binding OnWindowClosedCommand}"/>
     </dxmvvm:Interaction.Behaviors>
 
     <ContentControl Content="{Binding CurrentViewModel, UpdateSourceTrigger=PropertyChanged}"/>

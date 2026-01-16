@@ -27,11 +27,9 @@ namespace KIT.GasStation.Lanfeng
         private readonly IPortManager _portManager;
         private readonly IHubClient _hubClient;
         private readonly AsyncManualResetEvent _pauseGate = new(initialState: true);
-        private readonly SemaphoreSlim _exclusive = new(1, 1);
         private ISharedSerialPortService _sharedSerialPortService;
         private HubConnection _hub;
         private volatile bool _pollingEnabled;
-        private bool _stopTickStatus = false;
         private Task _pollingTask;
         private PortLease? _lease;
         private readonly object _pollLock = new();
@@ -88,10 +86,8 @@ namespace KIT.GasStation.Lanfeng
                 _hub = _hubClient.Connection;
                 RegisterHubConnectionHandlers();
 
-
                 _logger.Debug("EnsureStartedAsync вызван. Текущее состояние: {State}", _hub.State);
-                // 1. СНАЧАЛА запускаем SignalR (синхронно)
-                await _hubClient.EnsureStartedAsync(token);
+                
 
                 _hub.On<StartPollingCommand>("StartPolling", async e =>
                 {
@@ -133,16 +129,38 @@ namespace KIT.GasStation.Lanfeng
                     await ResumeFuelingAsync(groupName);
                 });
 
+                _hub.On<string>("GetStatusByAddressAsync", async (groupName) =>
+                {
+                    await GetStatusByAddressAsync(groupName);
+                });
+
+                _hub.On<string>("PausePollingAsync", async (groupName) =>
+                {
+                    if (Columns.Any(c => c.GroupName == groupName))
+                    {
+                        await PausePollingAsync();
+                    }
+                });
+
+                _hub.On<string>("ResumePollingAsync", async (groupName) =>
+                {
+                    if (Columns.Any(c => c.GroupName == groupName))
+                    {
+                        await ResumePollingAsync();
+                    }
+                });
+
                 _hub.On<string>("GetCountersAsync", async (groupName) =>
                 {
-                    _stopTickStatus = true;
                     var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                     if (column is not null)
                     {
                         await ExecuteCommandAsync(Command.CounterLiter, Address, column.LanfengAddress);
                     }
-                    _stopTickStatus = false;
                 });
+
+                // 1. СНАЧАЛА запускаем SignalR (синхронно)
+                await _hubClient.EnsureStartedAsync(token);
 
                 // 3. Присоединяемся к группам
                 await JoinWorkerGroupsAsync();
@@ -163,39 +181,43 @@ namespace KIT.GasStation.Lanfeng
         {
             _logger.Information("ТРК Lanfeng запущена, используется порт {Port}", Controller.ComPort);
 
+            // Даем время на выполнение инициализационных команд
+            await Task.Delay(3000, token);
+
             if (Status is NozzleStatus.Unknown)
             {
-                await ExecuteCommandAsync(Command.Status, Address, 0);
-
-                // Получаем версию прошивки
-                await _pauseGate.WaitAsync(token);
-                await ExecuteCommandAsync(Command.FirmwareVersion, Address, 0);
-
-                // Инициализация по пистолетам
-                await _pauseGate.WaitAsync(token);
+                // Приостанавливаем опрос на время инициализации
+                await PausePollingAsync();
+                try
+                {
+                    await ExecuteCommandAsync(Command.Status, Address, 0, ct: token);
+                    await ExecuteCommandAsync(Command.FirmwareVersion, Address, 0, ct: token);
+                }
+                finally
+                {
+                    await ResumePollingAsync();
+                }
             }
 
             while (!token.IsCancellationRequested && _pollingEnabled)
             {
                 try
                 {
-                    // опрос — одна команда через универсальный метод
-                    if (!_stopTickStatus)
-                    {
-                        await ExecuteCommandAsync(Command.Status, Address, 0, null, ct: token);
-                    }
-                    else
-                    {
-                        await Task.Delay(50, token);
-                    }
+                    // Ждем, если опрос приостановлен
+                    _pollingResumedEvent.Wait(token);
+
+                    await ExecuteCommandSafeAsync(() => 
+                        ExecuteCommandAsync(Command.Status, Address, 0, null, ct: token), token);
                 }
-                catch (OperationCanceledException ex)
+                catch (OperationCanceledException ex) when (ex.CancellationToken == token)
                 {
                     _logger.Information("Опрос ТРК Lanfeng отменён: {Message}", ex.Message);
+                    break;
                 }
                 catch (Exception e)
                 {
                     _logger.Error(e, e.Message, e.StackTrace);
+                    await Task.Delay(1000, token);
                 }
                 if (!_pollingEnabled) break;
             }
@@ -253,18 +275,21 @@ namespace KIT.GasStation.Lanfeng
                 throw new InvalidOperationException("Последовательный порт еще не получен.");
 
             await _pauseGate.WaitAsync(ct);     // уважаем паузу
-            await _exclusive.WaitAsync(ct);     // логически сериализуем окно команд
+            
             try
             {
-                var commandStart = Stopwatch.StartNew();
-                var sd = _controllerType;
-                var frame = _protocolParser.BuildRequest(cmd, controllerAddress, nozzleMask, value, controllerType: _controllerType);
+                var frame = _protocolParser.BuildRequest(
+                    cmd, 
+                    controllerAddress, 
+                    columnAddress: nozzleMask, 
+                    value: value, 
+                    controllerType: _controllerType);
                 
 
                 byte[] rx;
                 var attempt = 0;
 
-                ControllerResponse controllerResponse = new();
+                var controllerResponse = new ControllerResponse();
 
                 while (true)
                 {
@@ -273,7 +298,7 @@ namespace KIT.GasStation.Lanfeng
 
                     try
                     {
-                        _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
+                        _logger.Information("[Tx] {Tx} экземпляр: {sd}", BitConverter.ToString(frame), GetHashCode());
 
                         rx = await _sharedSerialPortService.WriteReadAsync(
                             frame,
@@ -288,11 +313,15 @@ namespace KIT.GasStation.Lanfeng
 
                         if (controllerResponse.IsValid)
                         {
+                            Status = controllerResponse.Status;
+                            _logger.Information("[Rx] {Rx}", BitConverter.ToString(controllerResponse.Data));
                             await BroadcastWorkerAvailabilityAsync(true);
                             break; // всё ок, выходим из цикла
                         }
 
+#if DEBUG
                         _logger.Warning("Невалидный ответ от ТРК. Попытка {Attempt}. Повтор...", attempt);
+#endif
                     }
                     catch (Exception ex) when (IsCriticalSerialException(ex))
                     {
@@ -300,8 +329,6 @@ namespace KIT.GasStation.Lanfeng
                         await BroadcastWorkerAvailabilityAsync(false, ex.Message);
                         throw;
                     }
-
-                    await Task.Delay(300, ct);
                 }
 
                 Column? column = null;
@@ -336,19 +363,11 @@ namespace KIT.GasStation.Lanfeng
                 }
 
                 await HandleColumnLiftedAsync(controllerResponse);
-
-                Status = controllerResponse.Status;
-
-                _logger.Information("[Rx] {Rx}", BitConverter.ToString(controllerResponse.Data));
             }
             catch (Exception e)
             {
                 _logger.Error(e, "Ошибка ExecuteCommandAsync: {Message}", e.Message);
                 throw;
-            }
-            finally
-            {
-                _exclusive.Release();
             }
         }
 
@@ -356,14 +375,13 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
-                _stopTickStatus = true;
-
-                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
+                var column = GetColumnByGroupName(groupName);
                 if (column is null)
                 {
                     _logger.Warning("Колонка {GroupName} не найдена", groupName);
                     return;
                 }
+                
                 var cmd = isProgramMode ? Command.ProgramControlMode : Command.KeyboardControlMode;
                 await ExecuteCommandAsync(cmd, Address, column.LanfengAddress);
             }
@@ -371,34 +389,25 @@ namespace KIT.GasStation.Lanfeng
             {
                 _logger.Error(e, e.Message);
             }
-            finally
-            {
-                _stopTickStatus = false;
-            }
         }
 
         private async Task SetPriceAsync(string groupName, decimal price)
         {
             try
             {
-                _stopTickStatus = true; // временно приостанавливаем опрос
+                var column = GetColumnByGroupName(groupName);
 
-                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
                     _logger.Warning("Колонка {GroupName} не найдена", groupName);
                     return;
                 }
-
+                
                 await ExecuteCommandAsync(Command.ChangePrice, Address, column.LanfengAddress, price);
             }
             catch (Exception e)
             {
                 _logger.Error(e, e.Message);
-            }
-            finally
-            {
-                _stopTickStatus = false; // возобновляем опрос
             }
         }
 
@@ -406,9 +415,8 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
-                _stopTickStatus = true;
+                var column = GetColumnByGroupName(groupName);
 
-                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
                     _logger.Warning("Колонка {GroupName} не найдена", groupName);
@@ -422,33 +430,25 @@ namespace KIT.GasStation.Lanfeng
             {
                 _logger.Error(e, e.Message);
             }
-            finally
-            {
-                _stopTickStatus = false;
-            }
         }
 
         private async Task StopFuelingAsync(string groupName)
         {
             try
             {
-                _stopTickStatus = true;
+                var column = GetColumnByGroupName(groupName);
 
-                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
                     _logger.Warning("Колонка {GroupName} не найдена", groupName);
                     return;
                 }
+
                 await ExecuteCommandAsync(Command.StopFueling, Address, column.LanfengAddress);
             }
             catch (Exception e)
             {
                 _logger.Error(e, e.Message);
-            }
-            finally
-            {
-                _stopTickStatus = false;
             }
         }
 
@@ -456,8 +456,8 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
-                _stopTickStatus = true;
-                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
+                var column = GetColumnByGroupName(groupName);
+
                 if (column is null)
                 {
                     _logger.Warning("Колонка {GroupName} не найдена", groupName);
@@ -469,9 +469,24 @@ namespace KIT.GasStation.Lanfeng
             {
                 _logger.Error(e, e.Message);
             }
-            finally
+        }
+
+        private async Task GetStatusByAddressAsync(string groupName)
+        {
+            try
             {
-                _stopTickStatus = false;
+                var column = GetColumnByGroupName(groupName);
+
+                if (column is null)
+                {
+                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.Status, Address, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
             }
         }
 
@@ -595,26 +610,37 @@ namespace KIT.GasStation.Lanfeng
         {
             try
             {
-                _stopTickStatus = true;
+                var column = GetColumnByGroupName(groupName);
 
-                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
                 if (column is null)
                 {
                     _logger.Warning("Колонка {GroupName} не найдена", groupName);
                     return;
                 }
 
-                await ExecuteCommandAsync(Command.CompleteFueling, Address, column.Address);
+                await ExecuteCommandAsync(Command.CompleteFueling, Address, column.LanfengAddress);
             }
             catch (Exception e)
             {
                 _logger.Error(e, e.Message);
             }
-            finally
+        }
+
+        private Column? GetColumnByGroupName(string groupName)
+        {
+            if (_controllerType == LanfengControllerType.Single)
             {
-                _stopTickStatus = false;
+                return Columns.FirstOrDefault();
+            }
+            else
+            {
+                return Columns.FirstOrDefault(c => c.GroupName == groupName);
             }
         }
+
+        #endregion
+
+        #region Hub
 
         private void RegisterHubConnectionHandlers()
         {
@@ -629,13 +655,13 @@ namespace KIT.GasStation.Lanfeng
 
         private Task OnHubReconnecting(Exception? error)
         {
-            _logger.Warning("Потеряно соединение с SignalR: {Message}", error?.Message ?? "unknown");
+            _logger.Warning("Потеряно соединение с сервером: {Message}", error?.Message ?? "unknown");
             return Task.CompletedTask;
         }
 
         private async Task OnHubReconnected(string? connectionId)
         {
-            _logger.Information("SignalR переподключен. ConnectionId={ConnectionId}", connectionId);
+            _logger.Information("Переподключен с сервером. ConnectionId={ConnectionId}", connectionId);
             try
             {
                 await JoinWorkerGroupsAsync();
@@ -764,6 +790,43 @@ namespace KIT.GasStation.Lanfeng
 
         private static bool IsCriticalSerialException(Exception ex) =>
             ex is TimeoutException || ex is IOException || ex is InvalidOperationException || ex is UnauthorizedAccessException;
+
+        #endregion
+
+        #region Пауза и продолжения опроса
+
+        private readonly ManualResetEventSlim _pollingResumedEvent = new(true);
+        private readonly SemaphoreSlim _commandGate = new(1, 1);
+
+        private async Task PausePollingAsync()
+        {
+            _pollingResumedEvent.Reset();
+
+            // ⛔ ждём, пока текущая команда ДОРАБОТАЕТ
+            await _commandGate.WaitAsync();
+            _commandGate.Release();
+        }
+
+        private async Task ResumePollingAsync()
+        {
+            _pollingResumedEvent.Set();
+            await Task.CompletedTask;
+        }
+
+        private async Task ExecuteCommandSafeAsync(
+            Func<Task> command,
+            CancellationToken token)
+        {
+            await _commandGate.WaitAsync(token);
+            try
+            {
+                await command(); // <-- вот тут команда гарантированно ДОРАБАТЫВАЕТ
+            }
+            finally
+            {
+                _commandGate.Release();
+            }
+        }
 
         #endregion
 

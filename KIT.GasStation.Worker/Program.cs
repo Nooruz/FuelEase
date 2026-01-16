@@ -31,32 +31,32 @@ try
         .AddCashRegisters() 
         .ConfigureServices((hostContext, services) =>
         {
-            //var cfg = hostContext.Configuration;
-            //var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-            //var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-            //var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+            var cfg = hostContext.Configuration;
+            var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+            var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+            var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 
-            //services.AddTransient(sp =>
-            //    new HubConnectionBuilder()
-            //        .WithUrl(hubUrl)
-            //        .WithAutomaticReconnect()
-            //        .Build());
-            //services.AddSignalR();                 
-            
+            services.AddTransient(sp =>
+                new HubConnectionBuilder()
+                    .WithUrl(hubUrl)
+                    .WithAutomaticReconnect()
+                    .Build());
+            services.AddSignalR();
+
             //services.AddTransient<IHubClient, HubClient>();
 
-            services.AddSingleton(sp =>
-            {
-                var cfg = sp.GetRequiredService<IConfiguration>();
-                var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-                var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-                var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+            //services.AddSingleton(sp =>
+            //{
+            //    var cfg = sp.GetRequiredService<IConfiguration>();
+            //    var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+            //    var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+            //    var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 
-                return new HubConnectionBuilder()
-                    .WithUrl(hubUrl)
-                    .WithAutomaticReconnect([TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30)])
-                    .Build();
-            });
+            //    return new HubConnectionBuilder()
+            //        .WithUrl(hubUrl)
+            //        .WithAutomaticReconnect([TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30)])
+            //        .Build();
+            //});
 
             services.AddTransient<IHubClient, HubClient>();
 

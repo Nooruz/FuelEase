@@ -89,6 +89,9 @@ namespace KIT.GasStation.Web.Hubs
         public Task ResumeFuelingAsync(string groupName) =>
             Clients.Group(groupName).ResumeFuelingAsync(groupName);
 
+        public Task GetStatusByAddressAsync(string groupName) =>
+            Clients.Group(groupName).GetStatusByAddressAsync(groupName);
+
         public Task ColumnLiftedChanged(string groupName, bool isLifted) =>
             Clients.Group(groupName).ColumnLiftedChanged(groupName, isLifted);
         public Task CompleteFuelingAsync(string groupName) =>
@@ -107,6 +110,12 @@ namespace KIT.GasStation.Web.Hubs
 
         public Task StopPolling(string groupName) =>
             Clients.Group(groupName).StopPolling(new StopPollingCommand { GroupName = groupName });
+
+        public Task PausePollingAsync(string groupName) => 
+            Clients.Group(groupName).PausePollingAsync(groupName);
+
+        public Task ResumePollingAsync(string groupName) =>
+            Clients.Group(groupName).ResumePollingAsync(groupName);
 
         public async Task ReportWorkerAvailability(WorkerAvailabilityReport report)
         {

@@ -18,6 +18,11 @@ namespace KIT.GasStation.Domain.Services
         Task<IEnumerable<FuelSale>> GetUncompletedFuelSaleAsync(int shiftId);
 
         /// <summary>
+        /// Получить незавершенные продажи по колонке
+        /// </summary>
+        Task<FuelSale?> GetUncompletedFuelSaleAsync(int nozzleId, int shiftId);
+
+        /// <summary>
         /// Получить завершенные продажи
         /// </summary>
         /// <returns></returns>

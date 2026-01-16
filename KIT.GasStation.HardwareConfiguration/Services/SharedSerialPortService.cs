@@ -107,16 +107,23 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             var portLabel = _key.PortName ?? "<unset>";
             byte[]? result = null;
 
+#if DEBUG
             _logger.Debug("Serial {Port}: waiting for I/O lock.", portLabel);
+#endif
+
             await _io.WaitAsync(ct);
 
             try
             {
+#if DEBUG
                 _logger.Debug("Serial {Port}: acquired I/O lock.", portLabel);
+#endif
 
                 if (PortRequiresReopen())
                 {
+#if DEBUG
                     _logger.Warning("Serial {Port}: port requires reopen before I/O.", portLabel);
+#endif
                     await RecoverPortAsync(ct);
                 }
 
@@ -125,16 +132,18 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                 {
                     try
                     {
-                        _logger.Debug("Serial {Port}: starting operation (attempt {Attempt}/{MaxRetries})",
-                            portLabel, attempt, maxRetries);
+#if DEBUG
+                        _logger.Debug("Serial {Port}: starting operation (attempt {Attempt}/{MaxRetries})", portLabel, attempt, maxRetries);
+#endif
 
                         // Выполняем синхронную операцию в фоновом потоке
                         result = await Task.Run(() =>
                             WriteReadOnce(tx, expectedRxLength, writeToReadDelayMs,
                                 readTimeoutMs, attempt, maxRetries, portLabel, ct), ct);
 
-                        _logger.Debug("Serial {Port}: operation successful (attempt {Attempt})",
-                            portLabel, attempt);
+#if DEBUG
+                        _logger.Debug("Serial {Port}: operation successful (attempt {Attempt})", portLabel, attempt);
+#endif
                         break;
                     }
                     catch (OperationCanceledException)
@@ -146,7 +155,6 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                     {
                         _logger.Warning(ex, "Serial {Port}: timeout (attempt {Attempt}/{MaxRetries})",
                             portLabel, attempt, maxRetries);
-
                         // Небольшая задержка перед повторной попыткой
                         await Task.Delay(100, ct);
                     }
@@ -382,8 +390,9 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             _port.ReadTimeout = readTimeoutMs;
             _port.WriteTimeout = 1000; // 1 секунда на запись
 
-            _logger.Debug("Serial {Port}: write {TxLength} bytes (attempt {Attempt}/{MaxRetries}).",
-                portLabel, tx.Length, attempt, maxRetries);
+#if DEBUG
+            _logger.Debug("Serial {Port}: write {TxLength} bytes (attempt {Attempt}/{MaxRetries}).", portLabel, tx.Length, attempt, maxRetries);
+#endif
 
             // Записываем данные (синхронно)
             _port.Write(tx, 0, tx.Length);
@@ -398,8 +407,9 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             var buf = new byte[expectedRxLength];
             var total = 0;
 
-            _logger.Debug("Serial {Port}: reading {ExpectedLength} bytes with timeout {ReadTimeoutMs}ms",
-                portLabel, expectedRxLength, readTimeoutMs);
+#if DEBUG
+            _logger.Debug("Serial {Port}: reading {ExpectedLength} bytes with timeout {ReadTimeoutMs}ms", portLabel, expectedRxLength, readTimeoutMs);
+#endif
 
             var stopwatch = Stopwatch.StartNew();
 
@@ -415,24 +425,24 @@ namespace KIT.GasStation.HardwareConfigurations.Services
                     if (read > 0)
                     {
                         total += read;
-                        _logger.Debug("Serial {Port}: read {ReadBytes}/{ExpectedLength} bytes",
-                            portLabel, total, expectedRxLength);
+
+#if DEBUG
+                        _logger.Debug("Serial {Port}: read {ReadBytes}/{ExpectedLength} bytes", portLabel, total, expectedRxLength);
+#endif
+
                     }
                 }
                 catch (TimeoutException)
                 {
                     var elapsed = stopwatch.ElapsedMilliseconds;
-                    _logger.Warning("Serial {Port}: read timeout after {ElapsedMs}ms (got {Total}/{Expected} bytes)",
-                        portLabel, elapsed, total, expectedRxLength);
-
-                    throw new TimeoutException($"Таймаут чтения: получено {total}/{expectedRxLength} байт за {elapsed}мс");
+                    _logger.Warning("Serial {Port}: read timeout after {ElapsedMs}ms (got {Total}/{Expected} bytes)", portLabel, elapsed, total, expectedRxLength);
                 }
 
                 // Если мы получили хоть какие-то данные, но не все, продолжаем пытаться
                 // Но проверяем общий таймаут
                 if (stopwatch.ElapsedMilliseconds > readTimeoutMs)
                 {
-                    throw new TimeoutException($"Общий таймаут чтения: {readTimeoutMs}мс");
+                    return buf[..total];
                 }
             }
 
@@ -441,12 +451,14 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             {
                 var extraBytes = _port.BytesToRead;
                 _port.DiscardInBuffer();
-                _logger.Warning("Serial {Port}: discarded {ExtraBytes} extra bytes from buffer",
-                    portLabel, extraBytes);
+#if DEBUG
+                _logger.Warning("Serial {Port}: discarded {ExtraBytes} extra bytes from buffer", portLabel, extraBytes);
+#endif
             }
 
-            _logger.Debug("Serial {Port}: successfully read {Total} bytes in {ElapsedMs}ms",
-                portLabel, total, stopwatch.ElapsedMilliseconds);
+#if DEBUG
+            _logger.Debug("Serial {Port}: successfully read {Total} bytes in {ElapsedMs}ms", portLabel, total, stopwatch.ElapsedMilliseconds);
+#endif
 
             return buf;
         }

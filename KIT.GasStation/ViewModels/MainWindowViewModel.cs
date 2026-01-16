@@ -96,7 +96,7 @@ namespace KIT.GasStation.ViewModels
         }
 
         [Command]
-        public async Task Closing(CancelEventArgs args)
+        public void Closing(CancelEventArgs args)
         {
             if (MessageBoxService == null)
             {

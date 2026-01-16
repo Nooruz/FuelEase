@@ -83,16 +83,19 @@ namespace KIT.GasStation.EntityFramework.Services
         }
 
         ///<inheritdoc/>
-        public async Task<bool> IsNumberAvailableAsync(int number)
+        public async Task<bool> IsNumberAvailableAsync(Tank tank)
         {
             try
             {
                 await using GasStationDbContext context = _contextFactory.CreateDbContext();
-                Tank? tank = await context.Tanks
-                    .Where(t => !t.IsDeleted)
-                    .FirstOrDefaultAsync((e) => e.Number == number);
 
-                return tank != null;
+                var tanks = await context.Tanks
+                    .Where(t => !t.IsDeleted && t.Number == tank.Number)
+                    .ToListAsync();
+
+                if (tanks == null) return false;
+
+                return tanks.Any(t => t.Id != tank.Id);
             }
             catch (Exception)
             {

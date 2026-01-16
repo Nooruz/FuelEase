@@ -5,5 +5,7 @@ namespace KIT.GasStation.Domain.Services
     public interface INozzleService : IDataService<Nozzle>
     {
         Task<int> GetCountAsync();
+
+        Task<bool> IsTubeAvailableAsync(int id, int tube);
     }
 }

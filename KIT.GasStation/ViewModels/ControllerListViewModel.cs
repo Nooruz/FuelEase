@@ -87,6 +87,7 @@ namespace KIT.GasStation.ViewModels
 
             _documentPanelPositionPath = GetDocumentPanelPositionPath();
             _positions = LoadPositions();
+            _navigator.OnDispose += Navigator_OnDispose;
         }
 
         #endregion
@@ -358,10 +359,16 @@ namespace KIT.GasStation.ViewModels
 
         #region Dispose
 
-        protected override void Dispose(bool disposing)
+        private async void Navigator_OnDispose()
         {
+            _userStore.OnLogin -= UserStore_OnLogin;
+            _nozzleService.OnCreated -= NozzleService_OnCreated;
+            _navigator.OnDispose -= Navigator_OnDispose;
 
-            base.Dispose(disposing);
+            foreach (var item in FuelDispenserViewModels)
+            {
+                await item.StopAsync();
+            }
         }
 
         #endregion

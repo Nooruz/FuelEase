@@ -33,7 +33,7 @@ namespace KIT.GasStation.FuelDispenser.Services
 
         public byte[] BuildRequest(Command cmd, int controllerAddress, 
             int columnAddress = 0, decimal? value = null, bool bySum = true,
-            LanfengControllerType controllerType = LanfengControllerType.None)
+            LanfengControllerType controllerType = LanfengControllerType.Single)
         {
             // Берём буфер из пула длиной 14
             var rented = ArrayPool<byte>.Shared.Rent(FrameLength);

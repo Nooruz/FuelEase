@@ -44,8 +44,7 @@ namespace KIT.GasStation.EntityFramework
         {
             _ = modelBuilder.Entity<UnitOfMeasurement>().HasData(
                 new UnitOfMeasurement { Id = 1, Name = "литр" },
-                new UnitOfMeasurement { Id = 2, Name = "метр куб." },
-                new UnitOfMeasurement { Id = 3, Name = "кВт*ч" });
+                new UnitOfMeasurement { Id = 2, Name = "метр куб." });
 
             _ = modelBuilder.Entity<UserRole>().HasData(
                 new UserRole { Id = 1, Name = "Администратор" },

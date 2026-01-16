@@ -1,6 +1,7 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using System;
+using System.ComponentModel;
 
 namespace KIT.GasStation.ViewModels.Base
 {

@@ -108,6 +108,7 @@ namespace KIT.GasStation.Domain.Views
             {
                 _colorHex = value;
                 OnPropertyChanged(nameof(ColorHex));
+                OnPropertyChanged(nameof(ColorBrush));
             }
         }
 

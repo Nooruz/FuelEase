@@ -2,6 +2,7 @@
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.EntityFramework.Services.Common;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace KIT.GasStation.EntityFramework.Services
 {
@@ -103,12 +104,33 @@ namespace KIT.GasStation.EntityFramework.Services
             return 0;
         }
 
+        public async Task<bool> IsTubeAvailableAsync(int id, int tube)
+        {
+            try
+            {
+                await using GasStationDbContext context = _contextFactory.CreateDbContext();
+
+                var nozzles = await context.Nozzles
+                    .Where(n => !n.IsDeleted && n.Tube == tube)
+                    .ToListAsync();
+
+                if (nozzles == null) return false;
+
+                return nozzles.Any(n => n.Id != id);
+            }
+            catch (Exception)
+            {
+                return false;
+                //ignore
+            }
+        }
+
         public async Task<Nozzle> UpdateAsync(int id, Nozzle entity)
         {
             entity.UpdatedAt = DateTime.Now;
             var result = await _nonQueryDataService.Update(id, entity);
             if (result != null)
-                OnUpdated?.Invoke(result);
+                OnUpdated?.Invoke(await GetAsync(id));
             return result;
         }
     }
