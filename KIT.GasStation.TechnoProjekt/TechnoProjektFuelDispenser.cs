@@ -282,7 +282,7 @@ namespace KIT.GasStation.Technoproject
                 }
 
                 // Для задания дозы сначала даём команду SetDose (9), затем старт (5)
-                await ExecuteCommandAsync(Command.StartFillingQuantity, Address, column.Address, sumOrQty, expectedLength: _frameLen);
+                await ExecuteCommandAsync(Command.StartFuelingQuantity, Address, column.Address, sumOrQty, expectedLength: _frameLen);
                 // Небольшая пауза между командами
                 await Task.Delay(150);
                 await ExecuteCommandAsync(Command.Start, Address, column.Address, null, expectedLength: _frameLen);
@@ -305,7 +305,7 @@ namespace KIT.GasStation.Technoproject
                 }
 
                 // Для завершения заправки используем Stop (6) или Reset (7) в зависимости от логики
-                await ExecuteCommandAsync(Command.StopFilling, Address, column.Address);
+                await ExecuteCommandAsync(Command.StopFueling, Address, column.Address);
             }
             catch (Exception e)
             {

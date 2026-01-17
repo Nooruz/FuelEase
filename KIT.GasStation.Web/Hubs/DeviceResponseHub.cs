@@ -105,11 +105,18 @@ namespace KIT.GasStation.Web.Hubs
         public Task RegisterWorker(string groupName) =>
             Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
-        public Task StartPolling(string groupName) =>
-            Clients.Group(groupName).StartPolling(new StartPollingCommand { GroupName = groupName });
+        public async Task StartPolling(string groupName)
+        {
+            _log.LogInformation("Start polling {groupName}", groupName);
+            await Clients.Group(groupName).StartPolling(new StartPollingCommand { GroupName = groupName });
+        }
 
-        public Task StopPolling(string groupName) =>
-            Clients.Group(groupName).StopPolling(new StopPollingCommand { GroupName = groupName });
+        public async Task StopPolling(string groupName)
+        {
+            _log.LogInformation("Stop polling {groupName}", groupName);
+            await Clients.Group(groupName).StopPolling(new StopPollingCommand { GroupName = groupName });
+        }
+            
 
         public Task PausePollingAsync(string groupName) => 
             Clients.Group(groupName).PausePollingAsync(groupName);

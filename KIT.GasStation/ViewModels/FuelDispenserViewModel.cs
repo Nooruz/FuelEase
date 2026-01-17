@@ -397,6 +397,13 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
+
+                foreach (var item in Nozzles)
+                {
+                    await _hub.InvokeAsync("StopPolling", item.Group);
+                    await _hub.InvokeAsync("LeaveController", item.Group);
+                }
+
                 _shiftStore.OnLogin -= ShiftStore_OnLogin;
                 _fuelSaleService.OnCreated -= FuelSaleService_OnCreated;
                 _fuelSaleService.OnUpdated -= FuelSaleService_OnUpdated;

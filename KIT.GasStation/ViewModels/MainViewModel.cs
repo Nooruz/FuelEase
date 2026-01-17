@@ -14,12 +14,11 @@ using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
-using KIT.GasStation.ViewModels.Info;
 using KIT.GasStation.Views;
 using KIT.GasStation.Views.Details;
-using KIT.GasStation.Views.Info;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -49,6 +48,7 @@ namespace KIT.GasStation.ViewModels
         private BaseViewModel _cashViewModel;
         private BaseViewModel _nozzleCounterPanelViewModel;
         private BaseViewModel _unregisteredSalePanelViewModel;
+        private readonly Dictionary<ViewType, WeakReference<BaseViewModel>> _documentViewModels = new();
 
         #endregion
 
@@ -302,8 +302,9 @@ namespace KIT.GasStation.ViewModels
             {
                 if (_userStore.CurrentUser != null && _userStore.CurrentUser.UserType == UserType.Admin)
                 {
-                    DocumentViewerService.Title = "Управления конфигурацией";
-                    DocumentViewerService.Show(nameof(ConfigurationManagementView), await _navigator.GetViewModelAsync(ViewType.ConfigurationManagementView));
+                    await ShowDocumentViewerAsync(ViewType.ConfigurationManagementView,
+                        nameof(ConfigurationManagementView),
+                        "Управления конфигурацией");
                 }
             }
             catch (Exception e)
@@ -322,8 +323,9 @@ namespace KIT.GasStation.ViewModels
             {
                 if (_userStore.CurrentUser != null && _userStore.CurrentUser.UserType == UserType.Admin)
                 {
-                    DocumentViewerService.Title = "Управления скидками";
-                    DocumentViewerService.Show(nameof(DiscountManagementView), await _navigator.GetViewModelAsync(ViewType.DiscountManagement));
+                    await ShowDocumentViewerAsync(ViewType.DiscountManagement,
+                        nameof(DiscountManagementView),
+                        "Управления скидками");
                 }
             }
             catch (Exception e)
@@ -430,9 +432,9 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                var viewModel = await _navigator.GetViewModelAsync(ViewType.GlobalReportView);
-                DocumentViewerService.Title = "Глобальные отчеты";
-                DocumentViewerService.Show(nameof(GlobalReportView), viewModel);
+                await ShowDocumentViewerAsync(ViewType.GlobalReportView,
+                    nameof(GlobalReportView),
+                    "Глобальные отчеты");
             }
             catch (Exception e)
             {
@@ -784,6 +786,25 @@ namespace KIT.GasStation.ViewModels
                 return true;
             }
             return false;
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private async Task ShowDocumentViewerAsync(ViewType viewType, string viewName, string title)
+        {
+            if (!_documentViewModels.TryGetValue(viewType, out var weakReference)
+                || !weakReference.TryGetTarget(out var viewModel)
+                || viewModel == null)
+            {
+                viewModel = await _navigator.GetViewModelAsync(viewType);
+                _documentViewModels[viewType] = new WeakReference<BaseViewModel>(viewModel);
+            }
+
+            viewModel.Title = title;
+            DocumentViewerService.Show(viewName, viewModel);
+            DocumentViewerService.Activate();
         }
 
         #endregion

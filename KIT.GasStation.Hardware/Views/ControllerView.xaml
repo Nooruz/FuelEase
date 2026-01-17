@@ -11,9 +11,9 @@
     <dxlc:LayoutControl Orientation="Vertical">
         <dxlc:LayoutItem Label="Тип">
             <dxe:ComboBoxEdit ItemsSource="{Binding DeviceTypes}"
-                  DisplayMember="Value"
-                  ValueMember="Key"
-                  EditValue="{Binding CreatedDevice.Type}"/>
+                              DisplayMember="Value"
+                              ValueMember="Key"
+                              EditValue="{Binding CreatedDevice.Type}"/>
         </dxlc:LayoutItem>
         <dxlc:LayoutItem Label="Имя">
             <dxe:TextEdit EditValue="{Binding CreatedDevice.Name, UpdateSourceTrigger=PropertyChanged}"/>

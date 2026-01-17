@@ -1,4 +1,4 @@
-﻿<local:BaseView x:Class="KIT.GasStation.Hardware.Views.LanfengView"
+﻿<local:BaseView x:Class="KIT.GasStation.Hardware.Views.GilbarcoView"
                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                 xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
                 xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
@@ -21,28 +21,48 @@
 
                     <dxlc:LayoutItem Label="Порт">
                         <dxe:ComboBoxEdit ItemsSource="{Binding AvailablePorts}"
-                                      IsTextEditable="False"
-                                      EditValue="{Binding SelectedController.ComPort}"/>
+                                          IsTextEditable="False"
+                                          EditValue="{Binding SelectedController.ComPort}"/>
                     </dxlc:LayoutItem>
 
                     <dxlc:LayoutItem Label="Скорость">
                         <dxe:ComboBoxEdit ItemsSource="{Binding BaudRates}"
-                                      IsTextEditable="False"
-                                      EditValue="{Binding SelectedController.BaudRate}"/>
+                                          IsTextEditable="False"
+                                          EditValue="{Binding SelectedController.BaudRate}"/>
                     </dxlc:LayoutItem>
 
-                    <Button Content="Настройки ТРК"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Top"
-                        Command="{Binding SettingsCommand}"/>
+                    <dxlc:LayoutItem Label="Контроль">
+                        <dxe:ComboBoxEdit ItemsSource="{Binding Parities}"
+                                          IsTextEditable="False"
+                                          EditValue="{Binding SelectedController.Settings.Parity}"/>
+                    </dxlc:LayoutItem>
+
+                    <dxlc:LayoutItem Label="Кол-во пистолетов на стороне">
+                        <dxe:ComboBoxEdit ItemsSource="{Binding NozzleQuantities}"
+                                          IsTextEditable="False"
+                                          DisplayMember="Value"
+                                          ValueMember="Key"
+                                          EditValue="{Binding SelectedNozzleQuantity}"/>
+                    </dxlc:LayoutItem>
 
                 </dxlc:LayoutGroup>
 
+                <dxlc:LayoutGroup Orientation="Vertical">
 
+                    <dxlc:LayoutItem Label="Подавление эхо">
+                        <dxe:CheckEdit EditValue="{Binding SelectedController.Settings.EchoSuppression}"/>
+                    </dxlc:LayoutItem>
+
+                    <!--<dxlc:LayoutItem Label="Заявка на целые литры">
+                        <dxe:CheckEdit/>
+                    </dxlc:LayoutItem>-->
+
+                </dxlc:LayoutGroup>
 
                 <dxlc:LayoutGroup View="GroupBox"
-                              Orientation="Vertical"
-                              Header="Лог">
+                                  Orientation="Vertical"
+                                  Header="Лог">
+
                     <dxlc:LayoutItem Label="Пакетный">
                         <dxe:CheckEdit/>
                     </dxlc:LayoutItem>
@@ -50,12 +70,13 @@
                     <dxlc:LayoutItem Label="Низкоуровневый">
                         <dxe:CheckEdit/>
                     </dxlc:LayoutItem>
+
                 </dxlc:LayoutGroup>
 
             </dxlc:LayoutGroup>
 
             <dxg:GridControl ItemsSource="{Binding SelectedController.Columns}"
-                         SelectedItem="{Binding SelectedColumn}">
+                             SelectedItem="{Binding SelectedColumn}">
                 <dxg:GridControl.View>
                     <dxg:TableView ShowGroupPanel="False">
                         <dxg:TableView.ContextMenu>
@@ -88,26 +109,30 @@
                                 FieldName="Address">
                     <dxg:GridColumn.EditSettings>
                         <dxe:SpinEditSettings AllowSpin="False"
-                                          MinValue="0"
-                                          MaxValue="255"/>
+                                              MinValue="0"
+                                              MaxValue="255"/>
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
-                <dxg:GridColumn Header="Шланг"
+                <dxg:GridColumn Header="Пистолет"
                                 FieldName="Nozzle">
                     <dxg:GridColumn.EditSettings>
                         <dxe:SpinEditSettings MinValue="1"
-                                          MaxValue="4"
-                                          AllowSpin="False"/>
+                                      MaxValue="4"
+                                      AllowSpin="False"/>
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
-                <dxg:GridColumn Header="Имя"
-                            FieldName="Name"/>
-                <dxg:GridColumn Header="Блокирована"
-                            FieldName="Settings.IsDisabled"/>
-                <dxg:GridColumn Header="Тип заявок на ТРК"
-                            FieldName="Settings.LanfengFuelRequestType">
+                <dxg:GridColumn Header="Имя" FieldName="Name"/>
+                <dxg:GridColumn Header="Блокирована" FieldName="Settings.IsDisabled"/>
+                <dxg:GridColumn Header="Кол-во пистолетов на стороне" FieldName="Settings.NozzleQuantity">
                     <dxg:GridColumn.EditSettings>
-                        <dxe:ComboBoxEditSettings ItemsSource="{Binding LanfengFuelRequestTypes}"
+                        <dxe:ComboBoxEditSettings ItemsSource="{Binding NozzleQuantities}"
+                                                  DisplayMember="Value"
+                                                  ValueMember="Key"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Цена, после запятой" FieldName="Settings.PriceDecimalPoint">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:ComboBoxEditSettings ItemsSource="{Binding PriceDecimalPoints}"
                                                   DisplayMember="Value"
                                                   ValueMember="Key"/>
                     </dxg:GridColumn.EditSettings>
@@ -115,14 +140,12 @@
             </dxg:GridControl>
 
             <Button HorizontalAlignment="Right"
-            VerticalAlignment="Bottom"
-            Content="Сохранить настройки"
-            Command="{Binding SaveCommand}"/>
+                    VerticalAlignment="Bottom"
+                    Content="Сохранить настройки"
+                    Command="{Binding SaveCommand}"/>
 
         </dxlc:LayoutControl>
 
     </dx:LoadingDecorator>
 
-    
-    
 </local:BaseView>

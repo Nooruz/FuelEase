@@ -60,7 +60,7 @@ namespace KIT.GasStation.FuelDispenser.Services
 
                 // Price (5..10) и Volume (11..16) — ASCII '0'..'9' длиной 6
                 // В зависимости от команды помещаем значения
-                if (cmd == Command.StartFillingQuantity)
+                if (cmd == Command.StartFuelingQuantity)
                 {
                     // Если bySum == true — кладём сумму в Price (копейки)
                     if (value.HasValue)
@@ -248,6 +248,11 @@ namespace KIT.GasStation.FuelDispenser.Services
             aligned = new byte[FrameLength];
             Array.Copy(raw, idx, aligned, 0, FrameLength);
             return true;
+        }
+
+        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress, decimal? value = null, bool bySum = true, LanfengControllerType controllerType = LanfengControllerType.None)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

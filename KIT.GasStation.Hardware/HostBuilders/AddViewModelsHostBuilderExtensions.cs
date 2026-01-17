@@ -23,6 +23,7 @@ namespace KIT.GasStation.Hardware.HostBuilders
                 services.AddTransient(CreateEKassaViewModel);
                 services.AddTransient(CreateNewCasViewModel);
                 services.AddTransient(CreateKITViewModel);
+                services.AddTransient(CreateGilbarcoViewModel);
 
                 services.AddSingleton<CreateViewModel<KITViewModel>>(servicesProvider => () => CreateKITViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<MainWindowViewModel>>(servicesProvider => () => CreateMainWindowViewModel(servicesProvider));
@@ -30,6 +31,7 @@ namespace KIT.GasStation.Hardware.HostBuilders
                 services.AddSingleton<CreateViewModel<PKElectronicsViewModel>>(servicesProvider => () => CreatePKElectronicsViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<EKassaViewModel>>(servicesProvider => () => CreateEKassaViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<NewCasViewModel>>(servicesProvider => () => CreateNewCasViewModel(servicesProvider));
+                services.AddSingleton<CreateViewModel<GilbarcoViewModel>>(servicesProvider => () => CreateGilbarcoViewModel(servicesProvider));
 
                 services.AddSingleton<IViewModelFactory, ViewModelFactory>();
             });
@@ -56,6 +58,11 @@ namespace KIT.GasStation.Hardware.HostBuilders
         {
             return new MainWindowViewModel(services.GetRequiredService<INavigator>(),
                 services.GetRequiredService<IHardwareConfigurationService>());
+        }
+
+        private static GilbarcoViewModel CreateGilbarcoViewModel(IServiceProvider services)
+        {
+            return new GilbarcoViewModel(services.GetRequiredService<IHardwareConfigurationService>());
         }
 
         private static LanfengViewModel CreateLanfengViewModel(IServiceProvider services)

@@ -1,5 +1,6 @@
 ﻿using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
+using System.IO.Ports;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.Hardware.Services
@@ -30,6 +31,9 @@ namespace KIT.GasStation.Hardware.Services
                     break;
                 case ControllerType.PKElectronics:
                     controller.Settings = new PKElectronicsControllerSettings();
+                    break;
+                case ControllerType.Gilbarco:
+                    controller.Settings = new GilbarcoControllerSettings() { Parity = Parity.Even };
                     break;
             }
             await _hardwareConfigurationService.SaveControllerAsync(controller);

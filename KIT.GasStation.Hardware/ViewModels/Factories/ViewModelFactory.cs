@@ -14,6 +14,7 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
         private readonly CreateViewModel<EKassaViewModel> _createEKassaViewModel;
         private readonly CreateViewModel<NewCasViewModel> _createNewCasViewModel;
         private readonly CreateViewModel<KITViewModel> _createKITViewModel;
+        private readonly CreateViewModel<GilbarcoViewModel> _createGilbarcoViewModel;
 
         #endregion
 
@@ -24,7 +25,8 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
             CreateViewModel<PKElectronicsViewModel> createPKElectronicsViewModel,
             CreateViewModel<EKassaViewModel> createEKassaViewModel,
             CreateViewModel<NewCasViewModel> createNewCasViewModel,
-            CreateViewModel<KITViewModel> createKITViewModel)
+            CreateViewModel<KITViewModel> createKITViewModel,
+            CreateViewModel<GilbarcoViewModel> createGilbarcoViewModel)
         {
             _createMainWindowViewModel = createMainWindowViewModel;
             _createLanfengViewModel = createLanfengViewModel;
@@ -32,6 +34,7 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
             _createEKassaViewModel = createEKassaViewModel;
             _createNewCasViewModel = createNewCasViewModel;
             _createKITViewModel = createKITViewModel;
+            _createGilbarcoViewModel = createGilbarcoViewModel;
         }
 
         #endregion
@@ -51,6 +54,7 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
                     ViewType.EKassa => _createEKassaViewModel(),
                     ViewType.NewCas => _createNewCasViewModel(),
                     ViewType.KITView => _createKITViewModel(),
+                    ViewType.Gilbarco => _createGilbarcoViewModel(),
                     _ => throw new ArgumentException("The ViewType does not have a ViewModel.", nameof(viewType)),
                 };
             });
@@ -66,6 +70,7 @@ namespace KIT.GasStation.Hardware.ViewModels.Factories
                 ViewType.EKassa => _createEKassaViewModel(),
                 ViewType.NewCas => _createNewCasViewModel(),
                 ViewType.KITView => _createKITViewModel(),
+                ViewType.Gilbarco => _createGilbarcoViewModel(),
                 _ => throw new ArgumentException("The ViewType does not have a ViewModel.", nameof(viewType)),
             };
         }

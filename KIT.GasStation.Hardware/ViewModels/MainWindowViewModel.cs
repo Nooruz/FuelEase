@@ -249,6 +249,9 @@ namespace KIT.GasStation.Hardware.ViewModels
                     SelectedBaseViewModel = lanfengViewModel;
                     break;
                 case ControllerType.Gilbarco:
+                    GilbarcoViewModel gilbarcoViewModel = (GilbarcoViewModel)_navigator.GetViewModel(ViewType.Gilbarco);
+                    gilbarcoViewModel.SelectedController = controller;
+                    SelectedBaseViewModel = gilbarcoViewModel;
                     break;
                 case ControllerType.Emulator:
                     break;

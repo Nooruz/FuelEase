@@ -25,7 +25,7 @@ namespace KIT.GasStation.Views.Base
             Interaction.GetBehaviors(this).Add(new WindowService()
             {
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                AllowSetWindowOwner = true,
+                AllowSetWindowOwner = false,
                 Name = "DocumentViewerService",
                 WindowStyle = new Style
                 {

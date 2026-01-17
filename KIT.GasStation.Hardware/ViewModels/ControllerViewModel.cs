@@ -4,6 +4,7 @@ using KIT.GasStation.Hardware.Utilities;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using System.Collections.Generic;
+using System.IO.Ports;
 
 namespace KIT.GasStation.Hardware.ViewModels
 {

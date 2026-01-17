@@ -10,10 +10,10 @@ namespace KIT.GasStation.FuelDispenser.Services
             { Command.Setup,                (byte)'3' }, // "Установка"
             { Command.Status,               (byte)'4' }, // "Тест" / опрос
             { Command.Start,                (byte)'5' }, // "Пуск"
-            { Command.StopFilling,          (byte)'6' }, // "Останов"
+            { Command.StopFueling,          (byte)'6' }, // "Останов"
             { Command.Reset,                (byte)'7' }, // "Сброс"
             { Command.ReadParams,           (byte)'8' }, // "Параметры"
-            { Command.StartFillingQuantity, (byte)'9' }, // "Задание дозы"
+            { Command.StartFuelingQuantity, (byte)'9' }, // "Задание дозы"
             { Command.SetCounters,          (byte)'A' }  // "Изм. Счетчиков"
         };
 

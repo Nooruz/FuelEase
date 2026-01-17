@@ -7,8 +7,9 @@ using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Logging;
 using Serilog;
+using System.Diagnostics;
+using System.IO.Ports;
 using System.Text.RegularExpressions;
 
 namespace KIT.GasStation.Gilbarco
@@ -22,7 +23,6 @@ namespace KIT.GasStation.Gilbarco
         #region Private Members
 
         private readonly IProtocolParser _protocolParser;
-        private readonly IPortManager _portManager;
         private readonly IHubClient _hubClient;
         private readonly AsyncManualResetEvent _pauseGate = new(initialState: true);
         private readonly SemaphoreSlim _exclusive = new(1, 1);
@@ -34,6 +34,10 @@ namespace KIT.GasStation.Gilbarco
         private readonly object _pollLock = new();
         private const int _defaultTimeoutMs = 3000;
         private ILogger _logger;
+        private bool _hubHandlersRegistered;
+        private volatile bool _hardwareAvailable = true;
+        private string? _lastAvailabilityReason;
+        private int _hubRestartLoop;
 
         #endregion
 
@@ -41,15 +45,15 @@ namespace KIT.GasStation.Gilbarco
 
         public GilbarcoFuelDispenser(
             Controller controller,
-            int address,
             IProtocolParserFactory protocolParserFactory,
-            IPortManager portManager,
+            ISharedSerialPortService sharedSerialPortService,
             IHubClient hubClient)
-            : base(controller, address, protocolParserFactory, portManager, hubClient)
+            : base(controller, protocolParserFactory, sharedSerialPortService, hubClient)
         {
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
-            _portManager = portManager;
             _hubClient = hubClient;
+            _sharedSerialPortService = sharedSerialPortService;
+
             CreateLogger();
         }
 
@@ -61,6 +65,8 @@ namespace KIT.GasStation.Gilbarco
         {
             try
             {
+                _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
+
                 var key = new PortKey(
                     portName: Controller.ComPort,
                     baudRate: 5787, // TWOTP: фиксированный битрейт 5787 ±0.5%
@@ -70,6 +76,9 @@ namespace KIT.GasStation.Gilbarco
                 );
 
                 _hub = _hubClient.Connection;
+                RegisterHubConnectionHandlers();
+
+                _logger.Debug("EnsureStartedAsync вызван. Текущее состояние: {State}", _hub.State);
 
                 _hub.On<StartPollingCommand>("StartPolling", async _ => await StartPollingAsync(key, token));
                 _hub.On<StopPollingCommand>("StopPolling", async _ => await StopPollingAsync(key));
@@ -84,20 +93,16 @@ namespace KIT.GasStation.Gilbarco
                     await CompleteRefuelingAsync());
 
                 _hub.On<string>("GetCountersAsync", async _ =>
-                    await ExecuteCommandAsync(Command.RequestPumpTotals, Address, 0));
+                    await ExecuteCommandAsync(Command.CounterLiter, Address, 0));
 
                 await _hubClient.EnsureStartedAsync(token);
 
-                foreach (var column in Controller.Columns)
-                {
-                    string groupName = $"{Controller.Name}/{column.Name}";
-                    await _hub.InvokeAsync("JoinController", groupName);
-                    column.GroupName = groupName;
-                }
+                await JoinWorkerGroupsAsync();
+                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Ошибка при открытии подключения к Gilbarco");
+                _logger.Error(e, "Ошибка при открытии подключения к Gilbarco");
             }
         }
 
@@ -107,7 +112,7 @@ namespace KIT.GasStation.Gilbarco
 
             // Инициализация: запрос версии через Special Function 001
             await _pauseGate.WaitAsync(token);
-            await ExecuteCommandAsync(Command.SpecialFunction, Address, 0x001); // Version Request
+            await ExecuteCommandAsync(Command.Status, Address, 0x001); // Version Request
 
             while (!token.IsCancellationRequested && _pollingEnabled)
             {
@@ -183,6 +188,10 @@ namespace KIT.GasStation.Gilbarco
                     Status = parsed.Status;
                 }
             }
+            catch (Exception ex)
+            {
+
+            }
             finally
             {
                 _exclusive.Release();
@@ -202,7 +211,7 @@ namespace KIT.GasStation.Gilbarco
             // price = XXXX (BCD, LSD first), например: 1234 → 0x34, 0x12
             // но в десятичном виде: 12.34 → умножаем на 100 → 1234
             var priceScaled = (int)(price * 100);
-            await ExecuteCommandAsync(Command.SendDataToPump, Address, 0x04, priceScaled); // Level 1
+            await ExecuteCommandAsync(Command.ChangePrice, Address, 0x04, priceScaled); // Level 1
         }
 
         private async Task StartRefuelingAsync(string groupName, decimal amount, bool bySum)
@@ -214,15 +223,15 @@ namespace KIT.GasStation.Gilbarco
             int presetType = bySum ? 2 : 1; // 2 = money, 1 = volume
             var scaled = bySum ? (int)(amount * 100) : (int)(amount * 100); // volume: в сотых, money: в центах
 
-            await ExecuteCommandAsync(Command.SendDataToPump, Address, presetType, scaled);
+            await ExecuteCommandAsync(Command.ChangePrice, Address, presetType, scaled);
             await Task.Delay(100, CancellationToken.None);
-            await ExecuteCommandAsync(Command.Authorize, Address, 0); // команда '1'
+            //await ExecuteCommandAsync(Command.Authorize, Address, 0); // команда '1'
         }
 
         private async Task CompleteRefuelingAsync()
         {
             // TWOTP: Pump Stop команда '3'
-            await ExecuteCommandAsync(Command.PumpStop, Address, 0);
+            await ExecuteCommandAsync(Command.StopFueling, Address, 0);
         }
 
         #endregion
@@ -231,19 +240,6 @@ namespace KIT.GasStation.Gilbarco
 
         private async Task StartPollingAsync(PortKey key, CancellationToken token)
         {
-            var options = new SerialPortOptions(
-                BaudRate: 5787,
-                Parity: Parity.Even,
-                DataBits: 8,
-                StopBits: StopBits.One,
-                RtsEnable: false,
-                DtrEnable: false,
-                ReadTimeoutMs: _defaultTimeoutMs,
-                WriteTimeoutMs: 1000,
-                ReadBufferSize: 1024,
-                WriteBufferSize: 1024
-            );
-
             lock (_pollLock)
             {
                 if (_pollingEnabled) return;
@@ -251,9 +247,6 @@ namespace KIT.GasStation.Gilbarco
 
             try
             {
-                _lease = await _portManager.AcquireAsync(key, options, token);
-                _sharedSerialPortService = _lease.Port;
-
                 lock (_pollLock)
                 {
                     _pollingEnabled = true;
@@ -270,7 +263,6 @@ namespace KIT.GasStation.Gilbarco
                     await _lease.DisposeAsync();
                     _lease = null;
                 }
-                _sharedSerialPortService = null!;
             }
         }
 
@@ -296,10 +288,163 @@ namespace KIT.GasStation.Gilbarco
 
             try
             {
-                await _portManager.CloseIfIdleAsync(key);
+                //await _portManager.CloseIfIdleAsync(key);
             }
             catch { }
         }
+
+        #endregion
+
+        #region Hub
+
+        private void RegisterHubConnectionHandlers()
+        {
+            if (_hubHandlersRegistered || _hub is null)
+                return;
+
+            _hub.Reconnecting += OnHubReconnecting;
+            _hub.Reconnected += OnHubReconnected;
+            _hub.Closed += OnHubClosed;
+            _hubHandlersRegistered = true;
+        }
+
+        private Task OnHubReconnecting(Exception? error)
+        {
+            _logger.Warning("Потеряно соединение с сервером: {Message}", error?.Message ?? "unknown");
+            return Task.CompletedTask;
+        }
+
+        private async Task OnHubReconnected(string? connectionId)
+        {
+            _logger.Information("Переподключен с сервером. ConnectionId={ConnectionId}", connectionId);
+            try
+            {
+                await JoinWorkerGroupsAsync();
+                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Не удалось повторно присоединиться к группам после переподключения");
+            }
+        }
+
+        private Task OnHubClosed(Exception? error)
+        {
+            _logger.Error(error, "Соединение с SignalR было закрыто");
+            return RestartHubConnectionLoopAsync();
+        }
+
+        private Task RestartHubConnectionLoopAsync()
+        {
+            if (_hub is null)
+                return Task.CompletedTask;
+
+            if (Interlocked.CompareExchange(ref _hubRestartLoop, 1, 0) != 0)
+                return Task.CompletedTask;
+
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    while (_hub.State != HubConnectionState.Connected)
+                    {
+                        try
+                        {
+                            await _hub.StartAsync();
+                            await JoinWorkerGroupsAsync();
+                            await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "Не удалось переподключиться к SignalR, повтор через 5 секунд");
+                            await Task.Delay(TimeSpan.FromSeconds(5));
+                        }
+                    }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _hubRestartLoop, 0);
+                }
+            });
+        }
+
+        private async Task JoinWorkerGroupsAsync()
+        {
+            if (_hub is null || Controller?.Columns is null)
+                return;
+
+            // Ждем, пока соединение станет активным
+            var timeout = TimeSpan.FromSeconds(10);
+            var stopwatch = Stopwatch.StartNew();
+
+            while (_hub.State != HubConnectionState.Connected && stopwatch.Elapsed < timeout)
+            {
+                await Task.Delay(100);
+            }
+
+            if (_hub.State != HubConnectionState.Connected)
+                throw new InvalidOperationException("Не удалось подключиться к SignalR за отведенное время");
+
+            foreach (var item in Controller.Columns)
+            {
+                if (string.IsNullOrWhiteSpace(item.GroupName))
+                {
+                    item.GroupName = $"{Controller.Name}/{item.Name}";
+                }
+
+                await _hub.InvokeAsync("JoinController", item.GroupName, true);
+            }
+        }
+
+        private async Task BroadcastWorkerAvailabilityAsync(bool isAvailable, string? reason = null, bool force = false)
+        {
+            var sanitizedReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+
+            if (!force &&
+                _hardwareAvailable == isAvailable &&
+                string.Equals(_lastAvailabilityReason ?? string.Empty, sanitizedReason ?? string.Empty, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _hardwareAvailable = isAvailable;
+            _lastAvailabilityReason = sanitizedReason;
+
+            if (_hub is null || _hub.State != HubConnectionState.Connected)
+                return;
+
+            if (Controller?.Columns is null)
+                return;
+
+            var groups = Controller.Columns
+                .Where(c => !string.IsNullOrWhiteSpace(c.GroupName))
+                .Select(c => c.GroupName!);
+
+            var tasks = groups.Select(group => SendAvailabilityAsync(group, isAvailable, sanitizedReason));
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task SendAvailabilityAsync(string groupName, bool isAvailable, string? reason)
+        {
+            try
+            {
+                var report = new WorkerAvailabilityReport
+                {
+                    GroupName = groupName,
+                    IsAvailable = isAvailable,
+                    Reason = reason
+                };
+                await _hub.InvokeAsync("ReportWorkerAvailability", report);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Не удалось отправить состояние worker для {Group}", groupName);
+            }
+        }
+
+        private static bool IsCriticalSerialException(Exception ex) =>
+            ex is TimeoutException || ex is IOException || ex is InvalidOperationException || ex is UnauthorizedAccessException;
 
         #endregion
 

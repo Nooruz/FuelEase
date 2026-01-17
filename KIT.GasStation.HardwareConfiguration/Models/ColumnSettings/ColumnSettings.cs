@@ -6,6 +6,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
     [Serializable]
     [XmlInclude(typeof(LanfengColumnSettings))]
     [XmlInclude(typeof(PKElectronicsColumnSettings))]
+    [XmlInclude(typeof(GilbarcoColumnSettings))]
     public abstract class ColumnSettings : INotifyPropertyChanged
     {
         /// <summary>

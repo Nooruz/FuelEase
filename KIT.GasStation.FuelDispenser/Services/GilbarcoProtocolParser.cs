@@ -33,11 +33,11 @@ namespace KIT.GasStation.FuelDispenser.Services
             {
                 return new byte[] { (byte)(0x00 | (controllerAddress & 0x0F)) };
             }
-            else if (cmd == Command.Authorize)
-            {
-                return new byte[] { (byte)(0x10 | (controllerAddress & 0x0F)) };
-            }
-            else if (cmd == Command.StopFilling)
+            //else if (cmd == Command.Authorize)
+            //{
+            //    return new byte[] { (byte)(0x10 | (controllerAddress & 0x0F)) };
+            //}
+            else if (cmd == Command.StopFueling)
             {
                 return new byte[] { (byte)(0x30 | (controllerAddress & 0x0F)) };
             }
@@ -76,14 +76,14 @@ namespace KIT.GasStation.FuelDispenser.Services
                 0xFB, // LRC next
             };
 
-            byte lrc = CalculateLrc(block.Skip(1).Take(block.Count - 1 - 1)); // без STX и LRCn
-            block.Add(lrc);
-            block.Add(EndOfText);
+            //byte lrc = CalculateLrc(block.Skip(1).Take(block.Count - 1 - 1)); // без STX и LRCn
+            //block.Add(lrc);
+            //block.Add(EndOfText);
 
             // Оборачиваем в Data Next + Pump ID
             var full = new List<byte>
             {
-                0x20 | (pumpId & 0x0F) // Data Next команда
+                //0x20 | (pumpId & 0x0F) // Data Next команда
             };
             full.AddRange(block);
 
@@ -100,8 +100,8 @@ namespace KIT.GasStation.FuelDispenser.Services
 
             NozzleStatus nozzleStatus = status switch
             {
-                0x60 => NozzleStatus.Off,
-                0x70 => NozzleStatus.Call,
+                //0x60 => NozzleStatus.Off,
+                //0x70 => NozzleStatus.Call,
                 0x80 => NozzleStatus.Ready,
                 0x90 => NozzleStatus.PumpWorking,
                 0xA0 => NozzleStatus.PumpStop, // PEOT
@@ -139,6 +139,32 @@ namespace KIT.GasStation.FuelDispenser.Services
                 numStr = numStr.Insert(numStr.Length - decimalPlaces, ".");
             }
             return decimal.Parse(numStr);
+        }
+
+        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress, decimal? value = null, bool bySum = true, LanfengControllerType controllerType = LanfengControllerType.None)
+        {
+            if (cmd == Command.Status)
+            {
+                return new byte[] { (byte)(0x00 | (controllerAddress & 0x0F)) };
+            }
+            //else if (cmd == Command.Authorize)
+            //{
+            //    return new byte[] { (byte)(0x10 | (controllerAddress & 0x0F)) };
+            //}
+            else if (cmd == Command.StopFueling)
+            {
+                return new byte[] { (byte)(0x30 | (controllerAddress & 0x0F)) };
+            }
+            else if (cmd == Command.CounterSum || cmd == Command.CounterLiter)
+            {
+                return new byte[] { (byte)(0x50 | (controllerAddress & 0x0F)) };
+            }
+            else if (cmd == Command.ChangePrice)
+            {
+                return BuildPriceChangeBlock(controllerAddress, columnAddress, value ?? 0m);
+            }
+
+            throw new NotSupportedException($"Command {cmd} not implemented for Gilbarco.");
         }
     }
 }

@@ -24,11 +24,13 @@ namespace KIT.GasStation.FuelDispenser.Services.Factories
             return controllerType switch
             {
                 ControllerType.Lanfeng =>
-                    new LanfengProtocolParser(_commandEncoderFactory.Create(ControllerType.Lanfeng)),
+                    new LanfengProtocolParser(_commandEncoderFactory.Create(controllerType)),
                 ControllerType.PKElectronics => 
-                    new PKElectronicsProtocolParser(_commandEncoderFactory.Create(ControllerType.PKElectronics)),
+                    new PKElectronicsProtocolParser(_commandEncoderFactory.Create(controllerType)),
                 ControllerType.TechnoProjekt => 
-                    new TechnoprojectProtocolParser(_commandEncoderFactory.Create(ControllerType.TechnoProjekt)),
+                    new TechnoprojectProtocolParser(_commandEncoderFactory.Create(controllerType)),
+                ControllerType.Gilbarco => 
+                    new GilbarcoProtocolParser(_commandEncoderFactory.Create(controllerType)),
                 _ => throw new ArgumentException("Unknown controller type"),
             };
         }

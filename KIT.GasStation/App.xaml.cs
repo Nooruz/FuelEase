@@ -8,7 +8,6 @@ using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.HostBuilders;
 using KIT.GasStation.Services;
 using KIT.GasStation.SplashScreen;
-using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels;
 using KIT.GasStation.Views;
@@ -19,11 +18,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Sinks.MSSqlServer;
 using System;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -34,10 +33,11 @@ namespace KIT.GasStation
         #region Private Members
 
         private readonly IHost _host;
-        private IShiftStore _shiftStore;
         private readonly DXSplashScreenViewModel _splashScreenViewModel;
         private Window _window;
         private ThemedWindow _loginWindow;
+        private Mutex _instanceMutex;
+        private bool _ownsMutex;
 
         #endregion
 
@@ -230,6 +230,15 @@ namespace KIT.GasStation
         {
             try
             {
+                _instanceMutex = new Mutex(true, "Global\\КИТ-АЗС", out _ownsMutex);
+                if (!_ownsMutex)
+                {
+                    SplashScreenManager.CloseAll();
+                    MessageBox.Show("Приложение уже запущено.", "КИТ-АЗС", MessageBoxButton.OK, MessageBoxImage.Information);
+                    Shutdown();
+                    return;
+                }
+
                 _splashScreenViewModel.Status = "Проверка строки подключения...";
 
                 // Получаем конфигурацию
@@ -275,14 +284,13 @@ namespace KIT.GasStation
                 _splashScreenViewModel.Status = "Запуск хоста...";
                 await _host.StartAsync();
 
-                _shiftStore = _host.Services.GetRequiredService<IShiftStore>();
                 var userStore = _host.Services.GetRequiredService<IUserStore>();
                 userStore.OnLogin += UserStore_OnLogin;
                 userStore.OnLogout += UserStore_OnLogout;
 
                 _splashScreenViewModel.Status = "Запуск сервисов...";
-                await ServiceManager.StartWebAsync();
-                await ServiceManager.StartWorkerAsync();
+                //await ServiceManager.StartWebAsync();
+                //await ServiceManager.StartWorkerAsync();
 
                 _splashScreenViewModel.Status = "Загрузка основного окна...";
                 // Получаем главное окно из DI и устанавливаем DataContext

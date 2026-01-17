@@ -34,6 +34,10 @@
                 <views:KITView/>
             </DataTemplate>
 
+            <DataTemplate DataType="{x:Type viewModels:GilbarcoViewModel}">
+                <views:GilbarcoView/>
+            </DataTemplate>
+
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Styles/Fonts.xaml"/>
                 <ResourceDictionary Source="Styles/TextBlockStyle.xaml"/>

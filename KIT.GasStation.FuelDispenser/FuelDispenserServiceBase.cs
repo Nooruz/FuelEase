@@ -12,7 +12,7 @@ namespace KIT.GasStation.FuelDispenser
     {
         protected readonly Controller Controller;
         protected readonly IProtocolParserFactory _protocolParserFactory;
-        protected readonly IPortManager _portManager;
+        protected readonly ISharedSerialPortService _sharedSerialPortService;
         protected readonly IHubClient _hubClient;
         protected readonly ILogger _logger;
         protected readonly int Address;
@@ -30,17 +30,27 @@ namespace KIT.GasStation.FuelDispenser
         protected FuelDispenserServiceBase(Controller controller,
             int address,
             IProtocolParserFactory protocolParserFactory,
-            IPortManager portManager,
+            ISharedSerialPortService sharedSerialPortService,
             IHubClient hubClient)
         {
             Controller = controller;
             Columns = Controller.Columns.Where(c => c.Address == address).ToList();
             Address = address;
             _protocolParserFactory = protocolParserFactory;
-            _portManager = portManager;
+            _sharedSerialPortService = sharedSerialPortService;
             _hubClient = hubClient;
+        }
 
-
+        protected FuelDispenserServiceBase(Controller controller,
+            IProtocolParserFactory protocolParserFactory,
+            ISharedSerialPortService sharedSerialPortService,
+            IHubClient hubClient)
+        {
+            Controller = controller;
+            Columns = Controller.Columns.ToList();
+            _protocolParserFactory = protocolParserFactory;
+            _sharedSerialPortService = sharedSerialPortService;
+            _hubClient = hubClient;
         }
 
         public async Task RunAsync(CancellationToken token)

@@ -10,13 +10,13 @@ namespace KIT.GasStation.FuelDispenser.Services
         private static readonly Dictionary<Command, byte> _commandMap = new()
     {
         { Command.Status,          0x0 }, // Command '0'
-        { Command.StartFillingSum, 0x1 }, // Authorization / Re-Authorize
-        { Command.StopFilling,     0x3 }, // Pump Stop
+        { Command.StartFuelingSum, 0x1 }, // Authorization / Re-Authorize
+        { Command.StopFueling,     0x3 }, // Pump Stop
         { Command.CounterSum,      0x4 }, // Request for Transaction Data
         { Command.CounterLiter,    0x5 }, // Request for Pump Totals
         { Command.RealTimeMoney,   0x6 }, // Request for Real-Time Money
-        { Command.SendData,        0x2 }, // Data Next (для пресетов, цен и т.д.)
-        { Command.StopFilling,     0xF }  // Broadcast All Stop (команда 0xFC)
+        { Command.ChangePrice,     0x2 }, // Data Next (для пресетов, цен и т.д.)
+        { Command.StopFueling,     0xF }  // Broadcast All Stop (команда 0xFC)
     };
 
         private static readonly Dictionary<byte, Command> _reverseMap =

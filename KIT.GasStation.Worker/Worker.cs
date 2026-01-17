@@ -4,7 +4,7 @@ using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Serilog;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
+using System.IO.Ports;
 
 namespace KIT.GasStation.Worker
 {
@@ -14,16 +14,20 @@ namespace KIT.GasStation.Worker
         private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private readonly IFuelDispenserFactory _fuelDispenserFactory;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IPortManager _portManager;
+        private PortLease? _lease;
 
         public Worker(ILogger<Worker> logger,
             IHardwareConfigurationService hardwareConfigurationService,
             IFuelDispenserFactory fuelDispenserFactory,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            IPortManager portManager)
         {
             _logger = logger;
             _hardwareConfigurationService = hardwareConfigurationService;
             _fuelDispenserFactory = fuelDispenserFactory;
             _scopeFactory = scopeFactory;
+            _portManager = portManager;
         }
 
         
@@ -53,34 +57,27 @@ namespace KIT.GasStation.Worker
 
                     foreach (var ctrl in controllers)
                     {
-                        // Берём адреса из конфигурации колонки, исключаем отключённые и дубли
-                        var addresses = ctrl.Columns
-                            .Select(c => c.Address)
-                            .Distinct()
-                            .OrderBy(a => a)
-                            .ToArray();
+                        var port = await OpenPort(ctrl, currentCycleCts.Token);
 
-                        foreach (var addr in addresses)
+                        switch (ctrl.Type)
                         {
-                            var controller = new Controller()
-                            {
-                                Id = ctrl.Id,
-                                Name = ctrl.Name,
-                                Type = ctrl.Type,
-                                ComPort = ctrl.ComPort,
-                                BaudRate = ctrl.BaudRate,
-                                Settings = ctrl.Settings,
-                                Columns = new(ctrl.Columns.Where(c => c.Address == addr).ToList())
-                            };
-
-                            var taskKey = $"{ctrl.Id}_{addr}";
-
-                            var task = RunControllerLoopAsync(controller, addr, currentCycleCts.Token);
-
-                            // Сохраняем задачу для последующего отслеживания
-                            activeTasks[taskKey] = task;
+                            case ControllerType.None:
+                                break;
+                            case ControllerType.Lanfeng:
+                                await CreateLanfeng(ctrl, activeTasks, currentCycleCts.Token, port);
+                                break;
+                            case ControllerType.Gilbarco:
+                                await CreateGilbarco(ctrl, activeTasks, currentCycleCts.Token, port);
+                                break;
+                            case ControllerType.Emulator:
+                                break;
+                            case ControllerType.PKElectronics:
+                                break;
+                            case ControllerType.TechnoProjekt:
+                                break;
+                            default:
+                                break;
                         }
-
                     }
 
                     // 4. Ожидаем отмены основного токена (остановки службы) БЕЗ активного цикла.
@@ -106,7 +103,10 @@ namespace KIT.GasStation.Worker
         /// <param name="ctrl">ТРК</param>
         /// <param name="token">Токен</param>
         /// <returns></returns>
-        private async Task RunControllerLoopAsync(Controller ctrl, int address, CancellationToken token)
+        private async Task RunControllerLoopAsync(Controller ctrl, 
+            int address, 
+            CancellationToken token, 
+            ISharedSerialPortService port)
         {
             while (!token.IsCancellationRequested)
             {
@@ -117,7 +117,7 @@ namespace KIT.GasStation.Worker
                 try
                 {
                     _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
-                    service = _fuelDispenserFactory.Create(sp, ctrl, address);
+                    service = _fuelDispenserFactory.Create(sp, ctrl, address, port);
                     await service.RunAsync(token);
                 }
                 catch (OperationCanceledException)
@@ -138,5 +138,154 @@ namespace KIT.GasStation.Worker
                 }
             }
         }
+
+        private async Task RunControllerLoopAsync(Controller ctrl,
+            CancellationToken token, 
+            ISharedSerialPortService port)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                using var scope = _scopeFactory.CreateAsyncScope();
+                var sp = scope.ServiceProvider;
+                IFuelDispenserService? service = null;
+
+                try
+                {
+                    _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
+                    service = _fuelDispenserFactory.Create(sp, ctrl, port);
+                    await service.RunAsync(token);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Сбой в цикле ТРК {Id}", ctrl.Id);
+                    // Ждем перед перезапуском
+                    await Task.Delay(TimeSpan.FromSeconds(5), token);
+                }
+                finally
+                {
+                    if (service != null)
+                        await service.DisposeAsync();
+                }
+            }
+        }
+
+        #region Helpers
+
+        private async Task CreateLanfeng(Controller ctrl, 
+            ConcurrentDictionary<string, Task> activeTasks, 
+            CancellationToken token,
+            ISharedSerialPortService port)
+        {
+            // Берём адреса из конфигурации колонки, исключаем отключённые и дубли
+            var addresses = ctrl.Columns
+                .Select(c => c.Address)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToArray();
+
+            foreach (var addr in addresses)
+            {
+                var controller = new Controller()
+                {
+                    Id = ctrl.Id,
+                    Name = ctrl.Name,
+                    Type = ctrl.Type,
+                    ComPort = ctrl.ComPort,
+                    BaudRate = ctrl.BaudRate,
+                    Settings = ctrl.Settings,
+                    Columns = new(ctrl.Columns.Where(c => c.Address == addr).ToList())
+                };
+
+                var taskKey = $"{ctrl.Id}_{addr}";
+
+                var task = RunControllerLoopAsync(controller, addr, token, port);
+
+                // Сохраняем задачу для последующего отслеживания
+                activeTasks[taskKey] = task;
+            }
+        }
+
+        private async Task CreateGilbarco(Controller ctrl, 
+            ConcurrentDictionary<string, Task> activeTasks, 
+            CancellationToken token,
+            ISharedSerialPortService port)
+        {
+            var taskKey = $"{ctrl.Id}";
+
+            var task = RunControllerLoopAsync(ctrl, token, port);
+
+            // Сохраняем задачу для последующего отслеживания
+            activeTasks[taskKey] = task;
+        }
+
+        #endregion
+
+        #region Port
+
+        private async Task<ISharedSerialPortService> OpenPort(Controller controller, CancellationToken ct)
+        {
+            switch (controller.Type)
+            {
+                case ControllerType.None:
+                    break;
+                case ControllerType.Lanfeng:
+                    break;
+                case ControllerType.Gilbarco:
+                    return await GilbarcoPortOpen(controller, ct);
+                case ControllerType.Emulator:
+                    break;
+                case ControllerType.PKElectronics:
+                    break;
+                case ControllerType.TechnoProjekt:
+                    break;
+                default:
+                    break;
+            }
+
+            return null;
+        }
+
+        private async Task<ISharedSerialPortService> GilbarcoPortOpen(Controller controller, CancellationToken ct)
+        {
+            if (controller.Settings is GilbarcoControllerSettings settings)
+            {
+                var key = new PortKey(
+                    portName: controller.ComPort,
+                    baudRate: controller.BaudRate, // TWOTP: фиксированный битрейт 5787 ±0.5%
+                    parity: settings.Parity, // TWOTP: Even parity
+                    dataBits: 8,
+                    stopBits: StopBits.One
+                );
+                var options = new SerialPortOptions(
+                    BaudRate: controller.BaudRate,
+                    Parity: settings.Parity,
+                    DataBits: 8,
+                    StopBits: StopBits.One,
+                    RtsEnable: false,
+                    DtrEnable: false,
+                    ReadTimeoutMs: 3000,
+                    WriteTimeoutMs: 1000,
+                    ReadBufferSize: 1024,
+                    WriteBufferSize: 1024
+                );
+                try
+                {
+                    _lease = await _portManager.AcquireAsync(key, options, ct);
+                    return _lease.Port;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Не удалось запустить TWOTP polling");
+                }
+            }
+            return null;
+        }
+
+        #endregion
     }
 }

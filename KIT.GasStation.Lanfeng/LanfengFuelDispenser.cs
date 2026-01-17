@@ -49,13 +49,14 @@ namespace KIT.GasStation.Lanfeng
         public LanfengFuelDispenser(Controller controller,
             int address,
             IProtocolParserFactory protocolParserFactory,
-            IPortManager portManager,
+            ISharedSerialPortService sharedSerialPortService,
             IHubClient hubClient) 
-            : base(controller, address, protocolParserFactory, portManager, hubClient)
+            : base(controller, address, protocolParserFactory, sharedSerialPortService, hubClient)
         {
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
-            _portManager = portManager;
+            //_portManager = portManager;
             _hubClient = hubClient;
+            _sharedSerialPortService = sharedSerialPortService;
 
             if (Columns != null)
             {

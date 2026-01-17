@@ -29,9 +29,9 @@ namespace KIT.GasStation.PKElectronics
         public PKElectronicsFuelDispenser(Controller controller,
             int address,
             IProtocolParserFactory protocolParserFactory,
-            IPortManager portManager,
+            ISharedSerialPortService sharedSerialPortService,
             IHubClient hubClient) 
-            : base(controller, address, protocolParserFactory, portManager, hubClient)
+            : base(controller, address, protocolParserFactory, sharedSerialPortService, hubClient)
         {
             _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
             _hubClient = hubClient;

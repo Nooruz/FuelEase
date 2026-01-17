@@ -12,6 +12,7 @@ namespace KIT.GasStation.Hardware.ViewModels.Base
         private bool _allowCheckStatus = true;
         private Column _selectedColumn;
         private Controller _selectedController;
+        public ObservableCollection<int> _baudRates = new() { 2400, 4800, 9550, 9600, 9650, 9700, 9750, 10500, 10600, 57600, 115200 };
 
         #endregion
 
@@ -26,7 +27,15 @@ namespace KIT.GasStation.Hardware.ViewModels.Base
                 OnPropertyChanged(nameof(AvailablePorts));
             }
         }
-        public ObservableCollection<int> BaudRates => new() { 2400, 4800, 9550, 9600, 9650, 9700, 9750, 10500, 10600, 57600, 115200 };
+        public ObservableCollection<int> BaudRates
+        {
+            get => _baudRates;
+            set
+            {
+                _baudRates = value;
+                OnPropertyChanged(nameof(BaudRates));
+            }
+        }
         public bool AllowCheckStatus
         {
             get => _allowCheckStatus;
