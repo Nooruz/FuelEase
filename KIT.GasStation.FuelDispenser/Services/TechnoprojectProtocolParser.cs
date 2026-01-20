@@ -22,7 +22,7 @@ namespace KIT.GasStation.FuelDispenser.Services
     /// 22  CRC (XOR от байта 1 до 21)
     /// </summary>
     
-    public class TechnoprojectProtocolParser : IProtocolParser
+    public class TechnoprojectProtocolParser
     {
         private const byte SOH = 0x01;
         private const byte STX = 0x02;

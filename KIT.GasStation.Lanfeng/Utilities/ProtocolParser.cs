@@ -1,37 +1,25 @@
 ﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Models;
+using KIT.GasStation.FuelDispenser.Services;
 using System.Buffers;
 
-namespace KIT.GasStation.FuelDispenser.Services
+namespace KIT.GasStation.Lanfeng.Utilities
 {
-    /// <summary>
-    /// Реализация парсера протокола Lanfeng.
-    /// </summary>
-    public class LanfengProtocolParser : IProtocolParser
+    public static class ProtocolParser
     {
         #region Private Members
 
         private const byte StartTx = 0xA5;
         private const byte StartRx = 0x5A;
         private const byte FrameLength = 14;
-        private readonly ICommandEncoder _commandEncoder;
-        private LanfengControllerType _controllerType;
-
-        #endregion
-
-        #region Constructors
-
-        public LanfengProtocolParser(ICommandEncoder commandEncoder)
-        {
-            _commandEncoder = commandEncoder;
-        }
+        private static LanfengControllerType _controllerType;
 
         #endregion
 
         #region Public Voids
 
-        public byte[] BuildRequest(Command cmd, int controllerAddress, 
+        public static byte[] BuildRequest(Command cmd, int controllerAddress,
             int columnAddress = 0, decimal? value = null, bool bySum = true,
             LanfengControllerType controllerType = LanfengControllerType.Single)
         {
@@ -55,7 +43,7 @@ namespace KIT.GasStation.FuelDispenser.Services
                         frame[1] = (byte)(columnAddress << 4 | controllerAddress);
                         break;
                 }
-                frame[2] = _commandEncoder.Encode(cmd);
+                frame[2] = CommandEncoder.Encode(cmd);
 
                 // Вставить параметры, в зависимости от команды
                 switch (cmd)
@@ -83,7 +71,7 @@ namespace KIT.GasStation.FuelDispenser.Services
             }
         }
 
-        public ControllerResponse ParseResponse(byte[] rawResponse)
+        public static ControllerResponse ParseResponse(byte[] rawResponse)
         {
             // Базовая валидация
             if (rawResponse == null || rawResponse.Length < FrameLength)
@@ -103,7 +91,7 @@ namespace KIT.GasStation.FuelDispenser.Services
             if (checksum != rawResponse[^1])
                 return new ControllerResponse { IsValid = false };
 
-            var receivedcmd = _commandEncoder.Decode(rawResponse[2]);
+            var receivedcmd = CommandEncoder.Decode(rawResponse[2]);
             var address = (rawResponse[1] >> 4) & 0x0F;
 
             // Извлекаем статус колонки из 12-го байта (индекс 11)
@@ -147,7 +135,7 @@ namespace KIT.GasStation.FuelDispenser.Services
         /// <summary>
         /// Считывает 4 BCD-байта (offset … offset+3) из rawResponse и возвращает decimal = (BCD-значение) / 100.
         /// </summary>
-        private decimal ParseBcdQuantity(byte[] rawResponse, int offset, int endIndex = 4)
+        private static decimal ParseBcdQuantity(byte[] rawResponse, int offset, int endIndex = 4)
         {
             if (rawResponse == null || rawResponse.Length < offset + 4)
                 throw new ArgumentException("Недостаточно байт для BCD-парсинга");
@@ -251,7 +239,7 @@ namespace KIT.GasStation.FuelDispenser.Services
         }
 
         //Метод для выравнивания и извлечения кадра из необработанного ответа
-        private bool TryAlignAndExtractFrame(byte[] rawResponse, out byte[] sorted)
+        private static bool TryAlignAndExtractFrame(byte[] rawResponse, out byte[] sorted)
         {
             sorted = Array.Empty<byte>();
 

@@ -1,7 +1,5 @@
 ﻿using KIT.GasStation.FuelDispenser;
 using KIT.GasStation.FuelDispenser.Hubs;
-using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -14,7 +12,6 @@ namespace KIT.GasStation.PKElectronics
     {
         #region Private Members
 
-        private readonly IProtocolParser _protocolParser;
         private readonly IHubClient _hubClient;
         private readonly ILogger _logger;
         private PortKey _portKey;
@@ -28,12 +25,10 @@ namespace KIT.GasStation.PKElectronics
 
         public PKElectronicsFuelDispenser(Controller controller,
             int address,
-            IProtocolParserFactory protocolParserFactory,
             ISharedSerialPortService sharedSerialPortService,
             IHubClient hubClient) 
-            : base(controller, address, protocolParserFactory, sharedSerialPortService, hubClient)
+            : base(controller, address, sharedSerialPortService, hubClient)
         {
-            _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
             _hubClient = hubClient;
         }
 

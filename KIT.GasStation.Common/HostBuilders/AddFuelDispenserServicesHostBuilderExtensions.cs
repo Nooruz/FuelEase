@@ -1,5 +1,4 @@
 ﻿using KIT.GasStation.Common.Factories;
-using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,8 +14,6 @@ namespace KIT.GasStation.Common.HostBuilders
                 services.AddSingleton<IPortManager, PortManager>();
                 services.AddSingleton<ISharedSerialPortService, SharedSerialPortService>();
                 services.AddSingleton<IHardwareConfigurationService, HardwareConfigurationService>();
-                services.AddSingleton<ICommandEncoderFactory, CommandEncoderFactory>();
-                services.AddSingleton<IProtocolParserFactory, ProtocolParserFactory>();
                 services.AddSingleton<IFuelDispenserFactory, FuelDispenserFactory>();
             });
         }

@@ -1,8 +1,8 @@
 ﻿using KIT.GasStation.FuelDispenser.Commands;
 
-namespace KIT.GasStation.FuelDispenser.Services
+namespace KIT.GasStation.Lanfeng.Utilities
 {
-    public class LanfengCommandEncoder : ICommandEncoder
+    public static class CommandEncoder
     {
         #region Private Members
 
@@ -29,7 +29,7 @@ namespace KIT.GasStation.FuelDispenser.Services
 
         #region Public Voids
 
-        public byte Encode(Command command)
+        public static byte Encode(Command command)
         {
             if (_commandMap.TryGetValue(command, out byte value))
                 return value;
@@ -37,7 +37,7 @@ namespace KIT.GasStation.FuelDispenser.Services
             throw new ArgumentException($"Command '{command}' is not supported by Lanfeng.");
         }
 
-        public Command Decode(byte commandByte)
+        public static Command Decode(byte commandByte)
         {
             if (_reverseMap.TryGetValue(commandByte, out Command command))
                 return command;

@@ -1,12 +1,14 @@
 ﻿using KIT.GasStation.FuelDispenser.Commands;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace KIT.GasStation.FuelDispenser.Services
+namespace KIT.GasStation.Gilbarco.Helpers
 {
-    public class GilbarcoCommandEncoder : ICommandEncoder
+    public static class CommandEncoder
     {
-        // Согласно таблице 2: Command Code + Pump ID (4 бита команды + 4 бита адреса)
-        // Здесь энкодер возвращает только код команды (старшие 4 бита)
-
         private static readonly Dictionary<Command, byte> _commandMap = new()
         {
             { Command.Status,          0x0 }, // Command '0'
@@ -22,14 +24,14 @@ namespace KIT.GasStation.FuelDispenser.Services
         private static readonly Dictionary<byte, Command> _reverseMap =
             _commandMap.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
 
-        public byte Encode(Command command)
+        public static byte Encode(Command command)
         {
             if (_commandMap.TryGetValue(command, out byte value))
                 return value;
             throw new ArgumentException($"Command '{command}' is not supported by Gilbarco.");
         }
 
-        public Command Decode(byte commandByte)
+        public static Command Decode(byte commandByte)
         {
             // Только для не-специальных команд
             if (_reverseMap.TryGetValue(commandByte, out Command command))

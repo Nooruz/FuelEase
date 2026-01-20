@@ -1,93 +1,28 @@
 ﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KIT.GasStation.FuelDispenser.Services
 {
-    public class GilbarcoProtocolParser : IProtocolParser
+    public class GilbarcoProtocolParser
     {
         private const byte StartOfText = 0xFF;
         private const byte EndOfText = 0xF0;
-        private const byte DataControl_PresetAmount = 0xF8;
-        private const byte DataControl_Grade = 0xF6;
-        private const byte DataControl_PPU = 0xF7;
+        private const byte DataControl_VolumePreset = 0xF1;
+        private const byte DataControl_MoneyPreset = 0xF2;
+        private const byte DataControl_Level1 = 0xF4;
+        private const byte DataControl_Level2 = 0xF5;
+        private const byte DataControl_GradeNext = 0xF6;
+        private const byte DataControl_PpuNext = 0xF7;
+        private const byte DataControl_PresetAmountNext = 0xF8;
+        private const byte DataControl_LrcNext = 0xFB;
         private const byte DataWordPrefix = 0xE0;
-        private const byte DataControlWordPrefix = 0xF0;
 
         private readonly ICommandEncoder _encoder;
 
         public GilbarcoProtocolParser(ICommandEncoder encoder)
         {
             _encoder = encoder;
-        }
-
-        // Простой запрос статуса: [0x0][pumpId]
-        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress = 0, decimal? value = null, bool bySum = true)
-        {
-            if (cmd == Command.Status)
-            {
-                return new byte[] { (byte)(0x00 | (controllerAddress & 0x0F)) };
-            }
-            //else if (cmd == Command.Authorize)
-            //{
-            //    return new byte[] { (byte)(0x10 | (controllerAddress & 0x0F)) };
-            //}
-            else if (cmd == Command.StopFueling)
-            {
-                return new byte[] { (byte)(0x30 | (controllerAddress & 0x0F)) };
-            }
-            else if (cmd == Command.CounterSum || cmd == Command.CounterLiter)
-            {
-                return new byte[] { (byte)(0x50 | (controllerAddress & 0x0F)) };
-            }
-            else if (cmd == Command.ChangePrice)
-            {
-                return BuildPriceChangeBlock(controllerAddress, columnAddress, value ?? 0m);
-            }
-
-            throw new NotSupportedException($"Command {cmd} not implemented for Gilbarco.");
-        }
-
-        private byte[] BuildPriceChangeBlock(int pumpId, int grade, decimal price)
-        {
-            // Цена в формате XXXX (BCD, 4 цифры, LSD first)
-            int priceInt = (int)(price * 100); // 123.45 → 12345 → но у Gilbarco только 4 цифры!
-            if (priceInt > 9999) priceInt = 9999;
-
-            string priceStr = priceInt.ToString("D4"); // "1234"
-
-            var block = new List<byte>
-            {
-                StartOfText,
-                0xE5, // DL = 5 (фиксировано)
-                0xF4, // Level 1 Price
-                0xF6, // Grade next
-                (byte)(0xE0 | (grade & 0x0F)),
-                0xF7, // PPU next
-                (byte)(0xE0 | (priceStr[3] - '0')), // LSD
-                (byte)(0xE0 | (priceStr[2] - '0')),
-                (byte)(0xE0 | (priceStr[1] - '0')),
-                (byte)(0xE0 | (priceStr[0] - '0')), // MSD
-                0xFB, // LRC next
-            };
-
-            //byte lrc = CalculateLrc(block.Skip(1).Take(block.Count - 1 - 1)); // без STX и LRCn
-            //block.Add(lrc);
-            //block.Add(EndOfText);
-
-            // Оборачиваем в Data Next + Pump ID
-            var full = new List<byte>
-            {
-                //0x20 | (pumpId & 0x0F) // Data Next команда
-            };
-            full.AddRange(block);
-
-            return full.ToArray();
         }
 
         public ControllerResponse ParseResponse(byte[] rawResponse)
@@ -122,26 +57,12 @@ namespace KIT.GasStation.FuelDispenser.Services
             };
         }
 
-        // Helper: парсинг BCD-полей вида E1 E2 → "12"
-        private static decimal ParseGilbarcoBcdField(ReadOnlySpan<byte> bytes, int decimalPlaces = 0)
-        {
-            var digits = new List<char>();
-            foreach (byte b in bytes)
-            {
-                if ((b & 0xF0) != 0xE0)
-                    throw new FormatException("Invalid Data Word prefix");
-                char digit = (char)('0' + (b & 0x0F));
-                digits.Add(digit);
-            }
-            string numStr = string.Concat(digits);
-            if (decimalPlaces > 0 && numStr.Length > decimalPlaces)
-            {
-                numStr = numStr.Insert(numStr.Length - decimalPlaces, ".");
-            }
-            return decimal.Parse(numStr);
-        }
-
-        public byte[] BuildRequest(Command cmd, int controllerAddress, int columnAddress, decimal? value = null, bool bySum = true, LanfengControllerType controllerType = LanfengControllerType.None)
+        public byte[] BuildRequest(Command cmd, 
+            int controllerAddress, 
+            int columnAddress, 
+            decimal? value = null, 
+            bool bySum = true, 
+            LanfengControllerType controllerType = LanfengControllerType.None)
         {
             if (cmd == Command.Status)
             {
@@ -161,10 +82,111 @@ namespace KIT.GasStation.FuelDispenser.Services
             }
             else if (cmd == Command.ChangePrice)
             {
-                return BuildPriceChangeBlock(controllerAddress, columnAddress, value ?? 0m);
+                var dataBlock = BuildPriceChangeBlock(controllerAddress, columnAddress, value ?? 0m);
+                return BuildDataNextFrame(controllerAddress, dataBlock);
+            }
+            else if (cmd == Command.SendData)
+            {
+                if (!value.HasValue)
+                {
+                    throw new ArgumentException("Preset amount is required for SendData command.", nameof(value));
+                }
+
+                var dataBlock = BuildPresetBlock(controllerAddress, columnAddress, value.Value, bySum);
+                return BuildDataNextFrame(controllerAddress, dataBlock);
             }
 
             throw new NotSupportedException($"Command {cmd} not implemented for Gilbarco.");
         }
+
+        #region Helpers
+
+        private static byte[] BuildDataNextFrame(int pumpId, byte[] dataBlock)
+        {
+            var frame = new byte[dataBlock.Length + 1];
+            frame[0] = (byte)(0x20 | (pumpId & 0x0F));
+            Buffer.BlockCopy(dataBlock, 0, frame, 1, dataBlock.Length);
+            return frame;
+        }
+
+        private byte[] BuildPriceChangeBlock(int pumpId, int grade, decimal price)
+        {
+            // Цена в формате XXXX (BCD, 4 цифры, LSD first)
+            int priceInt = (int)(price * 100); // 123.45 → 12345 → но у Gilbarco только 4 цифры!
+            if (priceInt > 9999) priceInt = 9999;
+
+            string priceStr = priceInt.ToString("D4");
+            var gradeWord = BuildDataWord(Math.Clamp(grade - 1, 0, 15));
+            var message = new List<byte>
+            {
+                DataControl_Level1,
+                DataControl_GradeNext,
+                gradeWord,
+                DataControl_PpuNext,
+            };
+            message.AddRange(BuildBcdDigits(priceStr));
+            return BuildDataBlock(message);
+        }
+
+        private static byte[] BuildPresetBlock(int pumpId, int grade, decimal amount, bool bySum)
+        {
+            var presetControl = bySum ? DataControl_MoneyPreset : DataControl_VolumePreset;
+            var presetAmount = Math.Clamp((int)Math.Round(amount * 100m, MidpointRounding.AwayFromZero), 0, 99999);
+            var amountStr = presetAmount.ToString("D5");
+            var message = new List<byte> { presetControl, DataControl_Level1 };
+
+            if (!bySum)
+            {
+                var gradeWord = BuildDataWord(Math.Clamp(grade - 1, 0, 15));
+                message.Add(DataControl_GradeNext);
+                message.Add(gradeWord);
+            }
+
+            message.Add(DataControl_PresetAmountNext);
+            message.AddRange(BuildBcdDigits(amountStr));
+
+            return BuildDataBlock(message);
+        }
+
+        private static IEnumerable<byte> BuildBcdDigits(string digits)
+        {
+            for (int i = digits.Length - 1; i >= 0; i--)
+            {
+                yield return BuildDataWord(digits[i] - '0');
+            }
+        }
+
+        private static byte[] BuildDataBlock(IReadOnlyList<byte> messageWords)
+        {
+            var words = new List<byte>(messageWords.Count + 5) { StartOfText };
+            var wordCount = messageWords.Count + 3; // LRCn + LRC + ETX
+            words.Add(BuildDataLength(wordCount));
+            words.AddRange(messageWords);
+            words.Add(DataControl_LrcNext);
+            var lrc = CalculateLrc(words);
+            words.Add(lrc);
+            words.Add(EndOfText);
+            return words.ToArray();
+        }
+
+        private static byte BuildDataLength(int wordCount)
+        {
+            var nibble = (16 - (wordCount % 16)) % 16;
+            return BuildDataWord(nibble);
+        }
+
+        private static byte BuildDataWord(int digit)
+        {
+            return (byte)(DataWordPrefix | (digit & 0x0F));
+        }
+
+        private static byte CalculateLrc(IEnumerable<byte> words)
+        {
+            var sum = words.Sum(word => word & 0x0F);
+            var lrcNibble = (16 - (sum % 16)) % 16;
+            return BuildDataWord(lrcNibble);
+        }
+
+        #endregion
     }
 }

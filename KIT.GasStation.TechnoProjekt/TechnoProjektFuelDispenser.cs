@@ -4,9 +4,9 @@ using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
+using KIT.GasStation.TechnoProjekt.Utilities;
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
 using System.IO.Ports;
@@ -18,8 +18,6 @@ namespace KIT.GasStation.Technoproject
     {
         #region Private Members
 
-        private readonly IProtocolParser _protocolParser;
-        private readonly IPortManager _portManager;
         private readonly IHubClient _hubClient;
         private readonly AsyncManualResetEvent _pauseGate = new(initialState: true);
         private readonly SemaphoreSlim _exclusive = new(1, 1);
@@ -38,13 +36,10 @@ namespace KIT.GasStation.Technoproject
 
         public TechnoprojectFuelDispenser(Controller controller,
             int address,
-            IProtocolParserFactory protocolParserFactory,
-            IPortManager portManager,
+            ISharedSerialPortService sharedSerialPortService,
             IHubClient hubClient)
-            : base(controller, address, protocolParserFactory, portManager, hubClient)
+            : base(controller, address, sharedSerialPortService, hubClient)
         {
-            _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
-            _portManager = portManager;
             _hubClient = hubClient;
 
             CreateLogger();
@@ -179,7 +174,7 @@ namespace KIT.GasStation.Technoproject
             await _exclusive.WaitAsync(ct);
             try
             {
-                var frame = _protocolParser.BuildRequest(cmd, controllerAddress, nozzleMask, value);
+                var frame = ProtocolParser.BuildRequest(cmd, controllerAddress, nozzleMask, value);
                 _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
 
                 var rx = await _sharedSerialPortService.WriteReadAsync(
@@ -190,7 +185,7 @@ namespace KIT.GasStation.Technoproject
                     maxRetries: maxRetries,
                     ct: ct);
 
-                var resp = _protocolParser.ParseResponse(rx);
+                var resp = ProtocolParser.ParseResponse(rx);
 
                 if (resp is not null && resp.IsValid)
                 {
@@ -235,7 +230,7 @@ namespace KIT.GasStation.Technoproject
             {
                 async Task<byte[]> send(Command c, int addr, int mask, decimal? val)
                 {
-                    var frame = _protocolParser.BuildRequest(c, addr, mask, val);
+                    var frame = ProtocolParser.BuildRequest(c, addr, mask, val);
                     _logger.Information("[Tx] {Tx}", BitConverter.ToString(frame));
                     var rx = await _sharedSerialPortService.WriteReadAsync(frame, expectedRxLength: _frameLen, writeToReadDelayMs: 0, readTimeoutMs: 3000, maxRetries: 2, ct: ct);
                     _logger.Information("[Rx] {Rx}", BitConverter.ToString(rx));
@@ -335,7 +330,7 @@ namespace KIT.GasStation.Technoproject
             }
             _sharedSerialPortService = null!;
 
-            try { await _portManager.CloseIfIdleAsync(key); } catch { }
+            
         }
 
         private async Task StartPollingAsync(PortKey key, CancellationToken token)
@@ -362,9 +357,6 @@ namespace KIT.GasStation.Technoproject
 
                 try
                 {
-                    _lease = await _portManager.AcquireAsync(key, options, token);
-                    _sharedSerialPortService = _lease.Port;
-
                     lock (_pollLock)
                     {
                         _pollingEnabled = true;

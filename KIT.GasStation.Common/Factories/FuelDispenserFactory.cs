@@ -18,8 +18,8 @@ namespace KIT.GasStation.Common.Factories
 
             return controller.Type switch
             {
-                ControllerType.Lanfeng => ActivatorUtilities.CreateInstance<LanfengFuelDispenser>(sp, controller, address, hubClient),
-                ControllerType.Gilbarco => ActivatorUtilities.CreateInstance<GilbarcoFuelDispenser>(sp, controller, address, hubClient, port),
+                ControllerType.Lanfeng => ActivatorUtilities.CreateInstance<LanfengFuelDispenser>(sp, controller, address, hubClient, port),
+                ControllerType.Gilbarco => ActivatorUtilities.CreateInstance<GilbarcoFuelDispenser>(sp, controller, hubClient, port),
                 //ControllerType.Emulator => _createEmulatorFuelDispenser(),
                 ControllerType.PKElectronics => ActivatorUtilities.CreateInstance<PKElectronicsFuelDispenser>(sp, controller, address, hubClient),
                 //ControllerType.TechnoProjekt => _createTechnoProjektFuelDispenser(),

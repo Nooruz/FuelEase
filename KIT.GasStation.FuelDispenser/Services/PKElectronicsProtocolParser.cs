@@ -3,7 +3,7 @@ using KIT.GasStation.FuelDispenser.Models;
 
 namespace KIT.GasStation.FuelDispenser.Services
 {
-    public class PKElectronicsProtocolParser : IProtocolParser
+    public class PKElectronicsProtocolParser
     {
         #region Private Members
 

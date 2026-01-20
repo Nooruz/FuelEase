@@ -4,9 +4,9 @@ using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.FuelDispenser.Services.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
+using KIT.GasStation.Lanfeng.Utilities;
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
 using System.Diagnostics;
@@ -23,8 +23,6 @@ namespace KIT.GasStation.Lanfeng
     {
         #region Private Members
 
-        private readonly IProtocolParser _protocolParser;
-        private readonly IPortManager _portManager;
         private readonly IHubClient _hubClient;
         private readonly AsyncManualResetEvent _pauseGate = new(initialState: true);
         private ISharedSerialPortService _sharedSerialPortService;
@@ -48,13 +46,10 @@ namespace KIT.GasStation.Lanfeng
 
         public LanfengFuelDispenser(Controller controller,
             int address,
-            IProtocolParserFactory protocolParserFactory,
             ISharedSerialPortService sharedSerialPortService,
             IHubClient hubClient) 
-            : base(controller, address, protocolParserFactory, sharedSerialPortService, hubClient)
+            : base(controller, address, sharedSerialPortService, hubClient)
         {
-            _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
-            //_portManager = portManager;
             _hubClient = hubClient;
             _sharedSerialPortService = sharedSerialPortService;
 
@@ -279,7 +274,7 @@ namespace KIT.GasStation.Lanfeng
             
             try
             {
-                var frame = _protocolParser.BuildRequest(
+                var frame = ProtocolParser.BuildRequest(
                     cmd, 
                     controllerAddress, 
                     columnAddress: nozzleMask, 
@@ -310,7 +305,7 @@ namespace KIT.GasStation.Lanfeng
                             ct: ct);
                         await BroadcastWorkerAvailabilityAsync(true);
 
-                        controllerResponse = _protocolParser.ParseResponse(rx);
+                        controllerResponse = ProtocolParser.ParseResponse(rx);
 
                         if (controllerResponse.IsValid)
                         {
@@ -517,9 +512,6 @@ namespace KIT.GasStation.Lanfeng
                 _lease = null;
             }
             _sharedSerialPortService = null!;
-
-            // По желанию: мягкая уборка простаивающего порта
-            try { await _portManager.CloseIfIdleAsync(key); } catch { }
         }
 
         /// <summary>
@@ -549,10 +541,6 @@ namespace KIT.GasStation.Lanfeng
 
                 try
                 {
-                    // 1) Берём ЛИЗУ В ПОЛЕ
-                    _lease = await _portManager.AcquireAsync(key, options, token);
-                    _sharedSerialPortService = _lease.Port;
-
                     // 2) Только после успешного Acquire включаем флаг
                     lock (_pollLock)
                     {

@@ -3,7 +3,7 @@ using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.FuelDispenser.Services.Factories;
+using KIT.GasStation.Gilbarco.Helpers;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -22,7 +22,6 @@ namespace KIT.GasStation.Gilbarco
     {
         #region Private Members
 
-        private readonly IProtocolParser _protocolParser;
         private readonly IHubClient _hubClient;
         private readonly AsyncManualResetEvent _pauseGate = new(initialState: true);
         private readonly SemaphoreSlim _exclusive = new(1, 1);
@@ -43,14 +42,11 @@ namespace KIT.GasStation.Gilbarco
 
         #region Constructors
 
-        public GilbarcoFuelDispenser(
-            Controller controller,
-            IProtocolParserFactory protocolParserFactory,
+        public GilbarcoFuelDispenser(Controller controller,
             ISharedSerialPortService sharedSerialPortService,
             IHubClient hubClient)
-            : base(controller, protocolParserFactory, sharedSerialPortService, hubClient)
+            : base(controller, sharedSerialPortService, hubClient)
         {
-            _protocolParser = protocolParserFactory.CreateIProtocolParser(Controller.Type);
             _hubClient = hubClient;
             _sharedSerialPortService = sharedSerialPortService;
 
@@ -86,14 +82,56 @@ namespace KIT.GasStation.Gilbarco
                 _hub.On<string, decimal>("SetPriceAsync", async (groupName, price) =>
                     await SetPriceAsync(groupName, price));
 
-                _hub.On<string, decimal, bool>("StartRefuelingAsync", async (groupName, sum, bySum) =>
+                _hub.On<string, decimal, bool>("StartFuelingAsync", async (groupName, sum, bySum) =>
                     await StartRefuelingAsync(groupName, sum, bySum));
 
-                _hub.On<string>("CompleteRefuelingAsync", async _ =>
+                _hub.On<string>("CompleteFuelingAsync", async _ =>
                     await CompleteRefuelingAsync());
 
-                _hub.On<string>("GetCountersAsync", async _ =>
-                    await ExecuteCommandAsync(Command.CounterLiter, Address, 0));
+                _hub.On<string, bool>("ChangeControlModeAsync", async (groupName, isProgramMode) =>
+                {
+                    await ChangeControlModeAsync(groupName, isProgramMode);
+                });
+
+                _hub.On<string>("StopFuelingAsync", async (groupName) =>
+                {
+                    await StopFuelingAsync(groupName);
+                });
+
+                _hub.On<string>("ResumeFuelingAsync", async (groupName) =>
+                {
+                    await ResumeFuelingAsync(groupName);
+                });
+
+                _hub.On<string>("GetStatusByAddressAsync", async (groupName) =>
+                {
+                    await GetStatusByAddressAsync(groupName);
+                });
+
+                _hub.On<string>("GetCountersAsync", async (groupName) =>
+                {
+                    var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
+                    if (column is not null)
+                    {
+                        await ExecuteCommandAsync(Command.CounterLiter, Address, column.LanfengAddress);
+                    }
+                });
+
+                _hub.On<string>("PausePollingAsync", async (groupName) =>
+                {
+                    if (Columns.Any(c => c.GroupName == groupName))
+                    {
+                        await PausePollingAsync();
+                    }
+                });
+
+                _hub.On<string>("ResumePollingAsync", async (groupName) =>
+                {
+                    if (Columns.Any(c => c.GroupName == groupName))
+                    {
+                        await ResumePollingAsync();
+                    }
+                });
 
                 await _hubClient.EnsureStartedAsync(token);
 
@@ -112,14 +150,26 @@ namespace KIT.GasStation.Gilbarco
 
             // Инициализация: запрос версии через Special Function 001
             await _pauseGate.WaitAsync(token);
-            await ExecuteCommandAsync(Command.Status, Address, 0x001); // Version Request
+
+            var addresses = Controller.Columns
+                .Select(c => c.Address)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToArray();
+
+            if (addresses == null) return;
 
             while (!token.IsCancellationRequested && _pollingEnabled)
             {
                 try
                 {
-                    await ExecuteCommandAsync(Command.Status, Address, 0, ct: token);
-                    await Task.Delay(500, token); // TWOTP: опрос раз в ~500 мс
+                    foreach (int address in addresses)
+                    {
+                        _pollingResumedEvent.Wait(token);
+
+                        await ExecuteCommandSafeAsync(() => 
+                        ExecuteCommandAsync(Command.Status, address, 0x001, expectedLength: 2, ct: token), token); // Version Request
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -147,6 +197,43 @@ namespace KIT.GasStation.Gilbarco
 
         #endregion
 
+        #region Пауза и продолжения опроса
+
+        private readonly ManualResetEventSlim _pollingResumedEvent = new(true);
+        private readonly SemaphoreSlim _commandGate = new(1, 1);
+
+        private async Task PausePollingAsync()
+        {
+            _pollingResumedEvent.Reset();
+
+            // ⛔ ждём, пока текущая команда ДОРАБОТАЕТ
+            await _commandGate.WaitAsync();
+            _commandGate.Release();
+        }
+
+        private async Task ResumePollingAsync()
+        {
+            _pollingResumedEvent.Set();
+            await Task.CompletedTask;
+        }
+
+        private async Task ExecuteCommandSafeAsync(
+            Func<Task> command,
+            CancellationToken token)
+        {
+            await _commandGate.WaitAsync(token);
+            try
+            {
+                await command(); // <-- вот тут команда гарантированно ДОРАБАТЫВАЕТ
+            }
+            finally
+            {
+                _commandGate.Release();
+            }
+        }
+
+        #endregion
+
         #region Command Execution
 
         private async Task ExecuteCommandAsync(
@@ -155,6 +242,7 @@ namespace KIT.GasStation.Gilbarco
             int subCommandOrData,
             decimal? value = null,
             int expectedLength = 0,
+            bool bySum = true,
             CancellationToken ct = default)
         {
             if (_sharedSerialPortService is null)
@@ -165,12 +253,12 @@ namespace KIT.GasStation.Gilbarco
 
             try
             {
-                var frame = _protocolParser.BuildRequest(cmd, pumpId, subCommandOrData, value);
+                var frame = ProtocolParser.BuildRequest(cmd, pumpId, subCommandOrData, value, bySum);
                 _logger.Information("[Tx] {Frame}", BitConverter.ToString(frame));
 
                 var rx = await _sharedSerialPortService.WriteReadAsync(
                     frame,
-                    expectedRxLength: expectedLength > 0 ? expectedLength : 2, // минимум 1 слово (2 байта)
+                    expectedRxLength: expectedLength > 0 ? expectedLength : 1, // минимум 1 слово (1 байт)
                     writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
                     readTimeoutMs: _defaultTimeoutMs,
                     maxRetries: 3,
@@ -178,7 +266,7 @@ namespace KIT.GasStation.Gilbarco
 
                 _logger.Information("[Rx] {Response}", BitConverter.ToString(rx));
 
-                var parsed = _protocolParser.ParseResponse(rx);
+                var parsed = ProtocolParser.ParseResponse(rx);
                 if (parsed != null)
                 {
                     parsed.Group = Controller.Columns.FirstOrDefault()?.GroupName;
@@ -207,11 +295,8 @@ namespace KIT.GasStation.Gilbarco
             var column = Controller.Columns.FirstOrDefault(c => c.GroupName == groupName);
             if (column == null) return;
 
-            // TWOTP: команда '2' → Data Block → Price Change
-            // price = XXXX (BCD, LSD first), например: 1234 → 0x34, 0x12
-            // но в десятичном виде: 12.34 → умножаем на 100 → 1234
-            var priceScaled = (int)(price * 100);
-            await ExecuteCommandAsync(Command.ChangePrice, Address, 0x04, priceScaled); // Level 1
+            // price = XXXX (BCD, LSD first), например: 12.34 → 1234 (масштабирование выполняется в парсере)
+            await ExecuteCommandAsync(Command.ChangePrice, column.Address, column.Nozzle, price); // Level 1
         }
 
         private async Task StartRefuelingAsync(string groupName, decimal amount, bool bySum)
@@ -223,7 +308,7 @@ namespace KIT.GasStation.Gilbarco
             int presetType = bySum ? 2 : 1; // 2 = money, 1 = volume
             var scaled = bySum ? (int)(amount * 100) : (int)(amount * 100); // volume: в сотых, money: в центах
 
-            await ExecuteCommandAsync(Command.ChangePrice, Address, presetType, scaled);
+            await ExecuteCommandAsync(Command.SendData, Address, column.Nozzle, amount, expectedLength: 1, bySum: bySum);
             await Task.Delay(100, CancellationToken.None);
             //await ExecuteCommandAsync(Command.Authorize, Address, 0); // команда '1'
         }
@@ -232,6 +317,84 @@ namespace KIT.GasStation.Gilbarco
         {
             // TWOTP: Pump Stop команда '3'
             await ExecuteCommandAsync(Command.StopFueling, Address, 0);
+        }
+
+        private async Task ChangeControlModeAsync(string groupName, bool isProgramMode)
+        {
+            //try
+            //{
+            //    var column = GetColumnByGroupName(groupName);
+            //    if (column is null)
+            //    {
+            //        _logger.Warning("Колонка {GroupName} не найдена", groupName);
+            //        return;
+            //    }
+
+            //    var cmd = isProgramMode ? Command.ProgramControlMode : Command.KeyboardControlMode;
+            //    await ExecuteCommandAsync(cmd, Address, column.LanfengAddress);
+            //}
+            //catch (Exception e)
+            //{
+            //    _logger.Error(e, e.Message);
+            //}
+        }
+
+        private async Task StopFuelingAsync(string groupName)
+        {
+            //try
+            //{
+            //    var column = GetColumnByGroupName(groupName);
+
+            //    if (column is null)
+            //    {
+            //        _logger.Warning("Колонка {GroupName} не найдена", groupName);
+            //        return;
+            //    }
+
+            //    await ExecuteCommandAsync(Command.StopFueling, Address, column.LanfengAddress);
+            //}
+            //catch (Exception e)
+            //{
+            //    _logger.Error(e, e.Message);
+            //}
+        }
+
+        private async Task ResumeFuelingAsync(string groupName)
+        {
+            //try
+            //{
+            //    var column = GetColumnByGroupName(groupName);
+
+            //    if (column is null)
+            //    {
+            //        _logger.Warning("Колонка {GroupName} не найдена", groupName);
+            //        return;
+            //    }
+            //    await ExecuteCommandAsync(Command.ContinueFueling, Address, column.LanfengAddress);
+            //}
+            //catch (Exception e)
+            //{
+            //    _logger.Error(e, e.Message);
+            //}
+        }
+
+        private async Task GetStatusByAddressAsync(string groupName)
+        {
+            //try
+            //{
+            //    var column = GetColumnByGroupName(groupName);
+
+            //    if (column is null)
+            //    {
+            //        _logger.Warning("Колонка {GroupName} не найдена", groupName);
+            //        return;
+            //    }
+            //    await ExecuteCommandAsync(Command.Status, Address, column.LanfengAddress);
+            //}
+            //catch (Exception e)
+            //{
+            //    _logger.Error(e, e.Message);
+            //}
         }
 
         #endregion
