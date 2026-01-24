@@ -1,5 +1,6 @@
 ﻿using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Services;
+using KIT.GasStation.FuelDispenserEmulator;
 using KIT.GasStation.Gilbarco;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
@@ -33,13 +34,17 @@ namespace KIT.GasStation.Common.Factories
 
             return controller.Type switch
             {
-                ControllerType.Lanfeng => ActivatorUtilities.CreateInstance<LanfengFuelDispenser>(sp, controller, hubClient),
                 ControllerType.Gilbarco => ActivatorUtilities.CreateInstance<GilbarcoFuelDispenser>(sp, controller, hubClient, port),
-                //ControllerType.Emulator => _createEmulatorFuelDispenser(),
                 ControllerType.PKElectronics => ActivatorUtilities.CreateInstance<PKElectronicsFuelDispenser>(sp, controller, hubClient),
-                //ControllerType.TechnoProjekt => _createTechnoProjektFuelDispenser(),
                 _ => throw new NotSupportedException($"Тип контроллера {controller.Type} не поддерживается."),
             };
+        }
+
+        public IFuelDispenserService Create(IServiceProvider sp, Controller controller)
+        {
+            var hubClient = sp.GetRequiredService<IHubClient>();
+
+            return ActivatorUtilities.CreateInstance<EmulatorFuelDispenser>(sp, controller, hubClient);
         }
     }
 }

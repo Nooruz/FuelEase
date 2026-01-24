@@ -4,10 +4,11 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-	  <UseWPF>true</UseWPF>
-    
+	<UseWPF>true</UseWPF>
+	<AssemblyName>КИТ-АЗС Конфигуратор</AssemblyName>
+	<AssemblyTitle>КИТ-АЗС Конфигуратор</AssemblyTitle>
+	<Product>КИТ-АЗС Конфигуратор</Product>
     <Company>ОсОО "КИТ"</Company>
-    <Product>Конфигуратор оборудования "КИТ-АЗС"</Product>
 	<Platforms>AnyCPU;x64</Platforms>
 	<PlatformTarget>AnyCPU</PlatformTarget>
     <SignAssembly>False</SignAssembly>

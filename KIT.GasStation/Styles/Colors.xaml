@@ -49,4 +49,8 @@
     <Color x:Key="FuelDieselColor">#737373</Color>
     <SolidColorBrush x:Key="FuelDieselColorBrush" Color="{StaticResource FuelDieselColor}"/>
 
+    <Color x:Key="InternetConnectedColor">Green</Color>
+    <Color x:Key="InternetDisconnectedColor">Red</Color>
+    <Color x:Key="InternetCheckingColor">Orange</Color>
+
 </ResourceDictionary>

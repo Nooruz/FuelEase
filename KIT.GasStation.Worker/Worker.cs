@@ -64,12 +64,13 @@ namespace KIT.GasStation.Worker
                             case ControllerType.None:
                                 break;
                             case ControllerType.Lanfeng:
-                                await CreateLanfeng(ctrl, activeTasks, currentCycleCts.Token, port);
+                                CreateLanfeng(ctrl, activeTasks, currentCycleCts.Token, port);
                                 break;
                             case ControllerType.Gilbarco:
-                                await CreateGilbarco(ctrl, activeTasks, currentCycleCts.Token, port);
+                                CreateGilbarco(ctrl, activeTasks, currentCycleCts.Token, port);
                                 break;
                             case ControllerType.Emulator:
+                                CreateEmulator(ctrl, activeTasks, currentCycleCts.Token);
                                 break;
                             case ControllerType.PKElectronics:
                                 break;
@@ -174,9 +175,43 @@ namespace KIT.GasStation.Worker
             }
         }
 
+        private async Task RunControllerLoopAsync(Controller ctrl,
+            CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                using var scope = _scopeFactory.CreateAsyncScope();
+                var sp = scope.ServiceProvider;
+                IFuelDispenserService? service = null;
+
+                try
+                {
+                    _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
+                    service = _fuelDispenserFactory.Create(sp, ctrl);
+                    await service.RunAsync(token);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Сбой в цикле ТРК {Id}", ctrl.Id);
+                    // Ждем перед перезапуском
+                    await Task.Delay(TimeSpan.FromSeconds(5), token);
+                }
+                finally
+                {
+                    if (service != null)
+                        await service.DisposeAsync();
+                }
+            }
+        }
+
         #region Helpers
 
-        private async Task CreateLanfeng(Controller ctrl, 
+        private void CreateLanfeng(Controller ctrl, 
             ConcurrentDictionary<string, Task> activeTasks, 
             CancellationToken token,
             ISharedSerialPortService port)
@@ -210,7 +245,7 @@ namespace KIT.GasStation.Worker
             }
         }
 
-        private async Task CreateGilbarco(Controller ctrl, 
+        private void CreateGilbarco(Controller ctrl, 
             ConcurrentDictionary<string, Task> activeTasks, 
             CancellationToken token,
             ISharedSerialPortService port)
@@ -218,6 +253,18 @@ namespace KIT.GasStation.Worker
             var taskKey = $"{ctrl.Id}";
 
             var task = RunControllerLoopAsync(ctrl, token, port);
+
+            // Сохраняем задачу для последующего отслеживания
+            activeTasks[taskKey] = task;
+        }
+
+        private void CreateEmulator(Controller ctrl,
+            ConcurrentDictionary<string, Task> activeTasks,
+            CancellationToken token)
+        {
+            var taskKey = $"{ctrl.Id}";
+
+            var task = RunControllerLoopAsync(ctrl, token);
 
             // Сохраняем задачу для последующего отслеживания
             activeTasks[taskKey] = task;
@@ -234,7 +281,7 @@ namespace KIT.GasStation.Worker
                 case ControllerType.None:
                     break;
                 case ControllerType.Lanfeng:
-                    break;
+                    return await LanfengPortOpen(controller, ct);
                 case ControllerType.Gilbarco:
                     return await GilbarcoPortOpen(controller, ct);
                 case ControllerType.Emulator:
@@ -262,14 +309,42 @@ namespace KIT.GasStation.Worker
                     stopBits: StopBits.One
                 );
                 var options = new SerialPortOptions(
-                    BaudRate: controller.BaudRate,
-                    Parity: settings.Parity,
-                    DataBits: 8,
-                    StopBits: StopBits.One,
+                    RtsEnable: false,
+                    DtrEnable: false,
+                    ReadTimeoutMs: 300,
+                    WriteTimeoutMs: 300,
+                    ReadBufferSize: 1024,
+                    WriteBufferSize: 1024
+                );
+                try
+                {
+                    _lease = await _portManager.AcquireAsync(key, options, ct);
+                    return _lease.Port;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Не удалось запустить TWOTP polling");
+                }
+            }
+            return null;
+        }
+
+        private async Task<ISharedSerialPortService> LanfengPortOpen(Controller controller, CancellationToken ct)
+        {
+            if (controller.Settings is LanfengControllerSettings settings)
+            {
+                var key = new PortKey(
+                    portName: controller.ComPort,
+                    baudRate: controller.BaudRate, // TWOTP: фиксированный битрейт 5787 ±0.5%
+                    parity: Parity.None, // TWOTP: Even parity
+                    dataBits: 8,
+                    stopBits: StopBits.One
+                );
+                var options = new SerialPortOptions(
                     RtsEnable: false,
                     DtrEnable: false,
                     ReadTimeoutMs: 3000,
-                    WriteTimeoutMs: 1000,
+                    WriteTimeoutMs: 3000,
                     ReadBufferSize: 1024,
                     WriteBufferSize: 1024
                 );

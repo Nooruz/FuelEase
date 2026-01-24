@@ -1,15 +1,9 @@
-﻿using System.IO.Ports;
-
-namespace KIT.GasStation.HardwareConfigurations.Services
+﻿namespace KIT.GasStation.HardwareConfigurations.Services
 {
     /// <summary>
     /// Опции открытия последовательного порта.
     /// </summary>
     public sealed record SerialPortOptions(
-        int BaudRate,
-        Parity Parity,
-        int DataBits,
-        StopBits StopBits,
         bool RtsEnable = false,
         bool DtrEnable = false,
         int ReadTimeoutMs = 3000,

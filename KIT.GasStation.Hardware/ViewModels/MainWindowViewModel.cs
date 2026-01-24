@@ -77,6 +77,7 @@ namespace KIT.GasStation.Hardware.ViewModels
                 OnPropertyChanged(nameof(SelectedCashRegister));
             }
         }
+        public string ProductName => App.ProductName;
 
         #endregion
 
@@ -254,6 +255,9 @@ namespace KIT.GasStation.Hardware.ViewModels
                     SelectedBaseViewModel = gilbarcoViewModel;
                     break;
                 case ControllerType.Emulator:
+                    EmulatorViewModel emulatorViewModel = (EmulatorViewModel)_navigator.GetViewModel(ViewType.Emulator);
+                    emulatorViewModel.SelectedController = controller;
+                    SelectedBaseViewModel = emulatorViewModel;
                     break;
                 case ControllerType.PKElectronics:
                     PKElectronicsViewModel pKElectronicsViewModel = (PKElectronicsViewModel)_navigator.GetViewModel(ViewType.PKElectronics);

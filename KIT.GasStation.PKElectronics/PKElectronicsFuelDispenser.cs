@@ -42,14 +42,6 @@ namespace KIT.GasStation.PKElectronics
             {
                 _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
 
-                _portKey = new PortKey(
-                    portName: Controller.ComPort,                // например, "COM3"
-                    baudRate: Controller.BaudRate,               // напр., 9600
-                    parity: Parity.None,                // System.IO.Ports.Parity
-                    dataBits: 8,              // обычно 8
-                    stopBits: StopBits.One               // StopBits.One и т.п.
-                );
-
                 _hub = _hubClient.Connection;
 
 

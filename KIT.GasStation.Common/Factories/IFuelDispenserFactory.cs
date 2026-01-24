@@ -9,5 +9,6 @@ namespace KIT.GasStation.Common.Factories
     {
         public IFuelDispenserService Create(IServiceProvider sp, Controller controller, int address, ISharedSerialPortService port);
         public IFuelDispenserService Create(IServiceProvider sp, Controller controller, ISharedSerialPortService port);
+        public IFuelDispenserService Create(IServiceProvider sp, Controller controller);
     }
 }

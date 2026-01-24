@@ -53,6 +53,14 @@ namespace KIT.GasStation.Views.Base
                 },
                 CustomNotificationPosition = NotificationPosition.BottomRight
             });
+            Interaction.GetBehaviors(this).Add(new WindowedDocumentUIService()
+            {
+                WindowStyle = new Style
+                {
+                    TargetType = typeof(ThemedWindow),
+                    BasedOn = FindResource("WindowedDocumentUIServiceStyle") as Style
+                }
+            });
         }
     }
 }

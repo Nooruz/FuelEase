@@ -5,6 +5,7 @@ using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
+using KIT.GasStation.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Authenticators;
 using KIT.GasStation.State.CashRegisters;
@@ -49,11 +50,23 @@ namespace KIT.GasStation.ViewModels
         private BaseViewModel _nozzleCounterPanelViewModel;
         private BaseViewModel _unregisteredSalePanelViewModel;
         private readonly Dictionary<ViewType, WeakReference<BaseViewModel>> _documentViewModels = new();
+        private InternetStatus _internetStatus;
+        private InternetMonitor _internetMonitor;
+        private List<BaseLayoutItem> _layoutItems = new();
 
         #endregion
 
         #region Public Properties
 
+        private List<BaseLayoutItem> LayoutItems
+        {
+            get => _layoutItems;
+            set
+            {
+                _layoutItems = value;
+                OnPropertyChanged(nameof(LayoutItems));
+            }
+        }
         /// <summary>
         /// Текущая ViewModel
         /// </summary>
@@ -144,6 +157,29 @@ namespace KIT.GasStation.ViewModels
                 OnPropertyChanged(nameof(UnregisteredSalePanelViewModel));
             }
         }
+        public InternetStatus InternetStatus
+        {
+            get => _internetStatus;
+            set
+            {
+                _internetStatus = value;
+                OnPropertyChanged(nameof(InternetStatus));
+                OnPropertyChanged(nameof(InternetStatusMessage));
+            }
+        }
+        public string InternetStatusMessage
+        {
+            get
+            {
+                return InternetStatus switch
+                {
+                    InternetStatus.Checking => "текшерилүүдө",
+                    InternetStatus.Connected => "интернет бар",
+                    InternetStatus.Disconnected => "интернет жок",
+                    _ => string.Empty,
+                };
+            }
+        }
         public DockLayoutManager MainDockLayoutManager { get; set; }
         public bool IsCurrentUserAdmin => _userStore.CurrentUser?.UserType == UserType.Admin;
 
@@ -175,6 +211,10 @@ namespace KIT.GasStation.ViewModels
             
             _notificationStore.OnShowing += NotificationStore_OnShowing;
             _userStore.OnLogin += UserStore_OnLogin;
+
+            _internetMonitor = new InternetMonitor();
+            _internetMonitor.StatusChanged += InternetMonitor_StatusChanged;
+            _internetMonitor.Start();
         }
 
         #endregion
@@ -219,7 +259,7 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public async Task StopWorkerService()
         {
-            try { await Services.ServiceManager.StopWorkerAsync(); }
+            try { await ServiceManager.StopWorkerAsync(); }
             catch (Exception ex) { _logger.LogError(ex, ex.Message); }
         }
 
@@ -228,10 +268,10 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                await Services.ServiceManager.StopWorkerAsync();
-                await Services.ServiceManager.StopWebAsync();
-                await Services.ServiceManager.StartWebAsync();
-                await Services.ServiceManager.StartWorkerAsync();
+                await ServiceManager.StopWorkerAsync();
+                await ServiceManager.StopWebAsync();
+                await ServiceManager.StartWebAsync();
+                await ServiceManager.StartWorkerAsync();
             }
             catch (Exception ex) { _logger.LogError(ex, ex.Message); }
         }
@@ -794,17 +834,22 @@ namespace KIT.GasStation.ViewModels
 
         private async Task ShowDocumentViewerAsync(ViewType viewType, string viewName, string title)
         {
-            if (!_documentViewModels.TryGetValue(viewType, out var weakReference)
-                || !weakReference.TryGetTarget(out var viewModel)
-                || viewModel == null)
+            var viewModel = await _navigator.GetViewModelAsync(viewType);
+            var doc = DocumentManagerService.FindDocument(viewModel);
+
+            if (doc == null)
             {
-                viewModel = await _navigator.GetViewModelAsync(viewType);
-                _documentViewModels[viewType] = new WeakReference<BaseViewModel>(viewModel);
+                doc = DocumentManagerService.CreateDocument(viewName, viewModel);
+                doc.Title = title;
+                doc.Id = DocumentManagerService.Documents.Count();
             }
 
-            viewModel.Title = title;
-            DocumentViewerService.Show(viewName, viewModel);
-            DocumentViewerService.Activate();
+            doc.Show();
+        }
+
+        private void InternetMonitor_StatusChanged(InternetStatus status)
+        {
+            InternetStatus = status;
         }
 
         #endregion
@@ -856,5 +901,26 @@ namespace KIT.GasStation.ViewModels
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Статус интернета
+    /// </summary>
+    public enum InternetStatus
+    {
+        /// <summary>
+        /// Проверка статуса
+        /// </summary>
+        Checking,
+
+        /// <summary>
+        /// Интернет есть
+        /// </summary>
+        Connected,
+
+        /// <summary>
+        /// Интернет нет
+        /// </summary>
+        Disconnected,
     }
 }

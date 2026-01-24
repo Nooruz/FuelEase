@@ -1,15 +1,17 @@
-﻿using DevExpress.Mvvm.DataAnnotations;
+﻿using DevExpress.Mvvm;
+using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.State.Navigators;
 using KIT.GasStation.ViewModels.Base;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels
 {
-    public class DiscountManagementViewModel : BaseViewModel
+    public class DiscountManagementViewModel : BaseViewModel, IDocumentContent
     {
         #region Private Members
 
@@ -122,6 +124,22 @@ namespace KIT.GasStation.ViewModels
         private async Task<BaseViewModel> GetBaseViewModel(ViewType viewType)
         {
             return await _navigation.GetViewModelAsync(viewType);
+        }
+
+        #endregion
+
+        #region IDocumentContent
+
+        public IDocumentOwner DocumentOwner { get; set; } = null!;
+        
+        public void OnClose(CancelEventArgs e)
+        {
+
+        }
+
+        public void OnDestroy()
+        {
+
         }
 
         #endregion

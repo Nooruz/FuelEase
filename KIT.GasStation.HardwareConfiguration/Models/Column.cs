@@ -93,6 +93,9 @@ namespace KIT.GasStation.HardwareConfigurations.Models
             }
         }
 
+        [XmlIgnore]
+        public decimal Price { get; set; }
+
         /// <summary>
         /// Настройки колонки
         /// </summary>

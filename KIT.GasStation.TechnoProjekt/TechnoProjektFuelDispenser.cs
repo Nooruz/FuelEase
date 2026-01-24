@@ -53,24 +53,16 @@ namespace KIT.GasStation.Technoproject
         {
             try
             {
-                var key = new PortKey(
-                    portName: Controller.ComPort,
-                    baudRate: Controller.BaudRate,
-                    parity: Parity.None,
-                    dataBits: 8,
-                    stopBits: StopBits.One
-                );
-
                 _hub = _hubClient.Connection;
 
                 _hub.On<StartPollingCommand>("StartPolling", async e =>
                 {
-                    await StartPollingAsync(key, token);
+                    await StartPollingAsync(token);
                 });
 
                 _hub.On<StopPollingCommand>("StopPolling", async e =>
                 {
-                    await StopPollingAsync(key);
+                    await StopPollingAsync();
                 });
 
                 _hub.On<string, decimal>("SetPriceAsync", async (groupName, price) =>
@@ -308,7 +300,7 @@ namespace KIT.GasStation.Technoproject
             }
         }
 
-        private async Task StopPollingAsync(PortKey key)
+        private async Task StopPollingAsync()
         {
             Task? toAwait = null;
             lock (_pollLock)
@@ -333,21 +325,8 @@ namespace KIT.GasStation.Technoproject
             
         }
 
-        private async Task StartPollingAsync(PortKey key, CancellationToken token)
+        private async Task StartPollingAsync(CancellationToken token)
         {
-            var options = new SerialPortOptions(
-                BaudRate: Controller.BaudRate,
-                Parity: Parity.None,
-                DataBits: 8,
-                StopBits: StopBits.One,
-                RtsEnable: false,
-                DtrEnable: false,
-                ReadTimeoutMs: 3000,
-                WriteTimeoutMs: 1000,
-                ReadBufferSize: 64 * 1024,
-                WriteBufferSize: 64 * 1024
-            );
-
             if (_pollingTask == null || _pollingTask.IsCompleted)
             {
                 lock (_pollLock)

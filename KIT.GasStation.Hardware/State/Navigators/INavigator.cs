@@ -17,7 +17,8 @@ namespace KIT.GasStation.Hardware.State.Navigators
         NewCas,
         PKElectronics,
         KITView,
-        Gilbarco
+        Gilbarco,
+        Emulator
     }
     public interface INavigator
     {

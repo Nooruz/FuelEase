@@ -26,6 +26,7 @@
             <converters:EnumToStringConvertert x:Key="EnumToStringConvertert"/>
             <converters:NozzleStatusToBackgroundConverter x:Key="NozzleStatusToBackgroundConverter"/>
             <converters:SelectedNozzleToColorConverter x:Key="SelectedNozzleToColorConverter"/>
+            <converters:InternetStatusToColorBrushConverter x:Key="InternetStatusToColorBrushConverter"/>
             
 
             <DataTemplate DataType="{x:Type viewModels:WorkplaceSettingsViewModel}">
@@ -138,6 +139,7 @@
                 <ResourceDictionary Source="/Styles/DockLayoutManagerStyle.xaml"/>
                 <ResourceDictionary Source="/Styles/ToolBarControlStyle.xaml"/>
                 <ResourceDictionary Source="/Styles/GridControlStyle.xaml"/>
+                <ResourceDictionary Source="/Styles/WindowedDocumentUIServiceStyle.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             
         </ResourceDictionary>

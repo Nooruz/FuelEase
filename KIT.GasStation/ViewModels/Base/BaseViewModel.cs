@@ -1,7 +1,6 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using System;
-using System.ComponentModel;
 
 namespace KIT.GasStation.ViewModels.Base
 {
@@ -16,7 +15,7 @@ namespace KIT.GasStation.ViewModels.Base
             RaisePropertyChanged(propertyName);
         }
 
-        private string _title;
+        private object _title = string.Empty;
 
         #endregion
 
@@ -28,7 +27,7 @@ namespace KIT.GasStation.ViewModels.Base
 
         #region Public Properties
 
-        public string Title
+        public object Title
         {
             get => _title;
             set
@@ -69,6 +68,7 @@ namespace KIT.GasStation.ViewModels.Base
         protected INotificationService NotificationService => GetService<INotificationService>();
         protected INavigationService NavigationService => GetService<INavigationService>();
         protected ISplashScreenManagerService SplashScreenManagerService => GetService<ISplashScreenManagerService>();
+        protected IDocumentManagerService DocumentManagerService => GetService<IDocumentManagerService>();
 
         #endregion
 

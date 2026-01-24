@@ -63,21 +63,13 @@ namespace KIT.GasStation.Gilbarco
             {
                 _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
 
-                var key = new PortKey(
-                    portName: Controller.ComPort,
-                    baudRate: 5787, // TWOTP: фиксированный битрейт 5787 ±0.5%
-                    parity: Parity.Even, // TWOTP: Even parity
-                    dataBits: 8,
-                    stopBits: StopBits.One
-                );
-
                 _hub = _hubClient.Connection;
                 RegisterHubConnectionHandlers();
 
                 _logger.Debug("EnsureStartedAsync вызван. Текущее состояние: {State}", _hub.State);
 
-                _hub.On<StartPollingCommand>("StartPolling", async _ => await StartPollingAsync(key, token));
-                _hub.On<StopPollingCommand>("StopPolling", async _ => await StopPollingAsync(key));
+                _hub.On<StartPollingCommand>("StartPolling", async _ => await StartPollingAsync(token));
+                _hub.On<StopPollingCommand>("StopPolling", async _ => await StopPollingAsync());
 
                 _hub.On<string, decimal>("SetPriceAsync", async (groupName, price) =>
                     await SetPriceAsync(groupName, price));
@@ -259,7 +251,7 @@ namespace KIT.GasStation.Gilbarco
                 var rx = await _sharedSerialPortService.WriteReadAsync(
                     frame,
                     expectedRxLength: expectedLength > 0 ? expectedLength : 1, // минимум 1 слово (1 байт)
-                    writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                    writeToReadDelayMs: 100, // TWOTP: min delay между словами — 68 мс
                     readTimeoutMs: _defaultTimeoutMs,
                     maxRetries: 3,
                     ct: ct);
@@ -401,7 +393,7 @@ namespace KIT.GasStation.Gilbarco
 
         #region Polling Control
 
-        private async Task StartPollingAsync(PortKey key, CancellationToken token)
+        private async Task StartPollingAsync(CancellationToken token)
         {
             lock (_pollLock)
             {
@@ -429,7 +421,7 @@ namespace KIT.GasStation.Gilbarco
             }
         }
 
-        private async Task StopPollingAsync(PortKey key)
+        private async Task StopPollingAsync()
         {
             Task? toAwait = null;
             lock (_pollLock)

@@ -23,16 +23,13 @@ namespace KIT.GasStation.Lanfeng
     {
         #region Private Members
 
-        private readonly IHubClient _hubClient;
         private readonly AsyncManualResetEvent _pauseGate = new(initialState: true);
-        private ISharedSerialPortService _sharedSerialPortService;
         private HubConnection _hub;
         private volatile bool _pollingEnabled;
         private Task _pollingTask;
         private PortLease? _lease;
         private readonly object _pollLock = new();
         private const int _frameLen = 14;
-        private ILogger _logger;
         private LanfengControllerType _controllerType;
         private volatile bool _hardwareAvailable = true;
         private string? _lastAvailabilityReason;
@@ -46,8 +43,8 @@ namespace KIT.GasStation.Lanfeng
 
         public LanfengFuelDispenser(Controller controller,
             int address,
-            ISharedSerialPortService sharedSerialPortService,
-            IHubClient hubClient) 
+            IHubClient hubClient,
+            ISharedSerialPortService sharedSerialPortService) 
             : base(controller, address, sharedSerialPortService, hubClient)
         {
             _hubClient = hubClient;
@@ -71,14 +68,6 @@ namespace KIT.GasStation.Lanfeng
             {
                 _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
 
-                _portKey = new PortKey(
-                    portName: Controller.ComPort,                // например, "COM3"
-                    baudRate: Controller.BaudRate,               // напр., 9600
-                    parity: Parity.None,                // System.IO.Ports.Parity
-                    dataBits: 8,              // обычно 8
-                    stopBits: StopBits.One               // StopBits.One и т.п.
-                );
-
                 _hub = _hubClient.Connection;
                 RegisterHubConnectionHandlers();
 
@@ -87,7 +76,7 @@ namespace KIT.GasStation.Lanfeng
 
                 _hub.On<StartPollingCommand>("StartPolling", async e =>
                 {
-                    await StartPollingAsync(_portKey, token);
+                    await StartPollingAsync(token);
                 });
 
                 _hub.On<StopPollingCommand>("StopPolling", async e =>
@@ -517,21 +506,8 @@ namespace KIT.GasStation.Lanfeng
         /// <summary>
         /// Метод запуска цикла опроса.
         /// </summary>
-        private async Task StartPollingAsync(PortKey key, CancellationToken token)
+        private async Task StartPollingAsync(CancellationToken token)
         {
-            var options = new SerialPortOptions(
-                BaudRate: Controller.BaudRate,
-                Parity: Parity.None,
-                DataBits: 8,
-                StopBits: StopBits.One,
-                RtsEnable: false,            // рукопожатие отсутствует (no handshaking)
-                DtrEnable: false,
-                ReadTimeoutMs: 3000,
-                WriteTimeoutMs: 1000,
-                ReadBufferSize: 64 * 1024,
-                WriteBufferSize: 64 * 1024
-            );
-
             if (_pollingTask == null || _pollingTask.IsCompleted)
             {
                 lock (_pollLock)

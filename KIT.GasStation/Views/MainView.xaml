@@ -22,93 +22,116 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Menu>
-                <MenuItem Header="Программа">
-                    <MenuItem Header="Выход из аккаунта"
-                              Command="{Binding LogoutCommand}"/>
-                    <MenuItem Header="Закрыть программу"
-                              Command="{Binding CloseApplicationCommand}"/>
-                </MenuItem>
-
-                <MenuItem Header="Продажи">
-                    <MenuItem Header="Незавершённые продажи"
-                      Command="{Binding UncompletedSalesCommand}"/>
-                    <MenuItem Header="Завершённые продажи"
-                      Command="{Binding CompletedSalesCommand}"/>
-                </MenuItem>
-
-                <MenuItem Header="Топливо">
-                    <MenuItem Header="Приём топлива"
-                      Command="{Binding FuelIntakeCommand}"/>
-                    <MenuItem Header="Переоценка топлива"
-                      Command="{Binding RevaluationCommand}"/>
-                </MenuItem>
-
-                <MenuItem Header="Кассовые операции">
-                    <MenuItem Header="Открыть смену"
-                              Command="{Binding OpenShiftCommand}"/>
-                    <MenuItem Header="Закрыть смену"
-                              Command="{Binding CloseShiftCommand}"/>
-                    <Separator/>
-                    <MenuItem Header="Открыть смену ККМ"
-                              Command="{Binding CashRegisterOpenShiftCommand}"/>
-                    <MenuItem Header="Закрыть смену ККМ (Z-отчёт)"
-                              Command="{Binding CashRegisterCloseShiftCommand}"/>
-                    <MenuItem Header="Х-отчёт"
-                              Command="{Binding CashRegisterXReportCommand}"/>
-                    <!--<MenuItem Header="Произвольный чек"
-                              Command="{Binding CashRegisterCustomReceiptCommand}"/>-->
-                    <MenuItem Header="Состояние ККМ"
-                              Command="{Binding CashRegisterGetStateCommand}"/>
-                </MenuItem>
-
-                <MenuItem Header="Настройки и отчёты">
-                    <MenuItem Header="Управление скидками"
-                              Command="{Binding DiscountManagementCommand}"
-                              IsEnabled="{Binding IsCurrentUserAdmin}"/>
-                    <MenuItem Header="Управление конфигурацией"
-                              Command="{Binding ConfigurationManagementCommand}"
-                              IsEnabled="{Binding IsCurrentUserAdmin}"/>
-                    <Separator/>
-                    <MenuItem Header="Глобальные отчёты"
-                              Command="{Binding GlobalReportCommand}"/>
-                    <Separator/>
-                    <!--<MenuItem Header="Настройки"
-                              Command="{Binding ConfigurationCommand}"/>-->
-                    <MenuItem Header="Экран">
-                        <MenuItem Header="Восстановить расположение"
-                                  Command="{Binding RestoreDockLayoutManagerPositionCommand}"/>
-                        <MenuItem Header="Сохранить расположение панелей"
-                                  IsEnabled="{Binding IsCurrentUserAdmin}"
-                                  Command="{Binding SaveDockLayoutManagerPositionCommand}"/>
+            <StackPanel Orientation="Horizontal">
+                <Menu HorizontalAlignment="Left">
+                    <MenuItem Header="Программа">
+                        <MenuItem Header="Выход из аккаунта"
+                                  Command="{Binding LogoutCommand}"/>
+                        <MenuItem Header="Закрыть программу"
+                                  Command="{Binding CloseApplicationCommand}"/>
                     </MenuItem>
-                    <MenuItem Header="Настройки рабочего пространства"
-                      Command="{Binding WorkplaceSettingsCommand}"/>
-                </MenuItem>
 
-                <MenuItem Header="Помощь">
-                    <MenuItem Header="О программе"/>
-                    <MenuItem Header="Документы">
-                        <MenuItem Header="Договор"/>
-                        <MenuItem Header="Контакты техподдержки"/>
+                    <MenuItem Header="Вид">
+                        <MenuItem Header="Панель счётчиков ТРК"
+                                  Command="{Binding NozzleCounterPanelCommand}"/>
                     </MenuItem>
-                </MenuItem>
 
-                <MenuItem Header="Сервисы">
-                    <MenuItem Header="Запустить Web"
-                              Command="{Binding StartWebServiceCommand}"/>
-                    <MenuItem Header="Остановить Web"
-                              Command="{Binding StopWebServiceCommand}"/>
-                    <Separator/>
-                    <MenuItem Header="Запустить Worker"
-                              Command="{Binding StartWorkerServiceCommand}"/>
-                    <MenuItem Header="Остановить Worker"
-                              Command="{Binding StopWorkerServiceCommand}"/>
-                    <Separator/>
-                    <MenuItem Header="Перезапустить оба"
-                              Command="{Binding RestartAllServicesCommand}"/>
-                </MenuItem>
-            </Menu>
+                    <MenuItem Header="Продажи">
+                        <MenuItem Header="Незавершённые продажи"
+                                  Command="{Binding UncompletedSalesCommand}"/>
+                        <MenuItem Header="Завершённые продажи"
+                                  Command="{Binding CompletedSalesCommand}"/>
+                    </MenuItem>
+
+                    <MenuItem Header="Топливо">
+                        <MenuItem Header="Приём топлива"
+                                  Command="{Binding FuelIntakeCommand}"/>
+                        <MenuItem Header="Переоценка топлива"
+                                  Command="{Binding RevaluationCommand}"/>
+                    </MenuItem>
+
+                    <MenuItem Header="Кассовые операции">
+                        <MenuItem Header="Открыть смену"
+                                  Command="{Binding OpenShiftCommand}"/>
+                        <MenuItem Header="Закрыть смену"
+                                  Command="{Binding CloseShiftCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="Открыть смену ККМ"
+                                  Command="{Binding CashRegisterOpenShiftCommand}"/>
+                        <MenuItem Header="Закрыть смену ККМ (Z-отчёт)"
+                                  Command="{Binding CashRegisterCloseShiftCommand}"/>
+                        <MenuItem Header="Х-отчёт"
+                                  Command="{Binding CashRegisterXReportCommand}"/>
+                        <!--<MenuItem Header="Произвольный чек"
+                  Command="{Binding CashRegisterCustomReceiptCommand}"/>-->
+                        <MenuItem Header="Состояние ККМ"
+                                  Command="{Binding CashRegisterGetStateCommand}"/>
+                    </MenuItem>
+
+                    <MenuItem Header="Настройки и отчёты">
+                        <MenuItem Header="Управление скидками"
+                                  Command="{Binding DiscountManagementCommand}"
+                                  IsEnabled="{Binding IsCurrentUserAdmin}"/>
+                        <MenuItem Header="Управление конфигурацией"
+                                  Command="{Binding ConfigurationManagementCommand}"
+                                  IsEnabled="{Binding IsCurrentUserAdmin}"/>
+                        <Separator/>
+                        <MenuItem Header="Глобальные отчёты"
+                                  Command="{Binding GlobalReportCommand}"/>
+                        <Separator/>
+                        <!--<MenuItem Header="Настройки"
+                        Command="{Binding ConfigurationCommand}"/>-->
+                        <MenuItem Header="Экран">
+                            <MenuItem Header="Восстановить расположение"
+                                      Command="{Binding RestoreDockLayoutManagerPositionCommand}"/>
+                            <MenuItem Header="Сохранить расположение панелей"
+                                      IsEnabled="{Binding IsCurrentUserAdmin}"
+                                      Command="{Binding SaveDockLayoutManagerPositionCommand}"/>
+                        </MenuItem>
+                        <MenuItem Header="Настройки рабочего пространства"
+                                  Command="{Binding WorkplaceSettingsCommand}"/>
+                    </MenuItem>
+
+                    <MenuItem Header="Помощь">
+                        <MenuItem Header="О программе"/>
+                        <MenuItem Header="Документы">
+                            <MenuItem Header="Договор"/>
+                            <MenuItem Header="Контакты техподдержки"/>
+                        </MenuItem>
+                    </MenuItem>
+
+                    <!--<MenuItem Header="Сервисы">
+                        <MenuItem Header="Запустить Web"
+                                  Command="{Binding StartWebServiceCommand}"/>
+                        <MenuItem Header="Остановить Web"
+                                  Command="{Binding StopWebServiceCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="Запустить Worker"
+                                  Command="{Binding StartWorkerServiceCommand}"/>
+                        <MenuItem Header="Остановить Worker"
+                                  Command="{Binding StopWorkerServiceCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="Перезапустить оба"
+                                  Command="{Binding RestartAllServicesCommand}"/>
+                    </MenuItem>-->
+                </Menu>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+
+                    <TextBlock Text="Интернеттин статусу:"
+                               VerticalAlignment="Center"/>
+                    <Border Width="20"
+                            Height="20"
+                            CornerRadius="10"
+                            Background="{Binding InternetStatus, Converter={StaticResource InternetStatusToColorBrushConverter}}"
+                            Margin="10 0"/>
+                    <TextBlock Text="{Binding InternetStatusMessage}"
+                               VerticalAlignment="Center"/>
+
+                </StackPanel>
+
+            </StackPanel>
 
             <dxdo:DockLayoutManager Grid.Row="1">
 
@@ -141,16 +164,16 @@
                                           Content="{Binding TanksPanelViewModel}"/>
 
                         <dxdo:LayoutPanel x:Name="UnregisteredSale"
-                                  Caption="Панель незарегистрированного отпуска толива"
-                                  dxdo:AutoHideGroup.AutoHideType="Bottom"
-                                  ItemHeight="Auto"
-                                  Content="{Binding UnregisteredSalePanelViewModel}"/>
+                                          Caption="Панель незарегистрированного отпуска толива"
+                                          dxdo:AutoHideGroup.AutoHideType="Bottom"
+                                          ItemHeight="Auto"
+                                          Content="{Binding UnregisteredSalePanelViewModel}"/>
 
                         <dxdo:LayoutPanel x:Name="Event"
-                                  Caption="Панель событий"
-                                  dxdo:AutoHideGroup.AutoHideType="Bottom"
-                                  ItemHeight="Auto"
-                                  Content="{Binding EventPanelViewModel}"/>
+                                          Caption="Панель событий"
+                                          dxdo:AutoHideGroup.AutoHideType="Bottom"
+                                          ItemHeight="Auto"
+                                          Content="{Binding EventPanelViewModel}"/>
 
                         <!--<dxdo:LayoutPanel x:Name="Gauge"
                                   Caption="Панель датчиков"
@@ -177,6 +200,8 @@
                                           Caption="Панель счётчиков ТРК"
                                           dxdo:AutoHideGroup.AutoHideType="Right"
                                           ItemWidth="Auto"
+                                          MinWidth="200"
+                                          TabCaptionWidth="200"
                                           Content="{Binding NozzleCounterPanelViewModel}"/>
 
                     </dxdo:LayoutGroup>

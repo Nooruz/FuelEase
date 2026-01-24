@@ -13,7 +13,7 @@
     x:Class="KIT.GasStation.Views.UncompletedSalesView"
                     mc:Ignorable="d" 
                     Height="600" 
-                    Width="900">
+                    Width="1000">
 
     <dx:LoadingDecorator>
 

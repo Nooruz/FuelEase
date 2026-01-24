@@ -10,11 +10,11 @@ namespace KIT.GasStation.FuelDispenser
     public abstract class FuelDispenserServiceBase : IFuelDispenserService
     {
         protected readonly Controller Controller;
-        protected readonly ISharedSerialPortService _sharedSerialPortService;
-        protected readonly IHubClient _hubClient;
-        protected readonly ILogger _logger;
         protected readonly int Address;
         protected readonly IReadOnlyList<Column> Columns;
+        protected ISharedSerialPortService _sharedSerialPortService;
+        protected IHubClient _hubClient;
+        protected ILogger _logger;
 
         public string DispenserName => throw new NotImplementedException();
 

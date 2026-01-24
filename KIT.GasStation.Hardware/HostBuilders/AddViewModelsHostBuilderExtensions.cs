@@ -24,6 +24,7 @@ namespace KIT.GasStation.Hardware.HostBuilders
                 services.AddTransient(CreateNewCasViewModel);
                 services.AddTransient(CreateKITViewModel);
                 services.AddTransient(CreateGilbarcoViewModel);
+                services.AddTransient(CreateEmulatorViewModel);
 
                 services.AddSingleton<CreateViewModel<KITViewModel>>(servicesProvider => () => CreateKITViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<MainWindowViewModel>>(servicesProvider => () => CreateMainWindowViewModel(servicesProvider));
@@ -32,9 +33,15 @@ namespace KIT.GasStation.Hardware.HostBuilders
                 services.AddSingleton<CreateViewModel<EKassaViewModel>>(servicesProvider => () => CreateEKassaViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<NewCasViewModel>>(servicesProvider => () => CreateNewCasViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<GilbarcoViewModel>>(servicesProvider => () => CreateGilbarcoViewModel(servicesProvider));
+                services.AddSingleton<CreateViewModel<EmulatorViewModel>>(servicesProvider => () => CreateEmulatorViewModel(servicesProvider));
 
                 services.AddSingleton<IViewModelFactory, ViewModelFactory>();
             });
+        }
+
+        private static EmulatorViewModel CreateEmulatorViewModel(IServiceProvider services)
+        {
+            return new EmulatorViewModel(services.GetRequiredService<IHardwareConfigurationService>());
         }
 
         private static KITViewModel CreateKITViewModel(IServiceProvider services)

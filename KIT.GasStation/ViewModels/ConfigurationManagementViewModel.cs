@@ -5,12 +5,13 @@ using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.Views;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels
 {
-    public class ConfigurationManagementViewModel : BaseViewModel
+    public class ConfigurationManagementViewModel : BaseViewModel, IDocumentContent
     {
         #region Private Members
 
@@ -126,6 +127,22 @@ namespace KIT.GasStation.ViewModels
         private async Task<BaseViewModel> GetBaseViewModel(ViewType viewType)
         {
             return await _navigation.GetViewModelAsync(viewType);
+        }
+
+        #endregion
+
+        #region IDocumentContent
+
+        public IDocumentOwner DocumentOwner { get; set; } = null!;
+        
+        public void OnClose(CancelEventArgs e)
+        {
+
+        }
+
+        public void OnDestroy()
+        {
+
         }
 
         #endregion

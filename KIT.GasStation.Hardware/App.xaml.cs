@@ -23,9 +23,6 @@ namespace KIT.GasStation.Hardware
 
         #region Static Properties
 
-        /// <summary>
-        /// Возвращает название компании из атрибута AssemblyCompany сборки.
-        /// </summary>
         public static string CompanyName
         {
             get
@@ -43,7 +40,7 @@ namespace KIT.GasStation.Hardware
                 // Пример получения из атрибута AssemblyCompany
                 var attribute = Assembly.GetExecutingAssembly()
                     .GetCustomAttribute<AssemblyProductAttribute>();
-                return attribute?.Product ?? "Конфигуратор оборудования \"КИТ-АЗС\"";
+                return attribute?.Product ?? "КИТ-АЗС Конфигуратор";
             }
         }
 
