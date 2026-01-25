@@ -1,11 +1,6 @@
 ﻿using KIT.GasStation.FuelDispenser.Commands;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace KIT.GasStation.Gilbarco.Helpers
+namespace KIT.GasStation.Gilbarco.Utilities
 {
     public static class CommandEncoder
     {

@@ -1,5 +1,7 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
+using DevExpress.Mvvm.POCO;
+using DevExpress.Utils.MVVM.Services;
 using DevExpress.Xpf.Docking;
 using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
@@ -344,7 +346,8 @@ namespace KIT.GasStation.ViewModels
                 {
                     await ShowDocumentViewerAsync(ViewType.ConfigurationManagementView,
                         nameof(ConfigurationManagementView),
-                        "Управления конфигурацией");
+                        "Управления конфигурацией",
+                        1);
                 }
             }
             catch (Exception e)
@@ -365,7 +368,8 @@ namespace KIT.GasStation.ViewModels
                 {
                     await ShowDocumentViewerAsync(ViewType.DiscountManagement,
                         nameof(DiscountManagementView),
-                        "Управления скидками");
+                        "Управления скидками",
+                        2);
                 }
             }
             catch (Exception e)
@@ -474,7 +478,8 @@ namespace KIT.GasStation.ViewModels
             {
                 await ShowDocumentViewerAsync(ViewType.GlobalReportView,
                     nameof(GlobalReportView),
-                    "Глобальные отчеты");
+                    "Глобальные отчеты",
+                    3);
             }
             catch (Exception e)
             {
@@ -832,16 +837,16 @@ namespace KIT.GasStation.ViewModels
 
         #region Helpers
 
-        private async Task ShowDocumentViewerAsync(ViewType viewType, string viewName, string title)
+        private async Task ShowDocumentViewerAsync(ViewType viewType, string viewName, string title, int id)
         {
             var viewModel = await _navigator.GetViewModelAsync(viewType);
-            var doc = DocumentManagerService.FindDocument(viewModel);
+            var doc = DocumentManagerService.FindDocumentById(id);
 
             if (doc == null)
             {
                 doc = DocumentManagerService.CreateDocument(viewName, viewModel);
                 doc.Title = title;
-                doc.Id = DocumentManagerService.Documents.Count();
+                doc.Id = id;
             }
 
             doc.Show();

@@ -3,13 +3,12 @@ using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.Gilbarco.Helpers;
+using KIT.GasStation.Gilbarco.Utilities;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
 using System.Diagnostics;
-using System.IO.Ports;
 using System.Text.RegularExpressions;
 
 namespace KIT.GasStation.Gilbarco
@@ -72,17 +71,23 @@ namespace KIT.GasStation.Gilbarco
                 _hub.On<StopPollingCommand>("StopPolling", async _ => await StopPollingAsync());
 
                 _hub.On<string, decimal>("SetPriceAsync", async (groupName, price) =>
-                    await SetPriceAsync(groupName, price));
+                {
+                    await SetPriceAsync(groupName, price);
+                });
 
                 _hub.On<string, decimal, bool>("StartFuelingAsync", async (groupName, sum, bySum) =>
-                    await StartRefuelingAsync(groupName, sum, bySum));
+                {
+                    await StartRefuelingAsync(groupName, sum, bySum);
+                });
 
                 _hub.On<string>("CompleteFuelingAsync", async _ =>
-                    await CompleteRefuelingAsync());
+                {
+                    await CompleteRefuelingAsync();
+                });
 
                 _hub.On<string, bool>("ChangeControlModeAsync", async (groupName, isProgramMode) =>
                 {
-                    await ChangeControlModeAsync(groupName, isProgramMode);
+                    //await ChangeControlModeAsync(groupName, isProgramMode);
                 });
 
                 _hub.On<string>("StopFuelingAsync", async (groupName) =>
@@ -102,11 +107,11 @@ namespace KIT.GasStation.Gilbarco
 
                 _hub.On<string>("GetCountersAsync", async (groupName) =>
                 {
-                    var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
-                    if (column is not null)
-                    {
-                        await ExecuteCommandAsync(Command.CounterLiter, Address, column.LanfengAddress);
-                    }
+                    //var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
+                    //if (column is not null)
+                    //{
+                    //    await ExecuteCommandAsync(Command.CounterLiter, Address, column.LanfengAddress);
+                    //}
                 });
 
                 _hub.On<string>("PausePollingAsync", async (groupName) =>
@@ -138,7 +143,7 @@ namespace KIT.GasStation.Gilbarco
 
         protected override async Task OnTickAsync(CancellationToken token)
         {
-            _logger.Information("Gilbarco TWOTP polling запущен на порту {Port}", Controller.ComPort);
+            //_logger.Information("Gilbarco TWOTP polling запущен на порту {Port}", Controller.ComPort);
 
             // Инициализация: запрос версии через Special Function 001
             await _pauseGate.WaitAsync(token);

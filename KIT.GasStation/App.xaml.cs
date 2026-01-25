@@ -6,6 +6,7 @@ using KIT.GasStation.Domain.Models;
 using KIT.GasStation.EntityFramework;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.HostBuilders;
+using KIT.GasStation.Security;
 using KIT.GasStation.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Users;
@@ -238,6 +239,16 @@ namespace KIT.GasStation
                     Shutdown();
                     return;
                 }
+
+                //_splashScreenViewModel.Status = "Проверка привязки к оборудованию...";
+                //var bindingService = new MachineBindingService();
+                //if (!bindingService.EnsureMachineBinding(out var bindingError))
+                //{
+                //    SplashScreenManager.CloseAll();
+                //    MessageBox.Show(bindingError ?? "Ошибка проверки привязки.", "КИТ-АЗС", MessageBoxButton.OK, MessageBoxImage.Error);
+                //    Shutdown();
+                //    return;
+                //}
 
                 _splashScreenViewModel.Status = "Проверка строки подключения...";
 
