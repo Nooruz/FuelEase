@@ -60,7 +60,6 @@ namespace KIT.GasStation.FuelDispenser
                 {
                     try
                     {
-                        await OnTickAsync(token);
                         // Краткая задержка между тиками, если OnTickAsync завершается быстро
                         await Task.Delay(TimeSpan.FromMilliseconds(100), token);
                     }

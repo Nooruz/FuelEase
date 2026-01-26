@@ -9,7 +9,7 @@ namespace KIT.GasStation.FuelDispenser.Models
     public class ControllerResponse
     {
         public int Address { get; set; }
-        public int StatusAddress { get; set; }
+        public int? StatusAddress { get; set; }
         public Command Command { get; set; }
         public byte[] Data { get; set; }
         public bool IsValid { get; set; }

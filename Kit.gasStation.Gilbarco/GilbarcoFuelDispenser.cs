@@ -1,5 +1,4 @@
 ﻿using KIT.GasStation.FuelDispenser;
-using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.FuelDispenser.Services;
@@ -143,7 +142,7 @@ namespace KIT.GasStation.Gilbarco
 
         protected override async Task OnTickAsync(CancellationToken token)
         {
-            //_logger.Information("Gilbarco TWOTP polling запущен на порту {Port}", Controller.ComPort);
+            _logger.Information("Gilbarco TWOTP polling запущен на порту {Port}", Controller.ComPort);
 
             // Инициализация: запрос версии через Special Function 001
             await _pauseGate.WaitAsync(token);
@@ -158,6 +157,7 @@ namespace KIT.GasStation.Gilbarco
 
             while (!token.IsCancellationRequested && _pollingEnabled)
             {
+                
                 try
                 {
                     foreach (int address in addresses)
@@ -168,8 +168,9 @@ namespace KIT.GasStation.Gilbarco
                         ExecuteCommandAsync(Command.Status, address, 0x001, expectedLength: 2, ct: token), token); // Version Request
                     }
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException e)
                 {
+                    _logger.Error(e, "Операция опроса TWOTP была отменена");
                     break;
                 }
                 catch (Exception e)
@@ -235,8 +236,8 @@ namespace KIT.GasStation.Gilbarco
 
         private async Task ExecuteCommandAsync(
             Command cmd,
-            int pumpId,
-            int subCommandOrData,
+            int controllerAddress,
+            int columnAddress = 0,
             decimal? value = null,
             int expectedLength = 0,
             bool bySum = true,
@@ -250,7 +251,7 @@ namespace KIT.GasStation.Gilbarco
 
             try
             {
-                var frame = ProtocolParser.BuildRequest(cmd, pumpId, subCommandOrData, value, bySum);
+                var frame = ProtocolParser.BuildRequest(cmd, controllerAddress, columnAddress, value, bySum);
                 _logger.Information("[Tx] {Frame}", BitConverter.ToString(frame));
 
                 var rx = await _sharedSerialPortService.WriteReadAsync(
@@ -266,11 +267,16 @@ namespace KIT.GasStation.Gilbarco
                 var parsed = ProtocolParser.ParseResponse(rx);
                 if (parsed != null)
                 {
-                    parsed.Group = Controller.Columns.FirstOrDefault()?.GroupName;
+                    parsed.Group = Controller.Columns.FirstOrDefault(c => c.Address == parsed.Address)?.GroupName;
                     await _hub.InvokeAsync("PublishStatus", parsed, parsed.Group);
 
                     // Обновление статуса
                     Status = parsed.Status;
+
+                    if (parsed.IsLifted)
+                    {
+                        await HandleColumnLiftedAsync(parsed);
+                    }
                 }
             }
             catch (Exception ex)
@@ -305,7 +311,7 @@ namespace KIT.GasStation.Gilbarco
             int presetType = bySum ? 2 : 1; // 2 = money, 1 = volume
             var scaled = bySum ? (int)(amount * 100) : (int)(amount * 100); // volume: в сотых, money: в центах
 
-            await ExecuteCommandAsync(Command.SendData, Address, column.Nozzle, amount, expectedLength: 1, bySum: bySum);
+            //await ExecuteCommandAsync(Command.SendData, Address, column.Nozzle, amount, expectedLength: 1, bySum: bySum);
             await Task.Delay(100, CancellationToken.None);
             //await ExecuteCommandAsync(Command.Authorize, Address, 0); // команда '1'
         }
@@ -313,7 +319,7 @@ namespace KIT.GasStation.Gilbarco
         private async Task CompleteRefuelingAsync()
         {
             // TWOTP: Pump Stop команда '3'
-            await ExecuteCommandAsync(Command.StopFueling, Address, 0);
+            //await ExecuteCommandAsync(Command.StopFueling, Address, 0);
         }
 
         private async Task ChangeControlModeAsync(string groupName, bool isProgramMode)
@@ -392,6 +398,11 @@ namespace KIT.GasStation.Gilbarco
             //{
             //    _logger.Error(e, e.Message);
             //}
+        }
+
+        private async Task HandleColumnLiftedAsync(ControllerResponse response)
+        {
+            await ExecuteCommandAsync(Command.LiftedStatus, response.Address);
         }
 
         #endregion

@@ -1,5 +1,4 @@
 ﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Models;
 
 namespace KIT.GasStation.Gilbarco.Utilities
@@ -29,31 +28,26 @@ namespace KIT.GasStation.Gilbarco.Utilities
             {
                 return new byte[] { (byte)(0x00 | (controllerAddress & 0x0F)) };
             }
-            //else if (cmd == Command.Authorize)
-            //{
-            //    return new byte[] { (byte)(0x10 | (controllerAddress & 0x0F)) };
-            //}
-            else if (cmd == Command.StopFueling)
+            
+            if (cmd == Command.Authorization)
+            {
+                return new byte[] { (byte)(0x10 | (controllerAddress & 0x0F)) };
+            }
+            
+            if (cmd == Command.PumpStop)
             {
                 return new byte[] { (byte)(0x30 | (controllerAddress & 0x0F)) };
             }
-            else if (cmd == Command.CounterSum || cmd == Command.CounterLiter)
-            {
-                return new byte[] { (byte)(0x50 | (controllerAddress & 0x0F)) };
-            }
-            else if (cmd == Command.ChangePrice)
+            
+            if (cmd == Command.ChangePrice)
             {
                 var dataBlock = BuildPriceChangeBlock(controllerAddress, columnAddress, value ?? 0m);
                 return BuildDataNextFrame(controllerAddress, dataBlock);
             }
-            else if (cmd == Command.SendData)
-            {
-                if (!value.HasValue)
-                {
-                    throw new ArgumentException("Preset amount is required for SendData command.", nameof(value));
-                }
 
-                var dataBlock = BuildPresetBlock(controllerAddress, columnAddress, value.Value, bySum);
+            if (cmd == Command.LiftedStatus)
+            {
+                var dataBlock = BuildLiftedStatusBlock();
                 return BuildDataNextFrame(controllerAddress, dataBlock);
             }
 
@@ -62,34 +56,27 @@ namespace KIT.GasStation.Gilbarco.Utilities
 
         public static ControllerResponse ParseResponse(byte[] rawResponse)
         {
+            var response = new ControllerResponse() { IsValid = false };
             if (rawResponse == null || rawResponse.Length == 0)
-                return new() { IsValid = false };
+                return response;
 
-            byte status = (byte)(rawResponse[0] & 0xF0);
-            byte pumpId = (byte)(rawResponse[0] & 0x0F);
-
-            NozzleStatus nozzleStatus = status switch
+            if (rawResponse.Length == 2)
             {
-                //0x60 => NozzleStatus.Off,
-                //0x70 => NozzleStatus.Call,
-                0x80 => NozzleStatus.Ready,
-                0x90 => NozzleStatus.PumpWorking,
-                0xA0 => NozzleStatus.PumpStop, // PEOT
-                0xB0 => NozzleStatus.PumpStop, // FEOT
-                0xC0 => NozzleStatus.WaitingStop,
-                0x00 => NozzleStatus.Unknown,  // Data Error
-                _ => NozzleStatus.Unknown
-            };
+                var (controllerAddress, status) = ParseStatusAndAddress(rawResponse[1]);
 
-            return new ControllerResponse
+                response.Address = controllerAddress;
+                response.Status = GilbarcoStatusToNozzleStatusConverter(status);
+                response.IsLifted = status == Status.Call;
+
+                return response;
+            }
+
+            if (rawResponse.Length == 19)
             {
-                Address = pumpId,
-                Command = CommandEncoder.Decode((byte)(status >> 4)),
-                Data = rawResponse,
-                IsValid = true,
-                Status = nozzleStatus,
-                StatusAddress = pumpId
-            };
+
+            }
+
+            return response;
         }
 
         #region Helpers
@@ -118,6 +105,21 @@ namespace KIT.GasStation.Gilbarco.Utilities
                 DataControl_PpuNext,
             };
             message.AddRange(BuildBcdDigits(priceStr));
+            return BuildDataBlock(message);
+        }
+
+        private static byte[] BuildLiftedStatusBlock()
+        {
+            var message = new List<byte>
+            {
+                0xE9,
+                0xFE,
+                0xE0,
+                0xE1,
+                0xE0,
+                0xFB,
+                0xEE
+            };
             return BuildDataBlock(message);
         }
 
@@ -178,6 +180,55 @@ namespace KIT.GasStation.Gilbarco.Utilities
             var sum = words.Sum(word => word & 0x0F);
             var lrcNibble = (16 - (sum % 16)) % 16;
             return BuildDataWord(lrcNibble);
+        }
+
+        private static (byte controllerAddress, Status status) ParseStatusAndAddress(byte statusByte)
+        {
+            // Адрес пистолета — в старших 4 битах
+            byte controllerAddress = (byte)(statusByte & 0x0F);
+
+            // Код статуса — в младших 4 битах
+            byte statusCode = (byte)((statusByte >> 4) & 0x0F);
+
+            Status status = statusCode switch
+            {
+                6 => Status.Off,
+                7 => Status.Call,
+                _ => Status.Unknown
+            };
+
+            return (controllerAddress, status);
+        }
+
+        private static NozzleStatus GilbarcoStatusToNozzleStatusConverter(Status status)
+        {
+            switch (status)
+            {
+                case Status.Unknown:
+                    break;
+                case Status.DataError:
+                    break;
+                case Status.Off:
+                    return NozzleStatus.Ready;
+                case Status.Call:
+                    return NozzleStatus.Ready;
+                case Status.AuthorizedNotDelivering:
+                    break;
+                case Status.Busy:
+                    break;
+                case Status.TransactionCompletePeot:
+                    break;
+                case Status.TransactionCompleteFeot:
+                    break;
+                case Status.PumpStop:
+                    break;
+                case Status.SendData:
+                    break;
+                default:
+                    break;
+            }
+
+            return NozzleStatus.Unknown;
         }
 
         #endregion
