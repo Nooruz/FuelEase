@@ -120,7 +120,7 @@
                         </dxb:ToolBarControl>
 
                         <dxg:GridControl ItemsSource="{Binding Tanks}"
-                             SelectedItem="{Binding SelectedTank}">
+                                         SelectedItem="{Binding SelectedTank}">
                             <dxg:GridControl.View>
                                 <dxg:TableView ShowGroupPanel="False"
                                        AllowEditing="False">

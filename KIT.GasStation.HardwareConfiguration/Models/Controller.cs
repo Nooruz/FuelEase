@@ -19,6 +19,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         private int _baudRate = 4800;
         private ControllerSettings _settings;
         private ObservableCollection<Column> _columns = new();
+        private int _address;
 
         #endregion
 
@@ -119,6 +120,20 @@ namespace KIT.GasStation.HardwareConfigurations.Models
             {
                 _columns = value;
                 OnPropertyChanged(nameof(Columns));
+            }
+        }
+
+        /// <summary>
+        /// Адрес контроллера
+        /// </summary>
+        [XmlIgnore]
+        public int Address
+        {
+            get => _address;
+            set
+            {
+                _address = value;
+                OnPropertyChanged(nameof(Address));
             }
         }
 

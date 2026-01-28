@@ -38,11 +38,11 @@
                     </dxlc:LayoutItem>
 
                     <dxlc:LayoutItem Label="Кол-во пистолетов на стороне">
-                        <dxe:ComboBoxEdit ItemsSource="{Binding NozzleQuantities}"
+                        <dxe:ComboBoxEdit ItemsSource="{Binding ColumnQuantities}"
                                           IsTextEditable="False"
                                           DisplayMember="Value"
                                           ValueMember="Key"
-                                          EditValue="{Binding SelectedNozzleQuantity}"/>
+                                          EditValue="{Binding SelectedColumnQuantity}"/>
                     </dxlc:LayoutItem>
 
                 </dxlc:LayoutGroup>
@@ -123,9 +123,9 @@
                 </dxg:GridColumn>
                 <dxg:GridColumn Header="Имя" FieldName="Name"/>
                 <dxg:GridColumn Header="Блокирована" FieldName="Settings.IsDisabled"/>
-                <dxg:GridColumn Header="Кол-во пистолетов на стороне" FieldName="Settings.NozzleQuantity">
+                <dxg:GridColumn Header="Кол-во пистолетов на стороне" FieldName="Settings.ColumnQuantity">
                     <dxg:GridColumn.EditSettings>
-                        <dxe:ComboBoxEditSettings ItemsSource="{Binding NozzleQuantities}"
+                        <dxe:ComboBoxEditSettings ItemsSource="{Binding ColumnQuantities}"
                                                   DisplayMember="Value"
                                                   ValueMember="Key"/>
                     </dxg:GridColumn.EditSettings>

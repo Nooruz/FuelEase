@@ -870,12 +870,8 @@ namespace KIT.GasStation.ViewModels
                         await _hub.InvokeAsync("GetCountersAsync", item.Group);
                     }
 
-                    // Устанавливаем цену
-                    foreach (var item in Nozzles)
-                    {
-                        await _hub.InvokeAsync("SetPriceAsync", item.Group, item.Tank.Fuel.Price);
-                    }
-
+                    var dict = Nozzles.ToDictionary(n => n.Group, n => n.Tank.Fuel.Price);
+                    await _hub.InvokeAsync("SetPriceAsync", dict);
                 }
                 finally
                 {

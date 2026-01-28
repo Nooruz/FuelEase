@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KIT.GasStation.Domain.Models
 {
@@ -32,6 +33,7 @@ namespace KIT.GasStation.Domain.Models
             {
                 _name = value;
                 OnPropertyChanged(nameof(Name));
+                OnPropertyChanged(nameof(DisplayName));
             }
         }
 
@@ -107,8 +109,12 @@ namespace KIT.GasStation.Domain.Models
             {
                 _fuel = value;
                 OnPropertyChanged(nameof(Fuel));
+                OnPropertyChanged(nameof(DisplayName));
             }
         }
+
+        [NotMapped]
+        public string DisplayName => $"{Name} ({Fuel?.Name})";
 
         /// <summary>
         /// Создано в
@@ -162,6 +168,7 @@ namespace KIT.GasStation.Domain.Models
                 UpdatedAt = tank.UpdatedAt;
                 CreatedAt = tank.CreatedAt;
                 DeletedAt = tank.DeletedAt;
+                Fuel = tank.Fuel;
             }
         }
     }

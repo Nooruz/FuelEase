@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Hubs;
+﻿using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
@@ -21,9 +20,6 @@ namespace KIT.GasStation.FuelDispenser
         public string Version => throw new NotImplementedException();
 
         public Guid ControllerId => throw new NotImplementedException();
-
-        public NozzleStatus Status {  get; set; }
-        
 
         protected FuelDispenserServiceBase(Controller controller,
             int address,

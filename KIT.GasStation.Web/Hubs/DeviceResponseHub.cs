@@ -18,7 +18,9 @@ namespace KIT.GasStation.Web.Hubs
 
         #region Constructors
 
-        public DeviceResponseHub(IGroupRegistry groups, IWorkerStateStore workerStateStore, ILogger<DeviceResponseHub> log)
+        public DeviceResponseHub(IGroupRegistry groups, 
+            IWorkerStateStore workerStateStore, 
+            ILogger<DeviceResponseHub> log)
         {
             _groups = groups;
             _workerStateStore = workerStateStore;
@@ -77,8 +79,14 @@ namespace KIT.GasStation.Web.Hubs
         public Task<IReadOnlyCollection<string>> GetAllGroups() =>
             Task.FromResult(_groups.GetAllGroups());
 
-        public Task SetPriceAsync(string groupName, decimal price) =>
-            Clients.Group(groupName).SetPriceAsync(groupName, price);
+        public Task SetPriceAsync(Dictionary<string, decimal> prices)
+        {
+            if (prices == null || prices.Count == 0)
+                return Task.CompletedTask;
+
+            var group = prices.Keys.First();
+            return Clients.Group(group).SetPriceAsync(prices);
+        }
 
         public Task StartFuelingAsync(string groupName, decimal sum, bool bySum) =>
             Clients.Group(groupName).StartFuelingAsync(groupName, sum, bySum);

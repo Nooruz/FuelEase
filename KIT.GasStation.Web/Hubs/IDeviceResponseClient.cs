@@ -16,7 +16,7 @@ namespace KIT.GasStation.Web.Hubs
         Task StopPolling(StopPollingCommand command);
         Task PausePollingAsync(string groupName);
         Task ResumePollingAsync(string groupName);
-        Task SetPriceAsync(string groupName, decimal price);
+        Task SetPriceAsync(Dictionary<string, decimal> prices);
 
         /// <summary>
         /// Начать заправку по сумме или литрам

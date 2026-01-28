@@ -306,6 +306,19 @@ namespace KIT.GasStation.ViewModels
         {
             Fuel? fuel = Fuels.FirstOrDefault(f => f.Id == obj.Id);
             fuel?.Update(obj);
+
+            var tank = Tanks.FirstOrDefault(t => t.FuelId == obj.Id);
+
+            if (tank != null)
+            {
+                tank.ColorHex = obj.ColorHex;
+                tank.Fuel = obj.Name;
+                var nozzle = Nozzles.FirstOrDefault(n => n.TankId == tank.Id);
+                if (nozzle != null)
+                {
+                    nozzle.Tank.Fuel = obj;
+                }
+            }
         }
 
         private void FuelService_OnDeleted(int id)
@@ -330,6 +343,12 @@ namespace KIT.GasStation.ViewModels
                 selectedTank.FuelId = updatedTank.FuelId;
                 selectedTank.MinimumSize = updatedTank.MinimumSize;
                 selectedTank.ColorHex = updatedTank.Fuel.ColorHex;
+
+                var nozzle = Nozzles.FirstOrDefault(n => n.TankId == updatedTank.Id);
+                if (nozzle != null)
+                {
+                    nozzle.Tank = updatedTank;
+                }
             }
             catch (Exception e)
             {

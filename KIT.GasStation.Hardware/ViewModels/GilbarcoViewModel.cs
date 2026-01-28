@@ -17,22 +17,22 @@ namespace KIT.GasStation.Hardware.ViewModels
         #region Private Members
 
         private readonly IHardwareConfigurationService _hardwareConfigurationService;
-        private NozzleQuantity _selectedNozzleQuantity = NozzleQuantity.Three;
+        private ColumnQuantity _selectedColumnQuantity = ColumnQuantity.Three;
 
         #endregion
 
         #region Public Properties
 
         public List<Parity> Parities => new() { Parity.Even, Parity.Odd, Parity.None };
-        public List<KeyValuePair<NozzleQuantity, string>> NozzleQuantities => new(EnumHelper.GetLocalizedEnumValues<NozzleQuantity>());
+        public List<KeyValuePair<ColumnQuantity, string>> ColumnQuantities => new(EnumHelper.GetLocalizedEnumValues<ColumnQuantity>());
         public List<KeyValuePair<PriceDecimalPoint, string>> PriceDecimalPoints => new(EnumHelper.GetLocalizedEnumValues<PriceDecimalPoint>());
-        public NozzleQuantity SelectedNozzleQuantity
+        public ColumnQuantity SelectedColumnQuantity
         {
-            get => _selectedNozzleQuantity;
+            get => _selectedColumnQuantity;
             set
             {
-                _selectedNozzleQuantity = value;
-                OnPropertyChanged(nameof(SelectedNozzleQuantity));
+                _selectedColumnQuantity = value;
+                OnPropertyChanged(nameof(SelectedColumnQuantity));
             }
         }
 
@@ -96,7 +96,7 @@ namespace KIT.GasStation.Hardware.ViewModels
                     Name = name,
                     Settings = new GilbarcoColumnSettings()
                     {
-                        NozzleQuantity = SelectedNozzleQuantity,
+                        ColumnQuantity = SelectedColumnQuantity,
                         PriceDecimalPoint = PriceDecimalPoint.Two
                     }
                 };

@@ -16,13 +16,19 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         /// Количество пистолетов на сторону
         /// </summary>
         [XmlAttribute]
-        public NozzleQuantity NozzleQuantity { get; set; }
+        public ColumnQuantity ColumnQuantity { get; set; }
 
         /// <summary>
         /// Цена, после запятой
         /// </summary>
         [XmlAttribute]
         public PriceDecimalPoint PriceDecimalPoint { get; set; }
+
+        /// <summary>
+        /// Статус пистолета
+        /// </summary>
+        [XmlIgnore]
+        public ColumnStatus Status { get; set; }
     }
 
     /// <summary>
@@ -44,7 +50,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
     /// <summary>
     /// Количество пистолетов на сторону
     /// </summary>
-    public enum NozzleQuantity
+    public enum ColumnQuantity
     {
         None,
 
@@ -83,5 +89,41 @@ namespace KIT.GasStation.HardwareConfigurations.Models
 
         [Display(Name = "3 знака")]
         Three
+    }
+
+    /// <summary>
+    /// Статус пистолета
+    /// </summary>
+    public enum ColumnStatus
+    {
+        /// <summary>
+        /// Неизвестный
+        /// </summary>
+        Unknown,
+
+        /// <summary>
+        /// Пистолет находится в гнезде [2, 14]
+        /// </summary>
+        NozzleIn = 0,
+
+        /// <summary>
+        /// Пистолет снят [2, 14]
+        /// </summary>
+        NozzleOut = 1,
+
+        /// <summary>
+        /// Требуется выбор уровня цены [2, 14]
+        /// </summary>
+        PriceLevelNeeded = 2, 
+
+        /// <summary>
+        /// Требуется выбор сорта топлива [2, 14]
+        /// </summary>
+        GradeNeeded = 3,
+
+        /// <summary>
+        /// Ожидание нажатия кнопки «Старт» на ТРК [2, 15]
+        /// </summary>
+        PushToStartNeeded = 4
     }
 }

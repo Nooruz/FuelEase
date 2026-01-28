@@ -24,19 +24,20 @@
         </dxlc:LayoutItem>
 
         <dxlc:LayoutItem Label="Резервуар">
+
             <dxe:ComboBoxEdit ItemsSource="{Binding Tanks}"
-                          DisplayMember="Name"
-                          ValueMember="Id"
-                          EditValue="{Binding CreatedNozzle.TankId}"
-                          ShowError="False"
-                          ShowErrorToolTip="False"/>
+                              DisplayMember="DisplayName"
+                              ValueMember="Id"
+                              EditValue="{Binding CreatedNozzle.TankId}"
+                              ShowError="False"
+                              ShowErrorToolTip="False"/>
         </dxlc:LayoutItem>
 
         <dxlc:LayoutItem Label="Канал контроллера">
             <dxe:ComboBoxEdit ItemsSource="{Binding Hubs}"
-                          EditValue="{Binding CreatedNozzle.Group}"
-                          ShowError="False"
-                          ShowErrorToolTip="False"/>
+                              EditValue="{Binding CreatedNozzle.Group}"
+                              ShowError="False"
+                              ShowErrorToolTip="False"/>
         </dxlc:LayoutItem>
 
         <dxlc:LayoutGroup HorizontalAlignment="Right">
