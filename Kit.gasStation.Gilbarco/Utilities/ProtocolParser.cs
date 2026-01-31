@@ -1,5 +1,8 @@
 ﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.FuelDispenser.Models;
+using KIT.GasStation.HardwareConfigurations.Models;
+using System.Diagnostics;
+using System.Reflection.Emit;
 
 namespace KIT.GasStation.Gilbarco.Utilities
 {
@@ -8,10 +11,17 @@ namespace KIT.GasStation.Gilbarco.Utilities
     /// </summary>
     public static class ProtocolParser
     {
-        #region Private Members
+        #region Константы протокола
 
-        private const byte StartOfText = 0xFF;
-        private const byte EndOfText = 0xF0;
+        private const byte CommandMask = 0xF0;
+        private const byte AddressMask = 0x0F;
+
+        private const byte DataWordPrefix = 0xE0;
+        private const byte DataControlPrefix = 0xF0;
+
+        private const byte StartOfText = 0xFF; // F F = STX
+        private const byte EndOfText = 0xF0; // F 0 = ETX
+
         private const byte DataControl_VolumePreset = 0xF1;
         private const byte DataControl_MoneyPreset = 0xF2;
         private const byte DataControl_Level1 = 0xF4;
@@ -20,48 +30,15 @@ namespace KIT.GasStation.Gilbarco.Utilities
         private const byte DataControl_PpuNext = 0xF7;
         private const byte DataControl_PresetAmountNext = 0xF8;
         private const byte DataControl_LrcNext = 0xFB;
-        private const byte DataWordPrefix = 0xE0;
+        private const byte SpecialFunctionModeNext = 0xFE;
 
         #endregion
 
-        public static byte[] BuildRequest(Command cmd, int controllerAddress,
-            int? columnAddress = null, decimal? value = null, bool bySum = true)
-        {
-            if (cmd == Command.Status)
-            {
-                return new byte[] { (byte)(0x00 | (controllerAddress & 0x0F)) };
-            }
-            
-            if (cmd == Command.Authorization)
-            {
-                return new byte[] { (byte)(0x10 | (controllerAddress & 0x0F)) };
-            }
-            
-            if (cmd == Command.PumpStop)
-            {
-                return new byte[] { (byte)(0x30 | (controllerAddress & 0x0F)) };
-            }
-            
-            //if (cmd == Command.ChangePrice && columnAddress != null)
-            //{
-            //    var dataBlock = BuildPriceChangeBlock(controllerAddress, columnAddress.Value, value ?? 0m);
-            //    return BuildDataNextFrame(controllerAddress, dataBlock);
-            //}
+        #region Публичный API
 
-            //if (cmd == Command.LiftedStatus)
-            //{
-            //    var dataBlock = BuildLiftedStatusBlock();
-            //    var buildRawBlock = BuildRawDataBlock(dataBlock);
-            //    return BuildDataNextFrame(controllerAddress, buildRawBlock);
-            //}
 
-            if (cmd == Command.DataNext)
-            {
-                return new byte[] { (byte)(0x00 | (controllerAddress & 0x0F)) };
-            }
 
-            throw new NotSupportedException($"Command {cmd} not implemented for Gilbarco.");
-        }
+        #endregion
 
         public static ControllerResponse ParseResponse(byte[] rawResponse)
         {
@@ -77,7 +54,7 @@ namespace KIT.GasStation.Gilbarco.Utilities
 
                     response.Address = controllerAddress;
                     response.Status = GilbarcoStatusToNozzleStatusConverter(status);
-                    response.IsLifted = status == Status.Call;
+                    response.IsLifted = status == GilbarcoStatus.Call;
 
                     return response;
                 }
@@ -100,17 +77,17 @@ namespace KIT.GasStation.Gilbarco.Utilities
         /// Извлекает код статуса из байта ответа (старшие 4 бита) [3].
         /// </summary>
         /// <param name="response">Байт, полученный от ТРК.</param>
-        public static Status GetStatus(byte[] response)
+        public static GilbarcoStatus GetStatus(byte[] response)
         {
             if (response == null || response.Length == 0)
-                return Status.DataError;
+                return GilbarcoStatus.DataError;
 
             // Если пришло 2 байта (эхо + статус), берем второй [1]. 
             // Если 1 байт — берем его.
             byte statusByte = response.Length >= 2 ? response[1] : response[0];
 
             // Извлекаем старший ниббл (сдвиг на 4 бита вправо) [2]
-            return (Status)((statusByte >> 4) & 0x0F);
+            return (GilbarcoStatus)((statusByte >> 4) & 0x0F);
         }
 
         /// <summary>
@@ -128,10 +105,10 @@ namespace KIT.GasStation.Gilbarco.Utilities
         /// </summary>
         /// <param name="cmd">Тип команды.</param>
         /// <param name="pumpId">Номер ТРК (1-16).</param>
-        public static byte[] PackCommand(Command cmd, int pumpId)
+        public static byte[] PackCommand(int pumpId)
         {
             byte addr = (byte)(pumpId == 16 ? 0 : pumpId & 0x0F); // 16 кодируется как 0 [1, 4]
-            byte value = (byte)(((byte)cmd << 4) | addr);
+            byte value = (byte)(((byte)Command.Status << 4) | addr);
 
             return new[] { value };
         }
@@ -146,20 +123,268 @@ namespace KIT.GasStation.Gilbarco.Utilities
         /// </summary>
         public static byte EncodeModifiedAscii(int value) => (byte)(value >= 10 ? 0xC1 + (value - 10) : 0xB0 + value);
 
-        /// <summary>
-        /// Расчет контрольной суммы LRC для блока данных [7, 8].
-        /// </summary>
-        /// <remarks>
-        /// LRC — это дополнение до двух суммы младших нибблов всех слов в блоке [7, 8].
-        /// </remarks>
-        public static byte CalculateLrc(IEnumerable<byte> words)
+        public static NozzleStatus GilbarcoStatusToNozzleStatusConverter(GilbarcoStatus status)
         {
-            int sum = words.Sum(word => word & 0x0F);
-            int lrcNibble = (16 - (sum % 16)) % 16;
-            return (byte)(0xE0 | lrcNibble); // Префикс E0 для слов данных [4, 9]
+            switch (status)
+            {
+                case GilbarcoStatus.DataError:
+                    break;
+                case GilbarcoStatus.Off:
+                    return NozzleStatus.Ready;
+                case GilbarcoStatus.Call:
+                    return NozzleStatus.Ready;
+                case GilbarcoStatus.AuthorizedNotDelivering:
+                    break;
+                case GilbarcoStatus.Busy:
+                    break;
+                case GilbarcoStatus.TransactionCompletePeot:
+                    break;
+                case GilbarcoStatus.TransactionCompleteFeot:
+                    break;
+                case GilbarcoStatus.PumpStop:
+                    break;
+                case GilbarcoStatus.SendData:
+                    break;
+                default:
+                    break;
+            }
+
+            return NozzleStatus.Unknown;
+        }
+
+        /// <summary>
+        /// Формирует байт команды Data Next (0x2) для указанного адреса ТРК [1].
+        /// </summary>
+        /// <param name="pumpId">Номер ТРК (1-16).</param>
+        public static byte[] BuildDataNextCommand(int pumpId)
+        {
+            // Согласно протоколу, адрес 16 передается как 0 [1, 2].
+            byte addressNibble = (byte)(pumpId == 16 ? 0 : pumpId & 0x0F);
+
+            // Код команды (0x2) записывается в старший ниббл, адрес — в младший [1, 3].
+            return new byte[] { (byte)(0x20 | addressNibble) };
+        }
+
+        /// <summary>
+        /// Формирует блок данных для запроса расширенного статуса (Special Function 010).
+        /// </summary>
+        /// <returns>Массив байтов: FF-E9-FE-E0-E1-E0-FB-EE-F0</returns>
+        public static byte[] BuildExtendedStatusBlock()
+        {
+            // 0xFE - префикс специальной функции [3, 4]
+            // 0xE0, 0xE1, 0xE0 - код функции 010 в формате Gilbarco [5, 6]
+            return BuildDataBlock(new byte[] { SpecialFunctionModeNext, 0xE0, 0xE1, 0xE0 });
+        }
+
+        /// <summary>
+        /// Удаляет эхо-команду из начала ответа устройства.
+        /// Многие ТРК сначала возвращают отправленную команду (эхо),
+        /// а затем полезные данные ответа. Метод проверяет, что ответ
+        /// начинается с байтов команды, и если да — отрезает их.
+        /// </summary>
+        /// <param name="response">Полный ответ от устройства (с эхом).</param>
+        /// <param name="command">Команда, которая была отправлена устройству.</param>
+        /// <returns>
+        /// Массив байтов без эхо-команды.  
+        /// Если эхо не найдено в начале ответа, возвращается исходный массив.
+        /// </returns>
+        public static byte[] RemoveEcho(byte[] response, byte[] command)
+        {
+            if (response == null)
+                throw new ArgumentNullException(nameof(response));
+
+            if (command == null)
+                throw new ArgumentNullException(nameof(command));
+
+            // Если ответ короче команды — эха быть не может
+            if (response.Length < command.Length)
+                return response;
+
+            // Проверяем, что начало ответа полностью совпадает с командой
+            if (response.AsSpan(0, command.Length).SequenceEqual(command))
+            {
+                // Отрезаем команду и возвращаем только полезную часть
+                var result = new byte[response.Length - command.Length];
+                Buffer.BlockCopy(response, command.Length, result, 0, result.Length);
+                return result;
+            }
+
+            // Эхо не найдено — возвращаем ответ как есть
+            return response;
+        }
+
+        /// <summary>
+        /// Разбирает расширенный статус ТРК Gilbarco из сырого массива байтов,
+        /// полученного в ответ на команду Extended Status.
+        /// </summary>
+        /// <param name="raw">
+        /// Сырой массив байтов ответа без эхо-команды.
+        /// Пример: BA-B0-B3-B1-B0-B1-B0-B0-B0-B0-B1-B1-B1-B1-B3-C2-B8-8D-8A
+        /// </param>
+        /// <returns>
+        /// Заполненный объект <see cref="GilbarcoExtendedStatus"/>.
+        /// </returns>
+        /// <remarks>
+        /// Разбор полей согласно разделу 4.9.4.4 спецификации Gilbarco.
+        /// Индексация:
+        /// raw[6]  = идентификатор колонки (Pump ID)
+        /// raw[7-9]= код функции
+        /// raw[10-15] = данные статуса
+        /// </remarks>
+        public static GilbarcoExtendedStatus ParseExtendedStatus(byte[] raw)
+        {
+            if (raw == null) throw new ArgumentNullException(nameof(raw));
+            if (raw.Length < 19)
+                throw new ArgumentException("Extended Status frame is too short.", nameof(raw));
+
+            // Индексы по разбору:
+            // 0   BA  : prefix
+            // 1-2     : block length
+            // 3       : pump number
+            // 4-6     : function echo (010)
+            // 7-8     : remaining blocks
+            // 9       : MSD
+            // 10      : Price Level Selection Needed
+            // 11      : Grade Selection Needed
+            // 12      : Nozzle (handle)
+            // 13      : Push-To-Start Needed
+            // 14      : Selected Grade
+            // 15-16   : LRC
+            // 17      : CR
+            // 18      : LF
+
+            int pumpId = raw[3] - 0xB0;
+
+            // По примеру:
+            // B1 = 1 (Not Needed) для PriceLevel/Grade/PushToStart
+            // Для "Needed" удобно хранить как bool "Needed": (value == 0)
+            int priceLevelVal = raw[10] - 0xB0;
+            int gradeSelVal = raw[11] - 0xB0;
+            int nozzleVal = raw[12] - 0xB0;
+            int pushStartVal = raw[13] - 0xB0;
+            int selectedGrade = raw[14] - 0xB0;
+
+            return new GilbarcoExtendedStatus
+            {
+                PumpId = pumpId,
+
+                // true = требуется, false = не требуется
+                PriceLevelNeeded = priceLevelVal == 0,
+                GradeSelectionNeeded = gradeSelVal == 0,
+
+                // В твоём описании: 1 = снят (On/Out)
+                IsNozzleLifted = nozzleVal == 1,
+
+                // true = требуется нажать старт
+                PushToStartNeeded = pushStartVal == 0,
+
+                SelectedGrade = selectedGrade
+            };
+        }
+
+        /// <summary>
+        /// Разбирает ответ SF 00E и возвращает конфигурацию колонки.
+        /// </summary>
+        /// <param name="response">
+        /// Сырой ответ от колонки Gilbarco (BX/CX-кодировка).
+        /// </param>
+        /// <returns>Распарсенная конфигурация колонки.</returns>
+        public static MiscPumpConfig ParseConfig(byte[] response)
+        {
+            // BX -> цифра 0..9
+            static int Digit(byte b) => b - 0xB0;
+
+            // Две BX-цифры -> число 00..99
+            int ToInt(int index) => Digit(response[index]) * 10 + Digit(response[index + 1]);
+
+            // В твоих ответах SF полезная нагрузка 00E начинается с 9-го байта
+            const int dataStart = 9;
+
+            return new MiscPumpConfig
+            {
+                UnitType = (GilbarcoUnitType)ToInt(dataStart + 0),   // 9..10
+                VolumeUnit = (GilbarcoVolumeUnit)ToInt(dataStart + 2), // 11..12
+
+                // Reserved x6 = 6 байт = 3 пары (13..18) :contentReference[oaicite:5]{index=5}
+
+                MoneyMode = (GilbarcoMoneyMode)ToInt(dataStart + 10), // 19..20
+                AutoOnMode = (GilbarcoAutoOnMode)ToInt(dataStart + 12) // 21..22
+            };
+        }
+
+        /// <summary>
+        /// Формирует блок данных для запроса конфигурации ТРК (Special Function 00E).
+        /// </summary>
+        /// <returns>Массив байтов для отправки после получения статуса SendData (D).</returns>
+        public static byte[] BuildMiscPumpDataBlock()
+        {
+            // Передаем только полезную нагрузку: 
+            // FE (Special Function Next) + код 00E (E0, E0, EE)
+            return BuildDataBlock(new byte[] { SpecialFunctionModeNext, 0xEE, 0xE0, 0xE0 });
+        }
+
+        /// <summary>
+        /// Формирует блок данных для изменения цены (Price Change Data).
+        /// </summary>
+        /// <param name="column">Выбранный пистолет</param>
+        /// <param name="price">Цена (например, 65.50)</param>
+        public static byte[] BuildPriceChangeBlock(Column column, decimal price)
+        {
+            if (column.Settings is GilbarcoColumnSettings settings)
+            {
+                // 1) Масштабируем цену под десятичную точку ТРК
+                // Пример: price=65.50, ppuDecimals=2 => scaled=6550 => "6550"
+                var scale = Pow10(settings.PriceDecimalPoint);
+                var scaled = (int)Math.Round(price * scale, MidpointRounding.AwayFromZero);
+
+                if (scaled < 0 || scaled > 9999)
+                    throw new ArgumentOutOfRangeException(nameof(price),
+                        $"Цена {price} с decimals={settings.PriceDecimalPoint} не помещается в 4 цифры PPU (XXXX). Получилось: {scaled}.");
+
+
+                // 2) Формируем полезную нагрузку Price Change Data:
+                // <pput> (F4/F5) + <gn>(F6) <g>(EX) + <ppun>(F7) <ppu>(EX EX EX EX)
+                // где LSD передаётся первым. :contentReference[oaicite:2]{index=2}
+                var payload = new List<byte>
+                {
+                    // Уровень цены: F4 для Level 1, F5 для Level 2 [1, 2]
+                    DataControl_Level1,
+
+                    // Выбор сорта: F6 (метка) + EX (номер сорта 0-F) [2]
+                    0xF6,
+                    (byte)(0xE0 | (column.Nozzle - 1)), // Сорта 1-16 транслируются в 0-F [2]
+
+                    // Цена PPU: F7 (метка) + 4 цифры BCD (младшая цифра первой — LSD first) [2]
+                    0xF7
+                };
+
+                // 3) XXXX в “цифрах” EX, LSD first
+                // scaled=6550 -> digits "6550" -> отправка: 0,5,5,6
+                string s = scaled.ToString("D4");
+                payload.Add((byte)(0xE0 | (s[3] - '0'))); // LSD
+                payload.Add((byte)(0xE0 | (s[2] - '0')));
+                payload.Add((byte)(0xE0 | (s[1] - '0')));
+                payload.Add((byte)(0xE0 | (s[0] - '0'))); // MSD
+
+                // 2. Оборачиваем данные в стандартный блок (STX, DL, LRCn, LRC, ETX)
+                return BuildDataBlock(payload);
+            }
+            return Array.Empty<byte>();
         }
 
         #region Helpers
+
+        /// <summary>
+        /// Быстрый расчёт 10^n для n=0..3.
+        /// </summary>
+        private static int Pow10(PriceDecimalPoint n) => n switch
+        {
+            PriceDecimalPoint.None => 1,
+            PriceDecimalPoint.One => 10,
+            PriceDecimalPoint.Two => 100,
+            PriceDecimalPoint.Three => 1000,
+            _ => throw new ArgumentOutOfRangeException(nameof(n))
+        };
 
         private static byte[] BuildDataNextFrame(int pumpId, byte[] dataBlock)
         {
@@ -167,40 +392,6 @@ namespace KIT.GasStation.Gilbarco.Utilities
             frame[0] = (byte)(0x20 | (pumpId & 0x0F));
             Buffer.BlockCopy(dataBlock, 0, frame, 1, dataBlock.Length);
             return frame;
-        }
-
-        private static byte[] BuildPriceChangeBlock(int pumpId, int grade, decimal price)
-        {
-            // Цена в формате XXXX (BCD, 4 цифры, LSD first)
-            int priceInt = (int)(price * 100); // 123.45 → 12345 → но у Gilbarco только 4 цифры!
-            if (priceInt > 9999) priceInt = 9999;
-
-            string priceStr = priceInt.ToString("D4");
-            var gradeWord = BuildDataWord(Math.Clamp(grade - 1, 0, 15));
-            var message = new List<byte>
-            {
-                DataControl_Level1,
-                DataControl_GradeNext,
-                gradeWord,
-                DataControl_PpuNext,
-            };
-            message.AddRange(BuildBcdDigits(priceStr));
-            return BuildDataBlock(message);
-        }
-
-        private static byte[] BuildLiftedStatusBlock()
-        {
-            var message = new List<byte>
-            {
-                0xE9,
-                0xFE,
-                0xE0,
-                0xE1,
-                0xE0,
-                0xFB,
-                0xEE
-            };
-            return message.ToArray();
         }
 
         private static byte[] BuildPresetBlock(int pumpId, int grade, decimal amount, bool bySum)
@@ -267,7 +458,7 @@ namespace KIT.GasStation.Gilbarco.Utilities
             return (byte)(DataWordPrefix | (digit & 0x0F));
         }
 
-        private static (byte controllerAddress, Status status) ParseStatusAndAddress(byte statusByte)
+        private static (byte controllerAddress, GilbarcoStatus status) ParseStatusAndAddress(byte statusByte)
         {
             // Адрес пистолета — в старших 4 битах
             byte controllerAddress = (byte)(statusByte & 0x0F);
@@ -275,46 +466,17 @@ namespace KIT.GasStation.Gilbarco.Utilities
             // Код статуса — в младших 4 битах
             byte statusCode = (byte)((statusByte >> 4) & 0x0F);
 
-            Status status = statusCode switch
+            GilbarcoStatus status = statusCode switch
             {
-                6 => Status.Off,
-                7 => Status.Call,
-                _ => Status.DataError
+                6 => GilbarcoStatus.Off,
+                7 => GilbarcoStatus.Call,
+                _ => GilbarcoStatus.DataError
             };
 
             return (controllerAddress, status);
         }
 
-        private static NozzleStatus GilbarcoStatusToNozzleStatusConverter(Status status)
-        {
-            switch (status)
-            {
-                case Status.DataError:
-                    break;
-                case Status.Off:
-                    return NozzleStatus.Ready;
-                case Status.Call:
-                    return NozzleStatus.Ready;
-                case Status.AuthorizedNotDelivering:
-                    break;
-                case Status.Busy:
-                    break;
-                case Status.TransactionCompletePeot:
-                    break;
-                case Status.TransactionCompleteFeot:
-                    break;
-                case Status.PumpStop:
-                    break;
-                case Status.SendData:
-                    break;
-                default:
-                    break;
-            }
-
-            return NozzleStatus.Unknown;
-        }
-
-        public static void ParseExtendedStatus010(byte[] rx, ControllerResponse response)
+        private static void ParseExtendedStatus010(byte[] rx, ControllerResponse response)
         {
             //// BA - признак начала блока данных Special Function [4]
             //if (rx == null || rx.Length < 19 || rx != 0xBA) return;
@@ -330,6 +492,19 @@ namespace KIT.GasStation.Gilbarco.Utilities
             //response.SelectedGrade = Decode(rx[11]);         // Номер выбранного сорта [6]
 
             //response.IsValid = true;
+        }
+
+        /// <summary>
+        /// Расчет контрольной суммы LRC для блока данных [7, 8].
+        /// </summary>
+        /// <remarks>
+        /// LRC — это дополнение до двух суммы младших нибблов всех слов в блоке [7, 8].
+        /// </remarks>
+        private static byte CalculateLrc(IEnumerable<byte> words)
+        {
+            int sum = words.Sum(word => word & 0x0F);
+            int lrcNibble = (16 - (sum % 16)) % 16;
+            return (byte)(0xE0 | lrcNibble); // Префикс E0 для слов данных [4, 9]
         }
 
         #endregion

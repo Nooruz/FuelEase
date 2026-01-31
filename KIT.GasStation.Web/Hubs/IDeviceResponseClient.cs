@@ -6,6 +6,7 @@ namespace KIT.GasStation.Web.Hubs
     {
         // Сильная типизация на сервере (по желанию)
         Task StatusChanged(ControllerResponse e);
+        
         /// <summary>
         /// Сообщает об изменении статуса подключения воркера для указанной группы.
         /// </summary>
@@ -14,9 +15,7 @@ namespace KIT.GasStation.Web.Hubs
         Task WorkerStateChanged(WorkerStateNotification notification);
         Task StartPolling(StartPollingCommand command);
         Task StopPolling(StopPollingCommand command);
-        Task PausePollingAsync(string groupName);
-        Task ResumePollingAsync(string groupName);
-        Task SetPriceAsync(Dictionary<string, decimal> prices);
+        Task SetPriceAsync(Guid commandId, Dictionary<string, decimal> prices);
 
         /// <summary>
         /// Начать заправку по сумме или литрам
@@ -51,7 +50,7 @@ namespace KIT.GasStation.Web.Hubs
         /// Получить счетчики
         /// </summary>
         /// <param name="groupName">Название группы</param>
-        Task GetCountersAsync(string groupName);
+        Task GetCountersAsync(Guid commandId, string groupName);
 
         /// <summary>
         /// Поднята или опущена колонка
@@ -64,6 +63,8 @@ namespace KIT.GasStation.Web.Hubs
         /// <param name="groupName">Название группы</param>
         /// <param name="isProgramMode">Если true программный, иначе ручной</param>
         /// <returns></returns>
-        Task ChangeControlModeAsync(string groupName, bool isProgramMode);
+        Task ChangeControlModeAsync(Guid commandId, string groupName, bool isProgramMode);
+
+        Task InitializeConfigurationAsync(Guid commandId, string groupName);
     }
 }

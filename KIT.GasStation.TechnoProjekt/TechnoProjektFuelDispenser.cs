@@ -29,6 +29,7 @@ namespace KIT.GasStation.Technoproject
         private readonly object _pollLock = new();
         private const int _frameLen = 23;
         private ILogger _logger;
+        private CancellationToken _token;
 
         #endregion
 
@@ -104,7 +105,7 @@ namespace KIT.GasStation.Technoproject
             }
         }
 
-        protected override async Task OnTickAsync(CancellationToken token)
+        protected override async Task OnTickAsync()
         {
             _logger.Information("ТРК Technoproject запущена, используется порт {Port}", Controller.ComPort);
 
@@ -114,14 +115,11 @@ namespace KIT.GasStation.Technoproject
             // Стартовый опрос состояния
             await ExecuteCommandAsync(Command.Status, Address, 0);
 
-            while (!token.IsCancellationRequested && _pollingEnabled)
+            while (!_token.IsCancellationRequested && _pollingEnabled)
             {
                 try
                 {
-                    if (Status is NozzleStatus.Ready or NozzleStatus.PumpWorking or NozzleStatus.WaitingRemoved)
-                    {
-                        await ExecuteCommandAsync(Command.Status, Address, 0, null, expectedLength: _frameLen, ct: token);
-                    }
+                    await ExecuteCommandAsync(Command.Status, Address, 0, null, expectedLength: _frameLen, ct: _token);
                 }
                 catch (OperationCanceledException) { }
                 catch (Exception e)
@@ -132,7 +130,7 @@ namespace KIT.GasStation.Technoproject
                 if (!_pollingEnabled) break;
 
                 // Небольшая задержка между опросами — можно настроить
-                await Task.Delay(300, token);
+                await Task.Delay(300, _token);
             }
         }
 
@@ -197,8 +195,6 @@ namespace KIT.GasStation.Technoproject
 
                     // Обработка поднятия пистолета — в протоколе адрес и статус в статус-байтах
                     await HandleColumnLiftedAsync(resp.Data);
-
-                    Status = resp.Status;
                 }
 
                 _logger.Information("[Rx] {Rx}", BitConverter.ToString(rx));
@@ -341,7 +337,7 @@ namespace KIT.GasStation.Technoproject
                         _pollingEnabled = true;
                     }
 
-                    _pollingTask = OnTickAsync(token);
+                    _pollingTask = OnTickAsync();
                 }
                 catch (Exception ex)
                 {

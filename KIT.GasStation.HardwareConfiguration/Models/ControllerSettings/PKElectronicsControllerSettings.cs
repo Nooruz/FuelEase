@@ -17,6 +17,20 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         /// Количество пистолетов на стороне
         /// </summary>
         public NozzlesPerSide NozzlesPerSide { get; set; }
+
+        #region Public Voids
+
+        public override void SetStatus(object status)
+        {
+
+        }
+
+        public override object GetStatus()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 
     /// <summary>

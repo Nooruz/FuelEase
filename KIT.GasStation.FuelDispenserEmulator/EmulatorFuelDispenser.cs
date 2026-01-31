@@ -24,6 +24,7 @@ namespace KIT.GasStation.FuelDispenserEmulator
         private string? _lastAvailabilityReason;
         private int _hubRestartLoop;
         private readonly ControllerResponse _controllerResponse = new() { Status = NozzleStatus.Ready };
+        private CancellationToken _token; 
 
         #endregion
 
@@ -43,22 +44,22 @@ namespace KIT.GasStation.FuelDispenserEmulator
 
         #region Override Voids
 
-        protected override async Task OnTickAsync(CancellationToken token)
+        protected override async Task OnTickAsync()
         {
             _logger.Information("ТРК Эмулятор запущена, используется порт {Port}", Controller.ComPort);
 
             var column = Columns.First();
 
-            while (!token.IsCancellationRequested && _pollingEnabled)
+            while (!_token.IsCancellationRequested && _pollingEnabled)
             {
                 try
                 {
                     // Ждем, если опрос приостановлен
-                    _pollingResumedEvent.Wait(token);
+                    _pollingResumedEvent.Wait(_token);
 
-                    await _hub.InvokeAsync("PublishStatus", _controllerResponse, column.GroupName, cancellationToken: token);
+                    await _hub.InvokeAsync("PublishStatus", _controllerResponse, column.GroupName, cancellationToken: _token);
                 }
-                catch (OperationCanceledException ex) when (ex.CancellationToken == token)
+                catch (OperationCanceledException ex) when (ex.CancellationToken == _token)
                 {
                     _logger.Information("Опрос ТРК Эмулятор отменён: {Message}", ex.Message);
                     break;
@@ -66,7 +67,7 @@ namespace KIT.GasStation.FuelDispenserEmulator
                 catch (Exception e)
                 {
                     _logger.Error(e, e.Message, e.StackTrace);
-                    await Task.Delay(1000, token);
+                    await Task.Delay(1000, _token);
                 }
                 if (!_pollingEnabled) break;
             }
@@ -76,6 +77,8 @@ namespace KIT.GasStation.FuelDispenserEmulator
         {
             try
             {
+                _token = token;
+
                 _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
 
                 _hub = _hubClient.Connection;
@@ -86,6 +89,11 @@ namespace KIT.GasStation.FuelDispenserEmulator
                 _hub.On<StartPollingCommand>("StartPolling", async e =>
                 {
                     await StartPollingAsync(token);
+                });
+
+                _hub.On<string>("InitializeConfigurationAsync", async (groupName) =>
+                {
+                    await InitializeConfigurationAsync(groupName);
                 });
 
                 _hub.On<StopPollingCommand>("StopPolling", async e =>
@@ -190,7 +198,7 @@ namespace KIT.GasStation.FuelDispenserEmulator
                     }
 
                     // 3) Стартуем цикл опроса (lease остаётся жить в поле)
-                    _pollingTask = OnTickAsync(token);
+                    _pollingTask = OnTickAsync();
                     await BroadcastWorkerAvailabilityAsync(true, "Polling started");
                 }
                 catch (Exception ex)
@@ -208,6 +216,11 @@ namespace KIT.GasStation.FuelDispenserEmulator
             _controllerResponse.Group = column.GroupName;
 
             await _hub.InvokeAsync("PublishStatus", _controllerResponse, column.GroupName, cancellationToken: token);
+        }
+
+        private async Task InitializeConfigurationAsync(string groupName)
+        {
+            
         }
 
         private async Task StartFuelingAsync(string groupName, decimal value, bool bySum)

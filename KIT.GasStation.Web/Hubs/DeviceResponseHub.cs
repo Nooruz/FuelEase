@@ -13,6 +13,8 @@ namespace KIT.GasStation.Web.Hubs
         private readonly ILogger<DeviceResponseHub> _log;
         private readonly IWorkerStateStore _workerStateStore;
         private static readonly ConcurrentDictionary<string, byte> _workerConnections = new();
+        private static readonly ConcurrentDictionary<Guid, TaskCompletionSource<CommandCompletion>> _pendingCommands = new();
+        private static readonly TimeSpan CommandTimeout = TimeSpan.FromSeconds(15);
 
         #endregion
 
@@ -85,7 +87,8 @@ namespace KIT.GasStation.Web.Hubs
                 return Task.CompletedTask;
 
             var group = prices.Keys.First();
-            return Clients.Group(group).SetPriceAsync(prices);
+            return ExecuteCommandAsync(group, commandId =>
+                Clients.Group(group).SetPriceAsync(commandId, prices));
         }
 
         public Task StartFuelingAsync(string groupName, decimal sum, bool bySum) =>
@@ -105,10 +108,16 @@ namespace KIT.GasStation.Web.Hubs
         public Task CompleteFuelingAsync(string groupName) =>
             Clients.Group(groupName).CompleteFuelingAsync(groupName);
         public Task GetCountersAsync(string groupName) =>
-            Clients.Group(groupName).GetCountersAsync(groupName);
+            ExecuteCommandAsync(groupName, commandId =>
+                Clients.Group(groupName).GetCountersAsync(commandId, groupName));
 
         public Task ChangeControlModeAsync(string groupName, bool isProgramMode) =>
-            Clients.Group(groupName).ChangeControlModeAsync(groupName, isProgramMode);
+            ExecuteCommandAsync(groupName, commandId =>
+                Clients.Group(groupName).ChangeControlModeAsync(commandId, groupName, isProgramMode));
+
+        public Task InitializeConfigurationAsync(string groupName) =>
+            ExecuteCommandAsync (groupName, commandId =>
+                Clients.Group(groupName).InitializeConfigurationAsync(commandId, groupName));
 
         public Task RegisterWorker(string groupName) =>
             Groups.AddToGroupAsync(Context.ConnectionId, groupName);
@@ -116,21 +125,24 @@ namespace KIT.GasStation.Web.Hubs
         public async Task StartPolling(string groupName)
         {
             _log.LogInformation("Start polling {groupName}", groupName);
-            await Clients.Group(groupName).StartPolling(new StartPollingCommand { GroupName = groupName });
+            await ExecuteCommandAsync(groupName, commandId =>
+                Clients.Group(groupName).StartPolling(new StartPollingCommand
+                {
+                    GroupName = groupName,
+                    CommandId = commandId
+                }));
         }
 
         public async Task StopPolling(string groupName)
         {
             _log.LogInformation("Stop polling {groupName}", groupName);
-            await Clients.Group(groupName).StopPolling(new StopPollingCommand { GroupName = groupName });
+            await ExecuteCommandAsync(groupName, commandId =>
+                Clients.Group(groupName).StopPolling(new StopPollingCommand
+                {
+                    GroupName = groupName,
+                    CommandId = commandId
+                }));
         }
-            
-
-        public Task PausePollingAsync(string groupName) => 
-            Clients.Group(groupName).PausePollingAsync(groupName);
-
-        public Task ResumePollingAsync(string groupName) =>
-            Clients.Group(groupName).ResumePollingAsync(groupName);
 
         public async Task ReportWorkerAvailability(WorkerAvailabilityReport report)
         {
@@ -154,6 +166,18 @@ namespace KIT.GasStation.Web.Hubs
             return Task.FromResult(snapshot);
         }
 
+        public Task ReportCommandCompleted(CommandCompletion completion)
+        {
+            if (completion is null)
+                return Task.CompletedTask;
+
+            if (_pendingCommands.TryGetValue(completion.CommandId, out var tcs))
+            {
+                tcs.TrySetResult(completion);
+            }
+
+            return Task.CompletedTask;
+        }
 
         public Task StartFueling() => Task.CompletedTask;
         public Task StopFueling() => Task.CompletedTask;
@@ -177,6 +201,48 @@ namespace KIT.GasStation.Web.Hubs
                 return Task.CompletedTask;
 
             return Clients.Group(groupName).WorkerStateChanged(notification);
+        }
+
+        private async Task ExecuteCommandAsync(string groupName, Func<Guid, Task> sendAsync)
+        {
+            var commandId = Guid.NewGuid();
+            var tcs = new TaskCompletionSource<CommandCompletion>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _pendingCommands[commandId] = tcs;
+
+            try
+            {
+                await sendAsync(commandId);
+                await WaitForCompletionAsync(commandId, groupName, Context.ConnectionAborted);
+            }
+            finally
+            {
+                _pendingCommands.TryRemove(commandId, out _);
+            }
+        }
+
+        private async Task WaitForCompletionAsync(Guid commandId, string groupName, CancellationToken token)
+        {
+            if (!_pendingCommands.TryGetValue(commandId, out var tcs))
+                return;
+
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            timeoutCts.CancelAfter(CommandTimeout);
+
+            try
+            {
+                var completion = await tcs.Task.WaitAsync(timeoutCts.Token);
+                if (!completion.IsSuccess)
+                {
+                    var message = string.IsNullOrWhiteSpace(completion.ErrorMessage)
+                        ? $"Команда {commandId} для группы {groupName} завершилась с ошибкой."
+                        : completion.ErrorMessage;
+                    throw new HubException(message);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw new HubException($"Таймаут ожидания команды {commandId} для группы {groupName}.");
+            }
         }
 
     }

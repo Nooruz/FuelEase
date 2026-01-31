@@ -36,6 +36,7 @@ namespace KIT.GasStation.Lanfeng
         private bool _hubHandlersRegistered;
         private int _hubRestartLoop;
         private PortKey _portKey;
+        private CancellationToken _token;
 
         #endregion
 
@@ -162,39 +163,36 @@ namespace KIT.GasStation.Lanfeng
         /// Цикл опроса статуса ТРК.
         /// Выполняется пока не придёт сигнал отмены.
         /// </summary>
-        protected override async Task OnTickAsync(CancellationToken token)
+        protected override async Task OnTickAsync()
         {
             _logger.Information("ТРК Lanfeng запущена, используется порт {Port}", Controller.ComPort);
 
             // Даем время на выполнение инициализационных команд
-            await Task.Delay(3000, token);
+            await Task.Delay(3000, _token);
 
-            if (Status is NozzleStatus.Unknown)
+            // Приостанавливаем опрос на время инициализации
+            await PausePollingAsync();
+            try
             {
-                // Приостанавливаем опрос на время инициализации
-                await PausePollingAsync();
-                try
-                {
-                    await ExecuteCommandAsync(Command.Status, Address, 0, ct: token);
-                    await ExecuteCommandAsync(Command.FirmwareVersion, Address, 0, ct: token);
-                }
-                finally
-                {
-                    await ResumePollingAsync();
-                }
+                await ExecuteCommandAsync(Command.Status, Address, 0, ct: _token);
+                await ExecuteCommandAsync(Command.FirmwareVersion, Address, 0, ct: _token);
+            }
+            finally
+            {
+                await ResumePollingAsync();
             }
 
-            while (!token.IsCancellationRequested && _pollingEnabled)
+            while (!_token.IsCancellationRequested && _pollingEnabled)
             {
                 try
                 {
                     // Ждем, если опрос приостановлен
-                    _pollingResumedEvent.Wait(token);
+                    _pollingResumedEvent.Wait(_token);
 
                     await ExecuteCommandSafeAsync(() => 
-                        ExecuteCommandAsync(Command.Status, Address, 0, null, ct: token), token);
+                        ExecuteCommandAsync(Command.Status, Address, 0, null, ct: _token), _token);
                 }
-                catch (OperationCanceledException ex) when (ex.CancellationToken == token)
+                catch (OperationCanceledException ex) when (ex.CancellationToken == _token)
                 {
                     _logger.Information("Опрос ТРК Lanfeng отменён: {Message}", ex.Message);
                     break;
@@ -202,7 +200,7 @@ namespace KIT.GasStation.Lanfeng
                 catch (Exception e)
                 {
                     _logger.Error(e, e.Message, e.StackTrace);
-                    await Task.Delay(1000, token);
+                    await Task.Delay(1000, _token);
                 }
                 if (!_pollingEnabled) break;
             }
@@ -298,7 +296,6 @@ namespace KIT.GasStation.Lanfeng
 
                         if (controllerResponse.IsValid)
                         {
-                            Status = controllerResponse.Status;
                             _logger.Information("[Rx] {Rx}", BitConverter.ToString(controllerResponse.Data));
                             await BroadcastWorkerAvailabilityAsync(true);
                             break; // всё ок, выходим из цикла
@@ -524,7 +521,7 @@ namespace KIT.GasStation.Lanfeng
                     }
 
                     // 3) Стартуем цикл опроса (lease остаётся жить в поле)
-                    _pollingTask = OnTickAsync(token);
+                    _pollingTask = OnTickAsync();
                     await BroadcastWorkerAvailabilityAsync(true, "Polling started");
                 }
                 catch (Exception ex)

@@ -4,7 +4,6 @@ using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
-using System.IO.Ports;
 
 namespace KIT.GasStation.PKElectronics
 {
@@ -53,7 +52,7 @@ namespace KIT.GasStation.PKElectronics
             }
         }
 
-        protected override async Task OnTickAsync(CancellationToken token)
+        protected override async Task OnTickAsync()
         {
 
         }

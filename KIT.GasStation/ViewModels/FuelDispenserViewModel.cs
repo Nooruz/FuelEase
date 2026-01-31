@@ -429,16 +429,7 @@ namespace KIT.GasStation.ViewModels
 
         private async Task ChangeControlModeAsync(Nozzle nozzle)
         {
-            try
-            {
-                await PausePollingAsync(nozzle.Group);
-                
-                await _hub.InvokeAsync("ChangeControlModeAsync", nozzle.Group, true);
-            }
-            finally
-            {
-                await ResumePollingAsync(nozzle.Group);
-            }
+            await _hub.InvokeAsync("ChangeControlModeAsync", nozzle.Group, true);
         }
 
         /// <summary>
@@ -511,17 +502,11 @@ namespace KIT.GasStation.ViewModels
 
                     _logger.LogInformation("Продажа {SaleId} завершена успешно", fuelSale.Id);
 
-                    await PausePollingAsync(nozzle.Group);
-
                     await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Ошибка при завершении заправки для продажи {SaleId}", fuelSale.Id);
-                }
-                finally
-                {
-                    await ResumePollingAsync(nozzle.Group);
                 }
             }
         }
@@ -569,22 +554,13 @@ namespace KIT.GasStation.ViewModels
 
         private async Task OnPumpStop(Nozzle nozzle, ControllerResponse response)
         {
-            try
+            if (response.Address == response.StatusAddress)
             {
-                await PausePollingAsync(nozzle.Group);
-
-                if (response.Address == response.StatusAddress)
-                {
-                    await _hub.InvokeAsync("CompleteFuelingAsync", nozzle.Group);
-                }
-                else
-                {
-                    await _hub.InvokeAsync("GetStatusByAddressAsync", nozzle.Group);
-                }
+                await _hub.InvokeAsync("CompleteFuelingAsync", nozzle.Group);
             }
-            finally
+            else
             {
-                await ResumePollingAsync(nozzle.Group);
+                await _hub.InvokeAsync("GetStatusByAddressAsync", nozzle.Group);
             }
         }
 
@@ -753,16 +729,6 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        private async Task ResumePollingAsync(string groupName)
-        {
-            await _hub.InvokeAsync("ResumePollingAsync", groupName);
-        }
-
-        private async Task PausePollingAsync(string groupName)
-        {
-            await _hub.InvokeAsync("PausePollingAsync", groupName);
-        }
-
         #endregion
 
         #region Private Voids
@@ -857,25 +823,16 @@ namespace KIT.GasStation.ViewModels
             {
                 await _hub.InvokeAsync("StartPolling", nozzle.Group);
 
-                try
+                await Task.Delay(3000);
+
+                await _hub.InvokeAsync("InitializeConfigurationAsync", nozzle.Group);
+
+                var dict = Nozzles.ToDictionary(n => n.Group, n => n.Tank.Fuel.Price);
+                await _hub.InvokeAsync("SetPriceAsync", dict);
+
+                foreach (var item in Nozzles)
                 {
-                    await Task.Delay(3000);
-
-                    await PausePollingAsync(nozzle.Group);
-
-                    await _hub.InvokeAsync("ChangeControlModeAsync", nozzle.Group, true);
-
-                    foreach (var item in Nozzles)
-                    {
-                        await _hub.InvokeAsync("GetCountersAsync", item.Group);
-                    }
-
-                    var dict = Nozzles.ToDictionary(n => n.Group, n => n.Tank.Fuel.Price);
-                    await _hub.InvokeAsync("SetPriceAsync", dict);
-                }
-                finally
-                {
-                    await ResumePollingAsync(nozzle.Group);
+                    await _hub.InvokeAsync("GetCountersAsync", item.Group);
                 }
             }
 
@@ -989,23 +946,14 @@ namespace KIT.GasStation.ViewModels
             }
             else
             {
-                try
+                await _hub.InvokeAsync("SetPriceAsync", nozzle.Group, nozzle.Price);
+                if (fuelSale.IsForSum)
                 {
-                    await PausePollingAsync(nozzle.Group);
-
-                    await _hub.InvokeAsync("SetPriceAsync", nozzle.Group, nozzle.Price);
-                    if (fuelSale.IsForSum)
-                    {
-                        await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Sum, true);
-                    }
-                    else
-                    {
-                        await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Quantity, false);
-                    }
+                    await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Sum, true);
                 }
-                finally
+                else
                 {
-                    await ResumePollingAsync(nozzle.Group);
+                    await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Quantity, false);
                 }
             }
         }
@@ -1020,16 +968,7 @@ namespace KIT.GasStation.ViewModels
 
             if (await ValidateFuelQuantity(fuelSale))
             {
-                try
-                {
-                    await PausePollingAsync(nozzle.Group);
-
-                    await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Sum - fuelSale.ReceivedSum, true);
-                }
-                finally
-                {
-                    await ResumePollingAsync(nozzle.Group);
-                }
+                await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Sum - fuelSale.ReceivedSum, true);
             }
         }
 
@@ -1071,20 +1010,11 @@ namespace KIT.GasStation.ViewModels
         {
             var firstNozzle = Nozzles.First();
 
-            try
+            foreach (var nozzle in Nozzles)
             {
-                await PausePollingAsync(firstNozzle.Group);
+                await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
+            }
 
-                foreach (var nozzle in Nozzles)
-                {
-                    await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
-                }
-            }
-            finally
-            {
-                await ResumePollingAsync(firstNozzle.Group);
-            }
-            
 
             //Ждем пол секунды
             await Task.Delay(1500);
@@ -1106,18 +1036,9 @@ namespace KIT.GasStation.ViewModels
         {
             var firstNozzle = Nozzles.First();
 
-            try
+            foreach (var nozzle in Nozzles)
             {
-                await PausePollingAsync(firstNozzle.Group);
-
-                foreach (var nozzle in Nozzles)
-                {
-                    await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
-                }
-            }
-            finally
-            {
-                await ResumePollingAsync(firstNozzle.Group);
+                await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
             }
 
             // Ждем пол секунды
@@ -1189,17 +1110,8 @@ namespace KIT.GasStation.ViewModels
                 Nozzles.Where(n => n.Tank.FuelId == fuel.Id)
                        .Select(async n =>
                        {
-                           try
-                           {
-                               await PausePollingAsync(n.Group);
-
-                               n.Tank?.Fuel.Update(fuel);
-                               await _hub.InvokeAsync("SetPriceAsync", n.Group, fuel.Price);
-                           }
-                           finally
-                           {
-                               await ResumePollingAsync(n.Group);
-                           }
+                           n.Tank?.Fuel.Update(fuel);
+                           await _hub.InvokeAsync("SetPriceAsync", n.Group, fuel.Price);
                        });
             }
             catch (Exception ex)
@@ -1233,19 +1145,9 @@ namespace KIT.GasStation.ViewModels
         {
             var nozzle = Nozzles.First();
 
-            try
+            foreach (var item in Nozzles)
             {
-                await PausePollingAsync(nozzle.Group);
-
-                foreach (var item in Nozzles)
-                {
-                    await _hub.InvokeAsync("GetCountersAsync", item.Group);
-                }
-
-            }
-            finally
-            {
-                await ResumePollingAsync(nozzle.Group);
+                await _hub.InvokeAsync("GetCountersAsync", item.Group);
             }
         }
 

@@ -93,7 +93,7 @@ namespace KIT.GasStation.FuelDispenser
         protected virtual Task OnCloseAsync() => Task.CompletedTask;
 
         // Обязательный шаг: тик опроса/обработки
-        protected abstract Task OnTickAsync(CancellationToken token);
+        protected abstract Task OnTickAsync();
 
         public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
