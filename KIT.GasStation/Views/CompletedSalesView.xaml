@@ -2,56 +2,93 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
     xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+    xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
     xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:base="clr-namespace:KIT.GasStation.Views.Base"
     x:Class="KIT.GasStation.Views.CompletedSalesView"
-    Width="800"
+    Width="1000"
     Height="600">
 
     <dxlc:LayoutControl Orientation="Vertical">
 
-        <dxg:GridControl ItemsSource="{Binding FuelSales}"
-                         SelectedItem="{Binding SelectedFuelSale}">
-            <dxg:GridControl.View>
-                <dxg:TableView ShowGroupPanel="False"
-                               AllowEditing="False"/>
-            </dxg:GridControl.View>
+        <dxlc:GroupBox Header="Продажи"
+                       Padding="0">
 
-            <dxg:GridColumn Header="Дата и время"
-                            FieldName="CreateDate">
-                <dxg:GridColumn.EditSettings>
-                    <dxe:DateEditSettings MaskUseAsDisplayFormat="True" 
-                                          Mask="G"/>
-                </dxg:GridColumn.EditSettings>
-            </dxg:GridColumn>
-            <dxg:GridColumn Header="Пользователь"
-                            FieldName="Shift.User.FullName"/>
-            <dxg:GridColumn Header="Тип оплаты"
-                            Binding="{Binding PaymentType, Converter={StaticResource EnumToStringConvertert}}"/>
-            <dxg:GridColumn Header="Отпуск"
-                            FieldName="Nozzle.Name"/>
-            <dxg:GridColumn Header="Чек"
-                            FieldName="FiscalData.FiscalDocument"/>
+            <dxg:GridControl ItemsSource="{Binding FuelSales}"
+                             SelectedItem="{Binding SelectedFuelSale}"
+                             ShowLoadingPanel="{Binding ShowLoadingPanel}">
+                <dxg:GridControl.View>
+                    <dxg:TableView ShowGroupPanel="False"
+                                   AllowEditing="False">
+                        <dxg:TableView.RowCellMenuCustomizations>
+                            <dxb:BarButtonItem Content="Возврат товара ККМ"
+                                   Command="{Binding DataContext.ReturnCommand, RelativeSource={RelativeSource AncestorType={x:Type base:BaseView}, Mode=FindAncestor}}" 
+                                   Glyph="{dx:DXImage SvgImages/Outlook Inspired/Reset.svg}" 
+                                   BarItemDisplayMode="ContentAndGlyph"/>
+                        </dxg:TableView.RowCellMenuCustomizations>
+                    </dxg:TableView>
+                </dxg:GridControl.View>
 
-        </dxg:GridControl>
+                <dxg:GridColumn Header="Дата и время"
+                    FieldName="CreateDate">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:DateEditSettings MaskUseAsDisplayFormat="True" 
+                                  Mask="G"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+                <dxg:GridColumn Header="Пользователь"
+                    FieldName="Shift.User.FullName"/>
+                <dxg:GridColumn Header="Тип оплаты"
+                    Binding="{Binding PaymentType, Converter={StaticResource EnumToStringConvertert}}"/>
+                <dxg:GridColumn Header="Отпуск"
+                    FieldName="Nozzle.Name"/>
+                <dxg:GridColumn Header="Топливо"
+                    FieldName="Tank.Fuel.Name"/>
+                <dxg:GridColumn Header="Цена"
+                    FieldName="Tank.Fuel.Price"/>
+                <dxg:GridColumn Header="Сумма"
+                    FieldName="Sum"/>
+                <dxg:GridColumn Header="Сумма (отпущено)"
+                    FieldName="ReceivedSum"/>
+                <dxg:GridColumn Header="Кол-во"
+                    FieldName="Quantity"/>
+                <dxg:GridColumn Header="Кол-во (отпущено)"
+                    FieldName="ReceivedQuantity"/>
 
-        <dxg:GridControl Height="100" ItemsSource="{Binding SelectedFuelSales}">
-            <dxg:GridControl.View>
-                <dxg:TableView ShowGroupPanel="False"
-                               AllowEditing="False"/>
-            </dxg:GridControl.View>
+            </dxg:GridControl>
 
-            <dxg:GridColumn Header="Товар"
-                            FieldName="Tank.Fuel.Name"/>
-            <dxg:GridColumn Header="Цена"
-                            FieldName="Tank.Fuel.Price"/>
-            <dxg:GridColumn Header="Кол-во"
-                            FieldName="ReceivedQuantity"/>
-            <dxg:GridColumn Header="Итого"
-                            FieldName="ReceivedSum"/>
+        </dxlc:GroupBox>
 
-        </dxg:GridControl>
+        <dxlc:GroupBox Header="Чеки"
+                       Height="150"
+                       Padding="0">
+
+            <dxg:GridControl ItemsSource="{Binding SelectedFuelSale.FiscalDatas}"
+                             SelectedItem="{Binding SelectedFiscalData}">
+                <dxg:GridControl.View>
+                    <dxg:TableView ShowGroupPanel="False"
+                                   AllowEditing="False"/>
+                </dxg:GridControl.View>
+
+                <dxg:GridColumn Header="ФД"
+                                FieldName="FiscalDocument"/>
+                <dxg:GridColumn Header="Кол-во"
+                                FieldName="Quantity"/>
+                <dxg:GridColumn Header="Сумма"
+                                FieldName="Total"/>
+                <dxg:GridColumn Header="Вид оплаты"
+                                FieldName="OperationType">
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:ComboBoxEditSettings ItemsSource="{Binding OperationTypes}"
+                                                  DisplayMember="Value"
+                                                  ValueMember="Key"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
+            </dxg:GridControl>
+
+        </dxlc:GroupBox>
 
         <dxlc:LayoutGroup VerticalAlignment="Bottom">
 

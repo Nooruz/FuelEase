@@ -78,6 +78,7 @@ namespace KIT.GasStation.Domain.Views
             {
                 _size = value;
                 OnPropertyChanged(nameof(Size));
+                OnPropertyChanged(nameof(FuelQuantityPercentage));
             }
         }
 
@@ -98,6 +99,7 @@ namespace KIT.GasStation.Domain.Views
             {
                 _currentFuelQuantity = value;
                 OnPropertyChanged(nameof(CurrentFuelQuantity));
+                OnPropertyChanged(nameof(FuelQuantityPercentage));
             }
         }
 
@@ -111,6 +113,18 @@ namespace KIT.GasStation.Domain.Views
                 OnPropertyChanged(nameof(ColorBrush));
             }
         }
+
+        [NotMapped]
+        public decimal FuelQuantityPercentage => Size > 0 ? (CurrentFuelQuantity / Size) * 100 : 0;
+
+        [NotMapped]
+        public string FreeSpace => $"{(Size - CurrentFuelQuantity):N2}";
+
+        [NotMapped]
+        public string CurrentQuantityDisplay => $"{CurrentFuelQuantity:N2}";
+
+        [NotMapped]
+        public string SizeDisplay => $"{Size:N0}";
 
         #endregion
 

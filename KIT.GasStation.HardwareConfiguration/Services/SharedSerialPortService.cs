@@ -193,6 +193,71 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             }
         }
 
+        public async Task<byte[]> WriteReadTwotpFrameAsync(
+            byte[] tx,
+            int writeToReadDelayMs = 20,
+            int readTimeoutMs = 3000,
+            int maxRetries = 3,
+            bool discardInputBeforeTx = true,
+            bool removeEcho = true,
+            CancellationToken ct = default)
+        {
+            var portLabel = _key.PortName ?? "<unset>";
+            byte[]? result = null;
+
+            await _io.WaitAsync(ct);
+            try
+            {
+                if (PortRequiresReopen())
+                    await RecoverPortAsync(ct);
+
+                for (int attempt = 1; attempt <= maxRetries; attempt++)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    try
+                    {
+                        result = await Task.Run(() =>
+                        {
+                            return WriteReadOnce_TwotpFrame(
+                                tx,
+                                writeToReadDelayMs,
+                                readTimeoutMs,
+                                discardInputBeforeTx,
+                                portLabel,
+                                ct);
+                        }, ct);
+
+                        if (removeEcho)
+                            result = RemoveEchoIfPresent(result, tx);
+
+                        return result;
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (TimeoutException) when (attempt < maxRetries)
+                    {
+                        _logger.Warning("Serial {Port}: TWOTP frame timeout (attempt {Attempt}/{MaxRetries})",
+                            portLabel, attempt, maxRetries);
+
+                        await Task.Delay(100 * attempt, ct);
+                    }
+                    catch (Exception ex) when (attempt < maxRetries && IsRecoverableException(ex))
+                    {
+                        _logger.Warning(ex, "Serial {Port}: TWOTP recoverable error (attempt {Attempt}/{MaxRetries})",
+                            portLabel, attempt, maxRetries);
+
+                        await Task.Delay(100 * attempt, ct);
+                    }
+                }
+
+                throw new IOException($"Не удалось получить TWOTP кадр после {maxRetries} попыток на {portLabel}");
+            }
+            finally
+            {
+                _io.Release();
+            }
+        }
+
         public async ValueTask DisposeAsync()
         {
             await CloseAsync();
@@ -202,6 +267,104 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         #endregion
 
         #region Private Helpers
+
+        private byte[] WriteReadOnce_TwotpFrame(
+    byte[] tx,
+    int writeToReadDelayMs,
+    int readTimeoutMs,
+    bool discardInputBeforeTx,
+    string portLabel,
+    CancellationToken ct)
+        {
+            // короткий ReadTimeout, чтобы "пульсировать" и проверять общий таймер
+            _port.ReadTimeout = 120;
+            _port.WriteTimeout = 1000;
+
+            if (discardInputBeforeTx)
+            {
+                // ВАЖНО: очищаем вход ДО команды (чтобы не примешались хвосты старого)
+                // Но не очищаем ПОСЛЕ чтения, потому что это может быть начало следующего кадра.
+                _port.DiscardInBuffer();
+            }
+
+            _port.Write(tx, 0, tx.Length);
+            _port.BaseStream.Flush();
+
+            if (writeToReadDelayMs > 0)
+                Thread.Sleep(writeToReadDelayMs);
+
+            var sw = Stopwatch.StartNew();
+            var buffer = new List<byte>(512);
+            var tmp = new byte[256];
+
+            while (sw.ElapsedMilliseconds <= readTimeoutMs)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                try
+                {
+                    int read = _port.Read(tmp, 0, tmp.Length);
+                    if (read > 0)
+                    {
+                        for (int i = 0; i < read; i++)
+                            buffer.Add(tmp[i]);
+
+                        if (TryExtractTwotpFrame(buffer, out var frame))
+                            return frame;
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    // нормально: просто пока не пришло
+                }
+            }
+
+            // для диагностики можно залогировать buffer.Count
+            throw new TimeoutException($"Serial {portLabel}: TWOTP frame timeout. Collected {buffer.Count} bytes.");
+        }
+
+        private static bool TryExtractTwotpFrame(List<byte> buffer, out byte[] frame)
+        {
+            frame = Array.Empty<byte>();
+
+            // 1) найти STX = FF
+            int stx = buffer.IndexOf(0xFF);
+            if (stx < 0)
+            {
+                buffer.Clear();
+                return false;
+            }
+
+            // выкинуть всё до FF
+            if (stx > 0)
+                buffer.RemoveRange(0, stx);
+
+            // 2) найти конец кадра: FB <LRC> F0
+            for (int i = 0; i <= buffer.Count - 3; i++)
+            {
+                if (buffer[i] == 0xFB && buffer[i + 2] == 0xF0)
+                {
+                    int len = i + 3; // FB + LRC + F0
+                    frame = buffer.GetRange(0, len).ToArray();
+                    buffer.RemoveRange(0, len);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static byte[] RemoveEchoIfPresent(byte[] rx, byte[] tx)
+        {
+            if (rx.Length < tx.Length) return rx;
+
+            for (int i = 0; i < tx.Length; i++)
+                if (rx[i] != tx[i])
+                    return rx;
+
+            // rx начинается с tx
+            return rx.Skip(tx.Length).ToArray();
+        }
 
         private async Task OpenWithRetriesAsync(PortKey key, SerialPortOptions options, CancellationToken ct)
         {

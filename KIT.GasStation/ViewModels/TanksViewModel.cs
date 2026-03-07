@@ -10,6 +10,7 @@ using KIT.GasStation.ViewModels.Factories;
 using KIT.GasStation.Views.Details;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -290,7 +291,7 @@ namespace KIT.GasStation.ViewModels
             var hub = _hubClient.Connection;
             await _hubClient.EnsureStartedAsync();
 
-            Hubs = await hub.InvokeAsync<string[]>("GetAllGroups");
+            Hubs = (await hub.InvokeAsync<string[]>("GetAllGroups")).OrderBy(c => c).ToArray();
         }
 
         #endregion

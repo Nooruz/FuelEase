@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.5.33414.496
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11512.155
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KIT.GasStation", "KIT.GasStation\KIT.GasStation.csproj", "{A5AD4FC2-F8CA-490F-86A5-AFAEE73A27A8}"
 EndProject
@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KIT.GasStation.Domain", "KI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.Lanfeng", "KIT.GasStation.Lanfeng\KIT.GasStation.Lanfeng.csproj", "{1C48C0B1-7A0D-4003-B192-59B80B7F9F2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.Common", "KIT.GasStation.Common\KIT.GasStation.Common.csproj", "{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.PKElectronics", "KIT.GasStation.PKElectronics\KIT.GasStation.PKElectronics.csproj", "{D6B81003-8EBD-48A2-9B03-6A57FEA58F55}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.TechnoProjekt", "KIT.GasStation.TechnoProjekt\KIT.GasStation.TechnoProjekt.csproj", "{5CFA3821-309F-485C-88FE-F681A66D82D7}"
@@ -21,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.Hardware", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.FuelDispenser", "KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj", "{68D76D88-88B9-4DD6-AFE3-98D33D2BFCBD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.FuelDispenserEmulator", "KIT.GasStation.FuelDispenserEmulator\KIT.GasStation.FuelDispenserEmulator.csproj", "{56DCE68A-D5D6-4BBA-A4CA-23F1B69E3FDB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.Emulator", "KIT.GasStation.FuelDispenserEmulator\KIT.GasStation.Emulator.csproj", "{56DCE68A-D5D6-4BBA-A4CA-23F1B69E3FDB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.EKassa", "KIT.GasStation.EKassa\KIT.GasStation.EKassa.csproj", "{C85325EA-7C3E-4775-8A84-5FAE559817EC}"
 EndProject
@@ -42,6 +40,15 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.NewCas", "KIT.GasStation.NewCas\KIT.GasStation.NewCas.csproj", "{F0EEFF83-8BE4-4DF7-F266-647C3D5B2951}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.Installer", "KIT.GasStation.Installer\KIT.GasStation.Installer.csproj", "{5BF9CC8B-8273-FF1A-88D8-074D1A7ADD74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.GasStation.HardwareSettings", "KIT.GasStation.HardwareSettings\KIT.GasStation.HardwareSettings.csproj", "{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KIT.App.Infrastructure", "KIT.App.Infrastructure\KIT.App.Infrastructure.csproj", "{6288D728-4311-4A6A-8B90-063392E5636B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{12E58DA7-8FEC-4E5A-B41A-5A46D8AA8899}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -101,18 +108,6 @@ Global
 		{1C48C0B1-7A0D-4003-B192-59B80B7F9F2E}.Release|x64.Build.0 = Release|Any CPU
 		{1C48C0B1-7A0D-4003-B192-59B80B7F9F2E}.Release|x86.ActiveCfg = Release|Any CPU
 		{1C48C0B1-7A0D-4003-B192-59B80B7F9F2E}.Release|x86.Build.0 = Release|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Debug|x64.Build.0 = Debug|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Debug|x86.Build.0 = Debug|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Release|x64.ActiveCfg = Release|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Release|x64.Build.0 = Release|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Release|x86.ActiveCfg = Release|Any CPU
-		{9A70DAB5-C3DB-4B2A-A5C9-563B9510A37C}.Release|x86.Build.0 = Release|Any CPU
 		{D6B81003-8EBD-48A2-9B03-6A57FEA58F55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D6B81003-8EBD-48A2-9B03-6A57FEA58F55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6B81003-8EBD-48A2-9B03-6A57FEA58F55}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -299,6 +294,30 @@ Global
 		{5BF9CC8B-8273-FF1A-88D8-074D1A7ADD74}.Release|x64.Build.0 = Release|Any CPU
 		{5BF9CC8B-8273-FF1A-88D8-074D1A7ADD74}.Release|x86.ActiveCfg = Release|Any CPU
 		{5BF9CC8B-8273-FF1A-88D8-074D1A7ADD74}.Release|x86.Build.0 = Release|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Debug|x64.Build.0 = Debug|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Debug|x86.Build.0 = Debug|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Release|x64.ActiveCfg = Release|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Release|x64.Build.0 = Release|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Release|x86.ActiveCfg = Release|Any CPU
+		{A08F0D1C-ED28-49D2-B2AB-807AE8ADD672}.Release|x86.Build.0 = Release|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Debug|x64.Build.0 = Debug|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Debug|x86.Build.0 = Debug|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Release|x64.ActiveCfg = Release|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Release|x64.Build.0 = Release|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Release|x86.ActiveCfg = Release|Any CPU
+		{6288D728-4311-4A6A-8B90-063392E5636B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,4 @@
-﻿using KIT.GasStation.Common.HostBuilders;
+﻿using KIT.App.Infrastructure.HostBuilders;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.Worker;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -27,7 +27,7 @@ try
         {
             options.ServiceName = "KIT.GasStation.Worker";
         })
-        .AddHardwareConfigurationsServices() 
+        .AddHardwareConfigurationsServices()
         .AddCashRegisters() 
         .ConfigureServices((hostContext, services) =>
         {

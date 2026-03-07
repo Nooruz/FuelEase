@@ -1,6 +1,6 @@
-﻿using KIT.GasStation.CashRegisters.Models;
+﻿using KIT.App.Infrastructure.Factories;
+using KIT.GasStation.CashRegisters.Models;
 using KIT.GasStation.CashRegisters.Services;
-using KIT.GasStation.Common.Factories;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Exceptions;
 using KIT.GasStation.HardwareConfigurations.Models;
@@ -128,19 +128,14 @@ namespace KIT.GasStation.State.CashRegisters
             return state;
         }
 
-        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, bool isBefore = true)
+        public async Task<FiscalData?> SaleAsync(FiscalData fiscalData)
         {
-            return await _cashRegisterService.SaleAsync(fuelSale, fuel, _userStore.CurrentUser.FullName, isBefore);
+            return await _cashRegisterService.SaleAsync(fiscalData, _userStore.CurrentUser.FullName);
         }
 
-        public async Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAsync(FiscalData fiscalData)
         {
-            return await _cashRegisterService.ReturnAsync(fuelSale, fuel);
-        }
-
-        public async Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
-        {
-            return await _cashRegisterService.ReturnAndReceivedSaleAsync(fuelSale, fuel, cashierName);
+            return await _cashRegisterService.ReturnAsync(fiscalData);
         }
 
         #endregion

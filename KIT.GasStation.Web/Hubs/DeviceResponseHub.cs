@@ -81,14 +81,20 @@ namespace KIT.GasStation.Web.Hubs
         public Task<IReadOnlyCollection<string>> GetAllGroups() =>
             Task.FromResult(_groups.GetAllGroups());
 
-        public Task SetPriceAsync(Dictionary<string, decimal> prices)
+        public Task SetPricesAsync(Dictionary<string, decimal> prices)
         {
             if (prices == null || prices.Count == 0)
                 return Task.CompletedTask;
 
             var group = prices.Keys.First();
             return ExecuteCommandAsync(group, commandId =>
-                Clients.Group(group).SetPriceAsync(commandId, prices));
+                Clients.Group(group).SetPricesAsync(commandId, prices));
+        }
+
+        public Task SetPriceAsync(string groupName, decimal price)
+        {
+            return ExecuteCommandAsync(groupName, commandId =>
+                Clients.Group(groupName).SetPriceAsync(commandId, groupName, price));
         }
 
         public Task StartFuelingAsync(string groupName, decimal sum, bool bySum) =>
@@ -97,16 +103,40 @@ namespace KIT.GasStation.Web.Hubs
         public Task StopFuelingAsync(string groupName) =>
             Clients.Group(groupName).StopFuelingAsync(groupName);
 
-        public Task ResumeFuelingAsync(string groupName) =>
-            Clients.Group(groupName).ResumeFuelingAsync(groupName);
+        public Task ResumeFuelingAsync(string groupName, decimal sum) =>
+            Clients.Group(groupName).ResumeFuelingAsync(groupName, sum);
 
         public Task GetStatusByAddressAsync(string groupName) =>
             Clients.Group(groupName).GetStatusByAddressAsync(groupName);
 
         public Task ColumnLiftedChanged(string groupName, bool isLifted) =>
             Clients.Group(groupName).ColumnLiftedChanged(groupName, isLifted);
+
+        public Task OnCountersUpdated(string groupName, List<CounterData> counterDatas) =>
+            Clients.Group(groupName).OnCountersUpdated(groupName, counterDatas);
+
+        public Task OnCounterUpdated(CounterData counterData) =>
+            Clients.Group(counterData.GroupName).OnCounterUpdated(counterData);
+
+        public Task OnFuelingAsync(FuelingResponse response) =>
+            Clients.Group(response.GroupName).OnFuelingAsync(response);
+
+        public Task OnCompletedFuelingAsync(string groupName, decimal? quantity) =>
+            Clients.Group(groupName).OnCompletedFuelingAsync(groupName, quantity);
+
+        public Task OnWaitingAsync(string groupName) =>
+            Clients.Group(groupName).OnWaitingAsync(groupName);
+
+        public Task OnPumpStopAsync(FuelingResponse response) =>
+            Clients.Group(response.GroupName).OnPumpStopAsync(response);
+
         public Task CompleteFuelingAsync(string groupName) =>
             Clients.Group(groupName).CompleteFuelingAsync(groupName);
+        
+        public Task GetCounterAsync(string groupName) =>
+            ExecuteCommandAsync(groupName, commandId =>
+                Clients.Group(groupName).GetCounterAsync(commandId, groupName));
+
         public Task GetCountersAsync(string groupName) =>
             ExecuteCommandAsync(groupName, commandId =>
                 Clients.Group(groupName).GetCountersAsync(commandId, groupName));
@@ -179,21 +209,19 @@ namespace KIT.GasStation.Web.Hubs
             return Task.CompletedTask;
         }
 
-        public Task StartFueling() => Task.CompletedTask;
-        public Task StopFueling() => Task.CompletedTask;
-
-        public sealed record StatusChangedEvent(ControllerResponse response);
-
-        public async Task PublishStatus(ControllerResponse e, string groupName)
+        public async Task PublishStatus(StatusResponse e)
         {
-            var g = groupName;
-            _last[g] = e;
-            await Clients.Group(g).StatusChanged(e);
+            try
+            {
+                await Clients.Group(e.GroupName).StatusChanged(e);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex.Message, e);
+            }
         }
 
         #endregion
-
-        private static readonly ConcurrentDictionary<string, ControllerResponse> _last = new();
 
         private Task BroadcastWorkerStateChangedAsync(string groupName, bool isOnline, string? reason = null)
         {

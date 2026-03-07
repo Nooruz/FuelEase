@@ -10,9 +10,9 @@ namespace KIT.GasStation.TechnoProjekt.Utilities
             return null;
         }
 
-        public static ControllerResponse ParseResponse(byte[] rawResponse)
-        {
-            return new ControllerResponse();
-        }
+        //public static ControllerResponse ParseResponse(byte[] rawResponse)
+        //{
+        //    return new ControllerResponse();
+        //}
     }
 }

@@ -7,6 +7,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
     /// </summary>
     public enum ControllerType
     {
+        [Display(Name = "Не выбрано")]
         None,
 
         [Display(Name = "Lanfeng")]

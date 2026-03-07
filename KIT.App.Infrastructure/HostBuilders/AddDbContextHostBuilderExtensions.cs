@@ -1,7 +1,10 @@
 ﻿using KIT.GasStation.EntityFramework;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-namespace KIT.GasStation.Web.HostBuilders
+namespace KIT.App.Infrastructure.HostBuilders
 {
     public static class AddDbContextHostBuilderExtensions
     {

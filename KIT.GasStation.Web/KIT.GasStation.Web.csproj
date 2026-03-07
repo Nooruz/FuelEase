@@ -10,16 +10,13 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.17" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.20" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Serilog.Sinks.RollingFile" Version="3.3.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\KIT.GasStation.Common\KIT.GasStation.Common.csproj" />
-    <ProjectReference Include="..\KIT.GasStation.EntityFramework\KIT.GasStation.EntityFramework.csproj" />
-    <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
+    <ProjectReference Include="..\KIT.App.Infrastructure\KIT.App.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

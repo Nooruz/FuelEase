@@ -1,6 +1,6 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
-using KIT.GasStation.Common.Factories;
+using KIT.App.Infrastructure.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using System;

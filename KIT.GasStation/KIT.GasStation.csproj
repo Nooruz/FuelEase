@@ -52,7 +52,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="logo.ico" />
+    <Content Include="logo.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -76,27 +78,12 @@
     <PackageReference Include="DevExpress.Wpf.LayoutControl.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.Printing.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.PropertyGrid.ru" Version="21.2.3" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.9" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.20">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.20" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SerialPortStreamCore" Version="2.1.0" />
-    <PackageReference Include="Serilog" Version="4.2.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.1.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\KIT.GasStation.Common\KIT.GasStation.Common.csproj" />
-    <ProjectReference Include="..\KIT.GasStation.Domain\KIT.GasStation.Domain.csproj" />
-    <ProjectReference Include="..\KIT.GasStation.EntityFramework\KIT.GasStation.EntityFramework.csproj" />
-    <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
+    <ProjectReference Include="..\KIT.App.Infrastructure\KIT.App.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

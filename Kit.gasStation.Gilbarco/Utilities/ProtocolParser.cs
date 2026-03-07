@@ -1,8 +1,7 @@
 ﻿using KIT.GasStation.Domain.Models;
 using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.HardwareConfigurations.Models;
-using System.Diagnostics;
-using System.Reflection.Emit;
+using System.Globalization;
 
 namespace KIT.GasStation.Gilbarco.Utilities
 {
@@ -40,39 +39,6 @@ namespace KIT.GasStation.Gilbarco.Utilities
 
         #endregion
 
-        public static ControllerResponse ParseResponse(byte[] rawResponse)
-        {
-            try
-            {
-                var response = new ControllerResponse() { IsValid = false };
-                if (rawResponse == null || rawResponse.Length == 0)
-                    return response;
-
-                if (rawResponse.Length == 2)
-                {
-                    var (controllerAddress, status) = ParseStatusAndAddress(rawResponse[1]);
-
-                    response.Address = controllerAddress;
-                    response.Status = GilbarcoStatusToNozzleStatusConverter(status);
-                    response.IsLifted = status == GilbarcoStatus.Call;
-
-                    return response;
-                }
-
-                if (rawResponse.Length == 19)
-                {
-
-                }
-
-                return response;
-            }
-            catch (Exception e)
-            {
-
-                throw;
-            }
-        }
-
         /// <summary>
         /// Извлекает код статуса из байта ответа (старшие 4 бита) [3].
         /// </summary>
@@ -105,23 +71,13 @@ namespace KIT.GasStation.Gilbarco.Utilities
         /// </summary>
         /// <param name="cmd">Тип команды.</param>
         /// <param name="pumpId">Номер ТРК (1-16).</param>
-        public static byte[] PackCommand(int pumpId)
+        public static byte[] BuildPackCommand(Command cmd, int pumpId)
         {
             byte addr = (byte)(pumpId == 16 ? 0 : pumpId & 0x0F); // 16 кодируется как 0 [1, 4]
-            byte value = (byte)(((byte)Command.Status << 4) | addr);
+            byte value = (byte)(((byte)cmd << 4) | addr);
 
             return new[] { value };
         }
-
-        /// <summary>
-        /// Декодирует байт из модифицированного ASCII Gilbarco (B0-C6) в число (0-15) [5, 6].
-        /// </summary>
-        public static int DecodeModifiedAscii(byte b) => b >= 0xC1 ? b - 0xC1 + 10 : b - 0xB0;
-
-        /// <summary>
-        /// Кодирует число (0-15) в байт модифицированного ASCII Gilbarco (B0-C6) [5, 6].
-        /// </summary>
-        public static byte EncodeModifiedAscii(int value) => (byte)(value >= 10 ? 0xC1 + (value - 10) : 0xB0 + value);
 
         public static NozzleStatus GilbarcoStatusToNozzleStatusConverter(GilbarcoStatus status)
         {
@@ -134,15 +90,15 @@ namespace KIT.GasStation.Gilbarco.Utilities
                 case GilbarcoStatus.Call:
                     return NozzleStatus.Ready;
                 case GilbarcoStatus.AuthorizedNotDelivering:
-                    break;
+                    return NozzleStatus.WaitingRemoved;
                 case GilbarcoStatus.Busy:
-                    break;
+                    return NozzleStatus.PumpWorking;
                 case GilbarcoStatus.TransactionCompletePeot:
-                    break;
+                    return NozzleStatus.PumpStop;
                 case GilbarcoStatus.TransactionCompleteFeot:
-                    break;
+                    return NozzleStatus.PumpStop;
                 case GilbarcoStatus.PumpStop:
-                    break;
+                    return NozzleStatus.PumpStop;
                 case GilbarcoStatus.SendData:
                     break;
                 default:
@@ -150,19 +106,6 @@ namespace KIT.GasStation.Gilbarco.Utilities
             }
 
             return NozzleStatus.Unknown;
-        }
-
-        /// <summary>
-        /// Формирует байт команды Data Next (0x2) для указанного адреса ТРК [1].
-        /// </summary>
-        /// <param name="pumpId">Номер ТРК (1-16).</param>
-        public static byte[] BuildDataNextCommand(int pumpId)
-        {
-            // Согласно протоколу, адрес 16 передается как 0 [1, 2].
-            byte addressNibble = (byte)(pumpId == 16 ? 0 : pumpId & 0x0F);
-
-            // Код команды (0x2) записывается в старший ниббл, адрес — в младший [1, 3].
-            return new byte[] { (byte)(0x20 | addressNibble) };
         }
 
         /// <summary>
@@ -312,6 +255,109 @@ namespace KIT.GasStation.Gilbarco.Utilities
             };
         }
 
+        public static RequestTransactionData ParseRequestTransactionData(byte[] response)
+        {
+            if (response == null || response.Length == 0)
+                throw new ArgumentException("Пустой ответ.");
+
+            // 1) Найти рамку FF ... F0
+            int start = Array.IndexOf(response, (byte)0xFF);
+            int end = Array.LastIndexOf(response, (byte)0xF0);
+
+            byte[] frame = response;
+
+            if (start >= 0 && end > start)
+            {
+                int len = end - start + 1;
+                frame = new byte[len];
+                Buffer.BlockCopy(response, start, frame, 0, len);
+            }
+
+            int i = 0;
+
+            // пропускаем 21 / FF / F1 если есть
+            while (i < frame.Length &&
+                   (frame[i] == 0x21 || frame[i] == 0xFF || frame[i] == 0xF1))
+                i++;
+
+            byte? idType = null;
+            int? position = null;
+            int? error = null;
+            int? columnType = null;
+            int? grade = null;
+            decimal? price = null;
+            decimal? volume = null;
+            decimal? amount = null;
+
+            while (i < frame.Length)
+            {
+                byte tag = frame[i++];
+
+                if (tag == 0xF0 || tag == 0xFB)
+                    break;
+
+                // ---------- F8 блок ----------
+                if (tag == 0xF8)
+                {
+                    var data = ReadUntilNextTag(frame, ref i);
+
+                    if (data.Length > 0)
+                        idType = data[0];
+
+                    if (data.Length >= 2 && IsExDigit(data[1]))
+                        position = ExDigit(data[1]) + 1;
+
+                    if (data.Length >= 3 && IsExDigit(data[2]))
+                        error = ExDigit(data[2]);
+
+                    if (data.Length >= 5 && IsExDigit(data[4]))
+                        columnType = ExDigit(data[4]);
+                }
+
+                // ---------- F6 Grade ----------
+                else if (tag == 0xF6)
+                {
+                    var data = ReadUntilNextTag(frame, ref i);
+
+                    if (data.Length >= 1 && IsExDigit(data[0]))
+                        grade = ExDigit(data[0]) + 1;
+                }
+
+                // ---------- F7 Price (4 цифры) ----------
+                else if (tag == 0xF7)
+                {
+                    var digits = ReadUntilNextTag(frame, ref i);
+                    price = ParseExLsdDecimal(digits, 4, 2);
+                }
+
+                // ---------- F9 Volume (6 цифр) ----------
+                else if (tag == 0xF9)
+                {
+                    var digits = ReadUntilNextTag(frame, ref i);
+                    volume = ParseExLsdDecimal(digits, 6, 3);
+                }
+
+                // ---------- FA Money (6 цифр) ----------
+                else if (tag == 0xFA)
+                {
+                    var digits = ReadUntilNextTag(frame, ref i);
+                    amount = ParseExLsdDecimal(digits, 6, 2);
+                }
+            }
+
+            return new RequestTransactionData
+            {
+                IdBlockTypeRaw = idType,
+                PositionNumber = position,
+                ErrorCode = error,
+                ColumnType = columnType,
+                Grade = grade,
+                Price = price,
+                Volume = volume,
+                Amount = amount
+            };
+        }
+
         /// <summary>
         /// Формирует блок данных для запроса конфигурации ТРК (Special Function 00E).
         /// </summary>
@@ -321,6 +367,20 @@ namespace KIT.GasStation.Gilbarco.Utilities
             // Передаем только полезную нагрузку: 
             // FE (Special Function Next) + код 00E (E0, E0, EE)
             return BuildDataBlock(new byte[] { SpecialFunctionModeNext, 0xEE, 0xE0, 0xE0 });
+        }
+
+        public static decimal ParseRealTimeMoney(byte[] dataWords)
+        {
+            long raw = 0;
+            long factor = 1;
+
+            for (int i = 0; i < dataWords.Length; i++)
+            {
+                raw += (dataWords[i] & 0x0F) * factor; // E0..E9 -> 0..9
+                factor *= 10;
+            }
+
+            return raw / 1000m; // XXX.XXX
         }
 
         /// <summary>
@@ -333,46 +393,272 @@ namespace KIT.GasStation.Gilbarco.Utilities
             if (column.Settings is GilbarcoColumnSettings settings)
             {
                 // 1) Масштабируем цену под десятичную точку ТРК
-                // Пример: price=65.50, ppuDecimals=2 => scaled=6550 => "6550"
-                var scale = Pow10(settings.PriceDecimalPoint);
-                var scaled = (int)Math.Round(price * scale, MidpointRounding.AwayFromZero);
+                int scale = Pow10(settings.PriceDecimalPoint);
+
+                int scaled = (int)Math.Round(price * scale, MidpointRounding.AwayFromZero);
 
                 if (scaled < 0 || scaled > 9999)
                     throw new ArgumentOutOfRangeException(nameof(price),
                         $"Цена {price} с decimals={settings.PriceDecimalPoint} не помещается в 4 цифры PPU (XXXX). Получилось: {scaled}.");
 
-
-                // 2) Формируем полезную нагрузку Price Change Data:
-                // <pput> (F4/F5) + <gn>(F6) <g>(EX) + <ppun>(F7) <ppu>(EX EX EX EX)
-                // где LSD передаётся первым. :contentReference[oaicite:2]{index=2}
+                // 2) Формируем payload
                 var payload = new List<byte>
                 {
-                    // Уровень цены: F4 для Level 1, F5 для Level 2 [1, 2]
+                    // Уровень цены (обычно Level 1)
                     DataControl_Level1,
 
-                    // Выбор сорта: F6 (метка) + EX (номер сорта 0-F) [2]
+                    // Выбор сорта
                     0xF6,
-                    (byte)(0xE0 | (column.Nozzle - 1)), // Сорта 1-16 транслируются в 0-F [2]
+                    (byte)(0xE0 | (column.Nozzle - 1)), // 1-16 → 0-F
 
-                    // Цена PPU: F7 (метка) + 4 цифры BCD (младшая цифра первой — LSD first) [2]
+                    // Маркер PPU
                     0xF7
                 };
 
-                // 3) XXXX в “цифрах” EX, LSD first
-                // scaled=6550 -> digits "6550" -> отправка: 0,5,5,6
-                string s = scaled.ToString("D4");
-                payload.Add((byte)(0xE0 | (s[3] - '0'))); // LSD
-                payload.Add((byte)(0xE0 | (s[2] - '0')));
-                payload.Add((byte)(0xE0 | (s[1] - '0')));
-                payload.Add((byte)(0xE0 | (s[0] - '0'))); // MSD
+                // 3) Всегда 4 цифры с ведущими нулями
+                string digits = scaled.ToString("D4", CultureInfo.InvariantCulture);
+                // пример:
+                // 7250 → "7250"
+                // 725  → "0725"
+                // 65   → "0065"
 
-                // 2. Оборачиваем данные в стандартный блок (STX, DL, LRCn, LRC, ETX)
+                // 4) Добавляем в формате LSD first
+                payload.Add((byte)(0xE0 | (digits[3] - '0'))); // LSD
+                payload.Add((byte)(0xE0 | (digits[2] - '0')));
+                payload.Add((byte)(0xE0 | (digits[1] - '0')));
+                payload.Add((byte)(0xE0 | (digits[0] - '0'))); // MSD
+
+                // 5) Оборачиваем в стандартный блок
                 return BuildDataBlock(payload);
             }
             return Array.Empty<byte>();
         }
 
+        /// <summary>
+        /// Расшифровывает стандартный ответ Gilbarco TWOWIRE на команду 0x5 (Pump Totals).
+        /// </summary>
+        /// <remarks>
+        /// Общая структура кадра:
+        /// FF | [Блоки сортов по 30 байт] | FB | LRC | F0
+        ///
+        /// Каждый блок (30 байт):
+        /// F6 EX  → номер пистолета
+        /// F9     → объём (8 BCD цифр, LSD first)
+        /// FA     → деньги (8 BCD цифр, LSD first)
+        /// F4     → цена Level 1 (4 BCD цифры)
+        /// F5     → цена Level 2 (4 BCD цифры)
+        /// </remarks>
+        /// <param name="data">Сырой массив байт, полученный от ТРК.</param>
+        /// <returns>Список данных по каждому пистолету.</returns>
+        public static List<GradeData> ParseCounters(byte[] data)
+        {
+            var result = new List<GradeData>();
+
+            // Проверка на минимальную длину кадра
+            if (data == null || data.Length < 4)
+                return result;
+
+            // Проверка стартового байта
+            if (data[0] != StartOfText)
+                return result;
+
+            // Проверка завершающих байт FB LRC F0
+            int etxIndex = data.Length - 3;
+            if (data[etxIndex] != DataControl_LrcNext || data[^1] != EndOfText)
+                return result;
+
+            byte receivedLrc = data[^2];
+
+            byte calculatedLrc = CalculateLrc(data.Take(etxIndex + 1)); // включаем FF и FB
+            if (calculatedLrc != receivedLrc)
+                return result;
+
+            // Полезная нагрузка без FF и хвоста FB-LRC-F0
+            int payloadLength = data.Length - 4;
+
+            // Каждый сорт занимает ровно 30 байт
+            if (payloadLength % 30 != 0)
+                return result;
+
+            int gradeCount = payloadLength / 30;
+
+            // Парсим каждый блок сорта
+            for (int i = 0; i < gradeCount; i++)
+            {
+                int offset = 1 + (i * 30);
+
+                // Проверка маркеров протокола
+                if (data[offset] != 0xF6) continue;
+                if (data[offset + 2] != 0xF9) continue;
+                if (data[offset + 11] != 0xFA) continue;
+                if (data[offset + 20] != 0xF4) continue;
+                if (data[offset + 25] != 0xF5) continue;
+
+                int nozzle = (data[offset + 1] & 0x0F) + 1;
+
+                long counterRaw = DecodeLsdBcd(data, offset + 3, 8);
+                long moneyRaw = DecodeLsdBcd(data, offset + 12, 8);
+                int priceL1 = (int)DecodeLsdBcd(data, offset + 21, 4);
+                int priceL2 = (int)DecodeLsdBcd(data, offset + 26, 4);
+
+                result.Add(new GradeData
+                {
+                    Nozzle = nozzle,
+                    Counter = counterRaw / 100m,
+                    Money = moneyRaw,
+                    PriceLevel1 = priceL1,
+                    PriceLevel2 = priceL2
+                });
+            }
+
+            return result;
+        }
+
+        public static byte[] BuildPresetBlock(Controller controller, Column column, int grade, decimal amount, bool bySum)
+        {
+            if (controller.Settings is not GilbarcoControllerSettings controllerSettings)
+                return Array.Empty<byte>();
+
+            if (column.Settings is not GilbarcoColumnSettings colSettings)
+                return Array.Empty<byte>();
+
+            // 1) Определяем длину пресета по деньгам: 5 или 6 цифр
+            int digitsCount = controllerSettings.PumpConfig.MoneyMode switch
+            {
+                GilbarcoMoneyMode.FiveDigits => 5,
+                GilbarcoMoneyMode.SixDigits => 6,
+                _ => 5
+            };
+
+            // 2) Выбираем тип пресета
+            // bySum=true  -> Money preset (F2)
+            // bySum=false -> Volume preset (F1)
+            byte presetControl = bySum ? DataControl_MoneyPreset : DataControl_VolumePreset;
+
+            // 3) Масштабируем amount в целое (LSD-first цифры)
+            // ВАЖНО: ведущие нули должны быть СЛЕВА (D5/D6), чтобы разряды не съезжали.
+            // Пример по твоему ожиданию:
+            // amount=100.00, decimals=2 => scaled=10000 => "10000" => E0 E0 E0 E0 E1
+            // amount=100.00, decimals=1 => scaled=1000  => "01000" => E0 E0 E0 E1 E0
+            int scale = Pow10(colSettings.PriceDecimalPoint);
+            long scaled = (long)Math.Round(amount * scale, MidpointRounding.AwayFromZero);
+
+            long max = digitsCount == 5 ? 99_999 : 999_999;
+            if (scaled < 0 || scaled > max)
+                throw new ArgumentOutOfRangeException(nameof(amount),
+                    $"Preset amount {amount} (scaled={scaled}, decimals={colSettings.PriceDecimalPoint}) " +
+                    $"не помещается в {digitsCount} цифр (max={max}).");
+
+            string amountStr = scaled.ToString(digitsCount == 5 ? "D5" : "D6", CultureInfo.InvariantCulture);
+
+            // 4) Собираем сообщение
+            var message = new List<byte>
+            {
+                presetControl,          // F1 или F2
+                DataControl_Level1,     // F4
+                DataControl_GradeNext   // F6
+            };
+
+            // grade: 1..16 -> 0..15
+            int gradeNibble = Math.Clamp(grade - 1, 0, 15);
+            message.Add(BuildDataWord(gradeNibble));     // EX (E0..EF)
+
+            message.Add(DataControl_PresetAmountNext);   // F8
+
+            // 5) Цифры пресета: LSD-first
+            message.AddRange(BuildBcdDigits(amountStr));
+
+            return BuildDataBlock(message);
+        }
+
         #region Helpers
+
+        private static byte[] ReadUntilNextTag(byte[] frame, ref int index)
+        {
+            int start = index;
+
+            while (index < frame.Length)
+            {
+                byte b = frame[index];
+
+                if (b == 0xF0 || b == 0xFB) break;
+
+                if (b == 0xF8 || b == 0xF6 || b == 0xF4 ||
+                    b == 0xF7 || b == 0xF9 || b == 0xFA)
+                    break;
+
+                index++;
+            }
+
+            int len = index - start;
+            var data = new byte[len];
+
+            if (len > 0)
+                Buffer.BlockCopy(frame, start, data, 0, len);
+
+            return data;
+        }
+
+        private static bool IsExDigit(byte b) => b >= 0xE0 && b <= 0xE9;
+
+        private static int ExDigit(byte b)
+        {
+            if (!IsExDigit(b))
+                throw new FormatException($"Ожидалась EX-цифра, пришло 0x{b:X2}");
+
+            return b - 0xE0;
+        }
+
+        private static decimal? ParseExLsdDecimal(byte[] digits, int count, int decimals)
+        {
+            if (digits == null || digits.Length < count)
+                return null;
+
+            long value = 0;
+            long multiplier = 1;
+
+            for (int i = 0; i < count; i++)
+            {
+                value += ExDigit(digits[i]) * multiplier;
+                multiplier *= 10;
+            }
+
+            decimal result = value;
+
+            for (int i = 0; i < decimals; i++)
+                result /= 10m;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Преобразует BCD-цифры формата LSD first в целое число.
+        /// </summary>
+        /// <remarks>
+        /// Пример:
+        /// E4 E4 → 44  
+        /// E0 E0 E0 E0 → 0
+        /// </remarks>
+        /// <param name="data">Массив байт.</param>
+        /// <param name="start">Индекс первого байта с цифрой.</param>
+        /// <param name="length">Количество цифр.</param>
+        /// <returns>Результирующее число.</returns>
+        private static long DecodeLsdBcd(byte[] data, int start, int length)
+        {
+            long result = 0;
+            long multiplier = 1;
+
+            for (int i = 0; i < length; i++)
+            {
+                int digit = data[start + i] & 0x0F;
+                if (digit > 9) digit = 0;
+
+                result += digit * multiplier;
+                multiplier *= 10;
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// Быстрый расчёт 10^n для n=0..3.
@@ -385,34 +671,6 @@ namespace KIT.GasStation.Gilbarco.Utilities
             PriceDecimalPoint.Three => 1000,
             _ => throw new ArgumentOutOfRangeException(nameof(n))
         };
-
-        private static byte[] BuildDataNextFrame(int pumpId, byte[] dataBlock)
-        {
-            var frame = new byte[dataBlock.Length + 1];
-            frame[0] = (byte)(0x20 | (pumpId & 0x0F));
-            Buffer.BlockCopy(dataBlock, 0, frame, 1, dataBlock.Length);
-            return frame;
-        }
-
-        private static byte[] BuildPresetBlock(int pumpId, int grade, decimal amount, bool bySum)
-        {
-            var presetControl = bySum ? DataControl_MoneyPreset : DataControl_VolumePreset;
-            var presetAmount = Math.Clamp((int)Math.Round(amount * 100m, MidpointRounding.AwayFromZero), 0, 99999);
-            var amountStr = presetAmount.ToString("D5");
-            var message = new List<byte> { presetControl, DataControl_Level1 };
-
-            if (!bySum)
-            {
-                var gradeWord = BuildDataWord(Math.Clamp(grade - 1, 0, 15));
-                message.Add(DataControl_GradeNext);
-                message.Add(gradeWord);
-            }
-
-            message.Add(DataControl_PresetAmountNext);
-            message.AddRange(BuildBcdDigits(amountStr));
-
-            return BuildDataBlock(message);
-        }
 
         private static IEnumerable<byte> BuildBcdDigits(string digits)
         {
@@ -435,18 +693,6 @@ namespace KIT.GasStation.Gilbarco.Utilities
             return words.ToArray();
         }
 
-        private static byte[] BuildRawDataBlock(IReadOnlyList<byte> messageWords)
-        {
-            var words = new List<byte>(messageWords.Count + 2)
-            {
-                StartOfText // 0xFF
-            };
-
-            words.AddRange(messageWords);
-            words.Add(EndOfText); // 0xF0
-            return words.ToArray();
-        }
-
         private static byte BuildDataLength(int wordCount)
         {
             var nibble = (16 - (wordCount % 16)) % 16;
@@ -456,42 +702,6 @@ namespace KIT.GasStation.Gilbarco.Utilities
         private static byte BuildDataWord(int digit)
         {
             return (byte)(DataWordPrefix | (digit & 0x0F));
-        }
-
-        private static (byte controllerAddress, GilbarcoStatus status) ParseStatusAndAddress(byte statusByte)
-        {
-            // Адрес пистолета — в старших 4 битах
-            byte controllerAddress = (byte)(statusByte & 0x0F);
-
-            // Код статуса — в младших 4 битах
-            byte statusCode = (byte)((statusByte >> 4) & 0x0F);
-
-            GilbarcoStatus status = statusCode switch
-            {
-                6 => GilbarcoStatus.Off,
-                7 => GilbarcoStatus.Call,
-                _ => GilbarcoStatus.DataError
-            };
-
-            return (controllerAddress, status);
-        }
-
-        private static void ParseExtendedStatus010(byte[] rx, ControllerResponse response)
-        {
-            //// BA - признак начала блока данных Special Function [4]
-            //if (rx == null || rx.Length < 19 || rx != 0xBA) return;
-
-            //// Вспомогательная функция для расшифровки нибблов (B0->0, C1->10 и т.д.) [3, 5]
-            //int Decode(byte b) => b >= 0xC1 ? b - 0xC1 + 10 : b - 0xB0;
-
-            //// Поля сообщения 'm' начинаются с 10-го байта в данном формате [4, 6]
-            //response.PriceLevelNeeded = Decode(rx[7]) == 0; // 0 = Needed, 1 = Not Needed [6]
-            //response.GradeSelectionNeeded = Decode(rx[8]) == 0;
-            //response.IsNozzleOut = Decode(rx[9]) == 1;      // 0 = Off/In, 1 = On/Out [6]
-            //response.PushToStartNeeded = Decode(rx[10]) == 0;
-            //response.SelectedGrade = Decode(rx[11]);         // Номер выбранного сорта [6]
-
-            //response.IsValid = true;
         }
 
         /// <summary>

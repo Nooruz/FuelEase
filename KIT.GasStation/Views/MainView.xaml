@@ -1,102 +1,86 @@
 ﻿<local:BaseView
+    x:Class="KIT.GasStation.Views.MainView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
-    xmlns:dxdo="http://schemas.devexpress.com/winfx/2008/xaml/docking"
     xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    xmlns:dxdo="http://schemas.devexpress.com/winfx/2008/xaml/docking"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
     xmlns:dxwui="http://schemas.devexpress.com/winfx/2008/xaml/windowsui"
-    x:Class="KIT.GasStation.Views.MainView">
+    xmlns:local="clr-namespace:KIT.GasStation.Views.Base">
     <dxmvvm:Interaction.Behaviors>
-        <dxmvvm:EventToCommand Event="FrameworkElement.Loaded"
-                               Command="{Binding WindowLoadedCommand}"/>
+        <dxmvvm:EventToCommand Command="{Binding WindowLoadedCommand}" Event="FrameworkElement.Loaded" />
     </dxmvvm:Interaction.Behaviors>
 
-    <dx:LoadingDecorator FadeInDuration="0"
-                         FadeOutDuration="0:0:0:2">
+    <dx:LoadingDecorator FadeInDuration="0" FadeOutDuration="0:0:0:2">
 
         <Grid>
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <StackPanel Orientation="Horizontal">
                 <Menu HorizontalAlignment="Left">
                     <MenuItem Header="Программа">
-                        <MenuItem Header="Выход из аккаунта"
-                                  Command="{Binding LogoutCommand}"/>
-                        <MenuItem Header="Закрыть программу"
-                                  Command="{Binding CloseApplicationCommand}"/>
+                        <MenuItem Command="{Binding LogoutCommand}" Header="Выход из аккаунта" />
+                        <MenuItem Command="{Binding CloseApplicationCommand}" Header="Закрыть программу" />
                     </MenuItem>
 
                     <MenuItem Header="Вид">
-                        <MenuItem Header="Панель счётчиков ТРК"
-                                  Command="{Binding NozzleCounterPanelCommand}"/>
+                        <MenuItem Command="{Binding NozzleCounterPanelCommand}" Header="Панель счётчиков ТРК" />
                     </MenuItem>
 
                     <MenuItem Header="Продажи">
-                        <MenuItem Header="Незавершённые продажи"
-                                  Command="{Binding UncompletedSalesCommand}"/>
-                        <MenuItem Header="Завершённые продажи"
-                                  Command="{Binding CompletedSalesCommand}"/>
+                        <MenuItem Command="{Binding UncompletedSalesCommand}" Header="Незавершённые продажи" />
+                        <MenuItem Command="{Binding CompletedSalesCommand}" Header="Завершённые продажи" />
                     </MenuItem>
 
                     <MenuItem Header="Топливо">
-                        <MenuItem Header="Приём топлива"
-                                  Command="{Binding FuelIntakeCommand}"/>
-                        <MenuItem Header="Переоценка топлива"
-                                  Command="{Binding RevaluationCommand}"/>
+                        <MenuItem Command="{Binding FuelIntakeCommand}" Header="Приём топлива" />
+                        <MenuItem Command="{Binding RevaluationCommand}" Header="Переоценка топлива" />
                     </MenuItem>
 
                     <MenuItem Header="Кассовые операции">
-                        <MenuItem Header="Открыть смену"
-                                  Command="{Binding OpenShiftCommand}"/>
-                        <MenuItem Header="Закрыть смену"
-                                  Command="{Binding CloseShiftCommand}"/>
-                        <Separator/>
-                        <MenuItem Header="Открыть смену ККМ"
-                                  Command="{Binding CashRegisterOpenShiftCommand}"/>
-                        <MenuItem Header="Закрыть смену ККМ (Z-отчёт)"
-                                  Command="{Binding CashRegisterCloseShiftCommand}"/>
-                        <MenuItem Header="Х-отчёт"
-                                  Command="{Binding CashRegisterXReportCommand}"/>
+                        <MenuItem Command="{Binding OpenShiftCommand}" Header="Открыть смену" />
+                        <MenuItem Command="{Binding CloseShiftCommand}" Header="Закрыть смену" />
+                        <Separator />
+                        <MenuItem Command="{Binding CashRegisterOpenShiftCommand}" Header="Открыть смену ККМ" />
+                        <MenuItem Command="{Binding CashRegisterCloseShiftCommand}" Header="Закрыть смену ККМ (Z-отчёт)" />
+                        <MenuItem Command="{Binding CashRegisterXReportCommand}" Header="Х-отчёт" />
                         <!--<MenuItem Header="Произвольный чек"
                   Command="{Binding CashRegisterCustomReceiptCommand}"/>-->
-                        <MenuItem Header="Состояние ККМ"
-                                  Command="{Binding CashRegisterGetStateCommand}"/>
+                        <MenuItem Command="{Binding CashRegisterGetStateCommand}" Header="Состояние ККМ" />
                     </MenuItem>
 
                     <MenuItem Header="Настройки и отчёты">
-                        <MenuItem Header="Управление скидками"
+                        <!--<MenuItem Header="Управление скидками"
                                   Command="{Binding DiscountManagementCommand}"
-                                  IsEnabled="{Binding IsCurrentUserAdmin}"/>
-                        <MenuItem Header="Управление конфигурацией"
-                                  Command="{Binding ConfigurationManagementCommand}"
-                                  IsEnabled="{Binding IsCurrentUserAdmin}"/>
-                        <Separator/>
-                        <MenuItem Header="Глобальные отчёты"
-                                  Command="{Binding GlobalReportCommand}"/>
-                        <Separator/>
+                                  IsEnabled="{Binding IsCurrentUserAdmin}"/>-->
+                        <MenuItem
+                            Command="{Binding ConfigurationManagementCommand}"
+                            Header="Управление конфигурацией"
+                            IsEnabled="{Binding IsCurrentUserAdmin}" />
+                        <Separator />
+                        <MenuItem Command="{Binding GlobalReportCommand}" Header="Глобальные отчёты" />
+                        <Separator />
                         <!--<MenuItem Header="Настройки"
                         Command="{Binding ConfigurationCommand}"/>-->
                         <MenuItem Header="Экран">
-                            <MenuItem Header="Восстановить расположение"
-                                      Command="{Binding RestoreDockLayoutManagerPositionCommand}"/>
-                            <MenuItem Header="Сохранить расположение панелей"
-                                      IsEnabled="{Binding IsCurrentUserAdmin}"
-                                      Command="{Binding SaveDockLayoutManagerPositionCommand}"/>
+                            <MenuItem Command="{Binding RestoreDockLayoutManagerPositionCommand}" Header="Восстановить расположение" />
+                            <MenuItem
+                                Command="{Binding SaveDockLayoutManagerPositionCommand}"
+                                Header="Сохранить расположение панелей"
+                                IsEnabled="{Binding IsCurrentUserAdmin}" />
                         </MenuItem>
-                        <MenuItem Header="Настройки рабочего пространства"
-                                  Command="{Binding WorkplaceSettingsCommand}"/>
+                        <MenuItem Command="{Binding WorkplaceSettingsCommand}" Header="Настройки рабочего пространства" />
                     </MenuItem>
 
                     <MenuItem Header="Помощь">
-                        <MenuItem Header="О программе"/>
+                        <MenuItem Header="О программе" />
                         <MenuItem Header="Документы">
-                            <MenuItem Header="Договор"/>
-                            <MenuItem Header="Контакты техподдержки"/>
+                            <MenuItem Header="Договор" />
+                            <MenuItem Header="Контакты техподдержки" />
                         </MenuItem>
                     </MenuItem>
 
@@ -116,18 +100,16 @@
                     </MenuItem>-->
                 </Menu>
 
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right">
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
 
-                    <TextBlock Text="Интернеттин статусу:"
-                               VerticalAlignment="Center"/>
-                    <Border Width="20"
-                            Height="20"
-                            CornerRadius="10"
-                            Background="{Binding InternetStatus, Converter={StaticResource InternetStatusToColorBrushConverter}}"
-                            Margin="10 0"/>
-                    <TextBlock Text="{Binding InternetStatusMessage}"
-                               VerticalAlignment="Center"/>
+                    <TextBlock VerticalAlignment="Center" Text="Интернеттин статусу:" />
+                    <Border
+                        Width="20"
+                        Height="20"
+                        Margin="10,0"
+                        Background="{Binding InternetStatus, Converter={StaticResource InternetStatusToColorBrushConverter}}"
+                        CornerRadius="10" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding InternetStatusMessage}" />
 
                 </StackPanel>
 
@@ -136,44 +118,50 @@
             <dxdo:DockLayoutManager Grid.Row="1">
 
                 <dxmvvm:Interaction.Behaviors>
-                    <dxmvvm:EventToCommand EventName="Loaded"
-                                           Command="{Binding DockLayoutManagerLoadedCommand}"
-                                           PassEventArgsToCommand="True"/>
+                    <dxmvvm:EventToCommand
+                        Command="{Binding DockLayoutManagerLoadedCommand}"
+                        EventName="Loaded"
+                        PassEventArgsToCommand="True" />
                 </dxmvvm:Interaction.Behaviors>
 
                 <dxdo:LayoutGroup>
 
                     <dxdo:LayoutGroup Orientation="Vertical">
 
-                        <dxdo:DocumentPanel x:Name="Current" 
-                                            AllowMaximize="True"
-                                            Background="AliceBlue"
-                                            AllowClose="False" 
-                                            Content="{Binding CurrentViewModel}">
+                        <dxdo:DocumentPanel
+                            x:Name="Current"
+                            AllowClose="False"
+                            AllowMaximize="True"
+                            Background="AliceBlue"
+                            Content="{Binding CurrentViewModel}">
                             <dxmvvm:Interaction.Behaviors>
-                                <dxmvvm:EventToCommand Event="Loaded"
-                                                       Command="{Binding CurrentDocumentPanelLoadedCommand}"
-                                                       PassEventArgsToCommand="True"/>
+                                <dxmvvm:EventToCommand
+                                    Command="{Binding CurrentDocumentPanelLoadedCommand}"
+                                    Event="Loaded"
+                                    PassEventArgsToCommand="True" />
                             </dxmvvm:Interaction.Behaviors>
                         </dxdo:DocumentPanel>
 
-                        <dxdo:LayoutPanel x:Name="Reservoir"
-                                          Caption="Панель резервуаров"
-                                          dxdo:AutoHideGroup.AutoHideType="Bottom"
-                                          ItemHeight="Auto"
-                                          Content="{Binding TanksPanelViewModel}"/>
+                        <dxdo:LayoutPanel
+                            x:Name="Reservoir"
+                            dxdo:AutoHideGroup.AutoHideType="Bottom"
+                            Caption="Панель резервуаров"
+                            Content="{Binding TanksPanelViewModel}"
+                            ItemHeight="Auto" />
 
-                        <dxdo:LayoutPanel x:Name="UnregisteredSale"
-                                          Caption="Панель незарегистрированного отпуска толива"
-                                          dxdo:AutoHideGroup.AutoHideType="Bottom"
-                                          ItemHeight="Auto"
-                                          Content="{Binding UnregisteredSalePanelViewModel}"/>
+                        <dxdo:LayoutPanel
+                            x:Name="UnregisteredSale"
+                            dxdo:AutoHideGroup.AutoHideType="Bottom"
+                            Caption="Панель незарегистрированного отпуска толива"
+                            Content="{Binding UnregisteredSalePanelViewModel}"
+                            ItemHeight="Auto" />
 
-                        <dxdo:LayoutPanel x:Name="Event"
-                                          Caption="Панель событий"
-                                          dxdo:AutoHideGroup.AutoHideType="Bottom"
-                                          ItemHeight="Auto"
-                                          Content="{Binding EventPanelViewModel}"/>
+                        <dxdo:LayoutPanel
+                            x:Name="Event"
+                            dxdo:AutoHideGroup.AutoHideType="Bottom"
+                            Caption="Панель событий"
+                            Content="{Binding EventPanelViewModel}"
+                            ItemHeight="Auto" />
 
                         <!--<dxdo:LayoutPanel x:Name="Gauge"
                                   Caption="Панель датчиков"
@@ -184,25 +172,28 @@
 
                     <dxdo:LayoutGroup ItemWidth="Auto">
 
-                        <dxdo:LayoutPanel x:Name="FuelSale"
-                                          Caption="Панель заявок"
-                                          dxdo:AutoHideGroup.AutoHideType="Right"
-                                          Content="{Binding FuelSaleViewModel}" 
-                                          ItemWidth="Auto"/>
+                        <dxdo:LayoutPanel
+                            x:Name="FuelSale"
+                            dxdo:AutoHideGroup.AutoHideType="Right"
+                            Caption="Панель заявок"
+                            Content="{Binding FuelSaleViewModel}"
+                            ItemWidth="Auto" />
 
-                        <dxdo:LayoutPanel x:Name="Cash" 
-                                          Caption="Панель кассы"
-                                          dxdo:AutoHideGroup.AutoHideType="Right"
-                                          ItemWidth="Auto"
-                                          Content="{Binding CashViewModel}"/>
+                        <dxdo:LayoutPanel
+                            x:Name="Cash"
+                            dxdo:AutoHideGroup.AutoHideType="Right"
+                            Caption="Панель кассы"
+                            Content="{Binding CashViewModel}"
+                            ItemWidth="Auto" />
 
-                        <dxdo:LayoutPanel x:Name="TRKCounters"
-                                          Caption="Панель счётчиков ТРК"
-                                          dxdo:AutoHideGroup.AutoHideType="Right"
-                                          ItemWidth="Auto"
-                                          MinWidth="200"
-                                          TabCaptionWidth="200"
-                                          Content="{Binding NozzleCounterPanelViewModel}"/>
+                        <dxdo:LayoutPanel
+                            x:Name="TRKCounters"
+                            MinWidth="200"
+                            dxdo:AutoHideGroup.AutoHideType="Right"
+                            Caption="Панель счётчиков ТРК"
+                            Content="{Binding NozzleCounterPanelViewModel}"
+                            ItemWidth="Auto"
+                            TabCaptionWidth="200" />
 
                     </dxdo:LayoutGroup>
 

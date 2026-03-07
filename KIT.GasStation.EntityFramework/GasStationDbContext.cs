@@ -98,10 +98,17 @@ namespace KIT.GasStation.EntityFramework
                 .WithOne(d => d.FuelSale)    // Навигационное свойство в DiscountSale
                 .HasForeignKey<DiscountSale>(d => d.FuelSaleId); // Внешний ключ в DiscountSale
 
-            modelBuilder.Entity<FuelSale>()
-                .HasOne(fd => fd.FiscalData) // Навигационное свойство в FuelSale
-                .WithOne(fs => fs.FuelSale)    // Навигационное свойство в FiscalData
-                .HasForeignKey<FiscalData>(fd => fd.FuelSaleId); // Внешний ключ в FiscalData
+            modelBuilder.Entity<FiscalData>(entity =>
+            {
+                entity.HasOne(x => x.FuelSale)
+                      .WithMany(x => x.FiscalDatas)
+                      .HasForeignKey(x => x.FuelSaleId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Индекс можно вообще не задавать руками — EF сам создаст для FK.
+                // Но если задаёшь:
+                entity.HasIndex(x => x.FuelSaleId).IsUnique(false);
+            });
 
             base.OnModelCreating(modelBuilder);
         }

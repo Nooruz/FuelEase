@@ -1,6 +1,5 @@
 ﻿using KIT.GasStation.CashRegisters.Models;
 using KIT.GasStation.Domain.Models;
-using KIT.GasStation.HardwareConfigurations.Models;
 
 namespace KIT.GasStation.CashRegisters.Services
 {
@@ -29,7 +28,7 @@ namespace KIT.GasStation.CashRegisters.Services
         /// <summary>
         /// Проводит операцию продажи.
         /// </summary>
-        Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName, bool isBefore = true);
+        Task<FiscalData?> SaleAsync(FiscalData fiscalData, string cashierName);
 
         /// <summary>
         /// Х-отчет.
@@ -39,18 +38,13 @@ namespace KIT.GasStation.CashRegisters.Services
         /// <summary>
         /// Возврат
         /// </summary>
-        Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel);
+        Task<FiscalData?> ReturnAsync(FiscalData fiscalData);
 
         /// <summary>
         /// Получение статуса ККМ
         /// </summary>
         /// <returns></returns>
         Task<CashRegisterState> GetShiftStateAsync();
-
-        /// <summary>
-        /// Возврат и продажа по полученными суммами
-        /// </summary>
-        Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName);
 
         #endregion
     }

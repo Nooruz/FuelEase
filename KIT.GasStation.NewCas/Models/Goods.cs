@@ -29,7 +29,7 @@ namespace KIT.GasStation.NewCas.Models
         /// Артикул
         /// </summary>
         [JsonPropertyName("article")]
-        public string Article { get; set; }
+        public string? Article { get; set; }
 
         /// <summary>
         /// Сумма

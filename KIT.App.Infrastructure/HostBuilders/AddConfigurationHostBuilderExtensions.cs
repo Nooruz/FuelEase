@@ -1,4 +1,7 @@
-﻿namespace KIT.GasStation.Web.HostBuilders
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+
+namespace KIT.App.Infrastructure.HostBuilders
 {
     public static class AddConfigurationHostBuilderExtensions
     {

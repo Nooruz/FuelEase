@@ -175,27 +175,27 @@ namespace KIT.GasStation.Technoproject
                     maxRetries: maxRetries,
                     ct: ct);
 
-                var resp = ProtocolParser.ParseResponse(rx);
+                //var resp = ProtocolParser.ParseResponse(rx);
 
-                if (resp is not null && resp.IsValid)
-                {
-                    Column? column = null;
+                //if (resp is not null && resp.IsValid)
+                //{
+                //    Column? column = null;
 
-                    // Пытаемся найти колонку по адресу TRK_No (resp.Address)
-                    if (Columns is not null)
-                    {
-                        column = Columns.FirstOrDefault(c => c.Address == resp.Address) ?? Columns.FirstOrDefault();
-                    }
+                //    // Пытаемся найти колонку по адресу TRK_No (resp.Address)
+                //    if (Columns is not null)
+                //    {
+                //        column = Columns.FirstOrDefault(c => c.Address == resp.Address) ?? Columns.FirstOrDefault();
+                //    }
 
-                    if (column is not null)
-                    {
-                        resp.Group = column.GroupName;
-                        await _hub.InvokeAsync("PublishStatus", resp, column.GroupName);
-                    }
+                //    if (column is not null)
+                //    {
+                //        resp.Group = column.GroupName;
+                //        await _hub.InvokeAsync("PublishStatus", resp, column.GroupName);
+                //    }
 
-                    // Обработка поднятия пистолета — в протоколе адрес и статус в статус-байтах
-                    await HandleColumnLiftedAsync(resp.Data);
-                }
+                //    // Обработка поднятия пистолета — в протоколе адрес и статус в статус-байтах
+                //    await HandleColumnLiftedAsync(resp.Data);
+                //}
 
                 _logger.Information("[Rx] {Rx}", BitConverter.ToString(rx));
             }

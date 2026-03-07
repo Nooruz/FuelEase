@@ -1,4 +1,4 @@
-﻿using KIT.GasStation.Common.Factories;
+﻿using KIT.App.Infrastructure.Factories;
 using KIT.GasStation.Hardware.State.Navigators;
 using KIT.GasStation.Hardware.ViewModels;
 using KIT.GasStation.Hardware.ViewModels.Factories;

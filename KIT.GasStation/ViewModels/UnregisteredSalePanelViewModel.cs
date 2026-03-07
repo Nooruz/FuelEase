@@ -31,6 +31,7 @@ namespace KIT.GasStation.ViewModels
         private readonly ILogger<SaleManagerViewModel> _saleManagerViewModelLoger;
         private readonly IUnregisteredSaleService _unregisteredSaleService;
         private readonly IFuelSaleService _fuelSaleService;
+        private readonly IFiscalDataService _fiscalDataService;
         private readonly INavigator _navigation;
         private readonly IFuelService _fuelService;
         private ObservableCollection<UnregisteredSale> _selectedUnregisteredSales = new();
@@ -82,7 +83,8 @@ namespace KIT.GasStation.ViewModels
             ICustomSplashScreenService splashScreenService,
             IDisсountStore disсountStore,
             ICashRegisterStore cashRegisterStore,
-            IFuelService fuelService)
+            IFuelService fuelService,
+            IFiscalDataService fiscalDataService)
         {
             _logger = logger;
             _unregisteredSaleService = unregisteredSaleService;
@@ -94,6 +96,7 @@ namespace KIT.GasStation.ViewModels
             _disсountStore = disсountStore;
             _cashRegisterStore = cashRegisterStore;
             _fuelService = fuelService;
+            _fiscalDataService = fiscalDataService;
 
             _unregisteredSaleService.OnCreated += UnregisteredSaleService_OnCreated;
             _shiftStore.OnLogin += ShiftStore_OnLogin;
@@ -120,7 +123,7 @@ namespace KIT.GasStation.ViewModels
 
                     WindowService.Title = "Регистрация продаж";
 
-                    PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore)
+                    PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore, _fiscalDataService)
                     {
                         CreateFuelSale = CreateFuelSale(selectedUnregisteredSale),
                         SelectedNozzle = selectedUnregisteredSale.Nozzle

@@ -50,21 +50,11 @@ namespace KIT.GasStation.State.CashRegisters
         /// <summary>
         /// Продажа
         /// </summary>
-        Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, bool isBefore = true);
-
-        /// <summary>
-        /// Произвольный чек
-        /// </summary>
-        //Task<FiscalData?> CustomReceiptAsync(FuelSale fuelSale);
+        Task<FiscalData?> SaleAsync(FiscalData fiscalData);
 
         /// <summary>
         /// Возврат
         /// </summary>
-        Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel);
-
-        /// <summary>
-        /// Возврат и продажа по полученными суммами
-        /// </summary>
-        Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName);
+        Task<FiscalData?> ReturnAsync(FiscalData fiscalData);
     }
 }

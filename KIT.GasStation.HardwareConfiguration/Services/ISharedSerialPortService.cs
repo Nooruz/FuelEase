@@ -30,5 +30,17 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             int readTimeoutMs = 3000,
             int maxRetries = 2,
             CancellationToken ct = default);
+
+        /// <summary>
+        /// Для Gilbarco 
+        /// </summary>
+        Task<byte[]> WriteReadTwotpFrameAsync(
+            byte[] tx,
+            int writeToReadDelayMs = 20,
+            int readTimeoutMs = 3000,
+            int maxRetries = 3,
+            bool discardInputBeforeTx = true,
+            bool removeEcho = true,
+            CancellationToken ct = default);
     }
 }

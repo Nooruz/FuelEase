@@ -21,12 +21,12 @@ namespace KIT.GasStation.Domain.Models
         private decimal _lastCounter;
         private decimal _salesSum;
         private bool _lifted;
-        private FuelSale _fuelSale;
         private int _number;
         private string? _workerStateMessage;
         private DateTimeOffset _workerStateUpdatedAt;
         private bool _isDeleted;
         private Tank? _tank;
+        private FuelSale _currentFuelSale;
 
         #endregion
 
@@ -170,6 +170,7 @@ namespace KIT.GasStation.Domain.Models
             {
                 _status = value;
                 OnPropertyChanged(nameof(Status));
+                OnPropertyChanged(nameof(IsWorkingState));
             }
         }
 
@@ -236,13 +237,16 @@ namespace KIT.GasStation.Domain.Models
         }
 
         [NotMapped]
-        public FuelSale FuelSale
+        public bool IsWorkingState => Status == NozzleStatus.PumpWorking || Status == NozzleStatus.WaitingStop || Status == NozzleStatus.WaitingRemoved;
+
+        [NotMapped]
+        public FuelSale CurrentFuelSale
         {
-            get => _fuelSale;
+            get => _currentFuelSale;
             set
             {
-                _fuelSale = value;
-                OnPropertyChanged(nameof(FuelSale));
+                _currentFuelSale = value;
+                OnPropertyChanged(nameof(CurrentFuelSale));
             }
         }
 
@@ -301,36 +305,43 @@ namespace KIT.GasStation.Domain.Models
         /// <summary>
         /// Неизвестно
         /// </summary>
+        [Display(Name = "Неизвестно")]
         Unknown = 0,
 
         /// <summary>
         /// Готов
         /// </summary>
+        [Display(Name = "Ожидание")]
         Ready = 1,
 
         /// <summary>
         /// Насос работает
         /// </summary>
+        [Display(Name = "Идёт заправка")]
         PumpWorking = 2,
 
         /// <summary>
         /// Ожидание остановки
         /// </summary>
+        [Display(Name = "Ожидание остановки")]
         WaitingStop = 3,
 
         /// <summary>
         /// Насос остановлен
         /// </summary>
+        [Display(Name = "Заправка остановлена")]
         PumpStop = 4,
 
         /// <summary>
         /// Ожидание снятия пистолета
         /// </summary>
+        [Display(Name = "Ожидание снятия пистолета")]
         WaitingRemoved = 5,
 
         /// <summary>
         /// Блокировка
         /// </summary>
+        [Display(Name = "Заблокировано")]
         Blocking = 6
     }
 

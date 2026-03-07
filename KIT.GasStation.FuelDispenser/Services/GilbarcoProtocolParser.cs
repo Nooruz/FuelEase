@@ -25,37 +25,37 @@ namespace KIT.GasStation.FuelDispenser.Services
             _encoder = encoder;
         }
 
-        public ControllerResponse ParseResponse(byte[] rawResponse)
-        {
-            if (rawResponse == null || rawResponse.Length == 0)
-                return new() { IsValid = false };
+        //public ControllerResponse ParseResponse(byte[] rawResponse)
+        //{
+        //    if (rawResponse == null || rawResponse.Length == 0)
+        //        return new() { IsValid = false };
 
-            byte status = (byte)(rawResponse[0] & 0xF0);
-            byte pumpId = (byte)(rawResponse[0] & 0x0F);
+        //    byte status = (byte)(rawResponse[0] & 0xF0);
+        //    byte pumpId = (byte)(rawResponse[0] & 0x0F);
 
-            NozzleStatus nozzleStatus = status switch
-            {
-                //0x60 => NozzleStatus.Off,
-                //0x70 => NozzleStatus.Call,
-                0x80 => NozzleStatus.Ready,
-                0x90 => NozzleStatus.PumpWorking,
-                0xA0 => NozzleStatus.PumpStop, // PEOT
-                0xB0 => NozzleStatus.PumpStop, // FEOT
-                0xC0 => NozzleStatus.WaitingStop,
-                0x00 => NozzleStatus.Unknown,  // Data Error
-                _ => NozzleStatus.Unknown
-            };
+        //    NozzleStatus nozzleStatus = status switch
+        //    {
+        //        //0x60 => NozzleStatus.Off,
+        //        //0x70 => NozzleStatus.Call,
+        //        0x80 => NozzleStatus.Ready,
+        //        0x90 => NozzleStatus.PumpWorking,
+        //        0xA0 => NozzleStatus.PumpStop, // PEOT
+        //        0xB0 => NozzleStatus.PumpStop, // FEOT
+        //        0xC0 => NozzleStatus.WaitingStop,
+        //        0x00 => NozzleStatus.Unknown,  // Data Error
+        //        _ => NozzleStatus.Unknown
+        //    };
 
-            return new ControllerResponse
-            {
-                Address = pumpId,
-                Command = _encoder.Decode((byte)(status >> 4)),
-                Data = rawResponse,
-                IsValid = true,
-                Status = nozzleStatus,
-                StatusAddress = pumpId
-            };
-        }
+        //    return new ControllerResponse
+        //    {
+        //        Address = pumpId,
+        //        Command = _encoder.Decode((byte)(status >> 4)),
+        //        Data = rawResponse,
+        //        IsValid = true,
+        //        Status = nozzleStatus,
+        //        StatusAddress = pumpId
+        //    };
+        //}
 
         public byte[] BuildRequest(Command cmd, 
             int controllerAddress, 

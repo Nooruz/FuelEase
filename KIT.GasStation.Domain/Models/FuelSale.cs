@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KIT.GasStation.Domain.Models
 {
@@ -18,14 +19,15 @@ namespace KIT.GasStation.Domain.Models
         private decimal _price;
         private decimal _sum;
         private decimal _receivedSum;
+        private decimal _resumeBaseSum;
         private decimal _receivedQuantity;
+        private decimal _resumeBaseQuantity;
         private decimal _receivedCount;
         private decimal _quantity;
-        private decimal? _customerSum;
         private decimal? _changeSum;
         private FuelSaleStatus _fuelSaleStatus;
         private bool _isForSum;
-        
+
         #endregion
 
         #region Public Properties
@@ -135,6 +137,22 @@ namespace KIT.GasStation.Domain.Models
         }
 
         /// <summary>
+        /// База фактически отпущенной суммы до продолжения.
+        /// Используется для корректного расчёта общей суммы,
+        /// так как новая сессия ТРК начинается с 0.
+        /// </summary>
+        [NotMapped]
+        public decimal ResumeBaseSum
+        {
+            get => _resumeBaseSum;
+            set
+            {
+                _resumeBaseSum = value;
+                OnPropertyChanged(nameof(ResumeBaseSum));
+            }
+        }
+
+        /// <summary>
         /// Количество
         /// </summary>
         public decimal Quantity
@@ -157,6 +175,23 @@ namespace KIT.GasStation.Domain.Models
             {
                 _receivedQuantity = value;
                 OnPropertyChanged(nameof(ReceivedQuantity));
+                OnPropertyChanged(nameof(ReceivedPercentage));
+            }
+        }
+
+        /// <summary>
+        /// База фактически отпущенной литры до продолжения.
+        /// Используется для корректного расчёта общей литры,
+        /// так как новая сессия ТРК начинается с 0.
+        /// </summary>
+        [NotMapped]
+        public decimal ResumeBaseQuantity
+        {
+            get => _resumeBaseQuantity;
+            set
+            {
+                _resumeBaseQuantity = value;
+                OnPropertyChanged(nameof(ResumeBaseQuantity));
             }
         }
 
@@ -170,19 +205,6 @@ namespace KIT.GasStation.Domain.Models
             {
                 _receivedCount = value;
                 OnPropertyChanged(nameof(ReceivedCount));
-            }
-        }
-
-        /// <summary>
-        /// Сумма клиента
-        /// </summary>
-        public decimal? CustomerSum
-        {
-            get => _customerSum;
-            set
-            {
-                _customerSum = value;
-                OnPropertyChanged(nameof(CustomerSum));
             }
         }
 
@@ -257,12 +279,18 @@ namespace KIT.GasStation.Domain.Models
         /// <summary>
         /// Фискальные данные
         /// </summary>
-        public FiscalData? FiscalData { get; set; }
+        public ICollection<FiscalData>? FiscalDatas { get; set; } = new HashSet<FiscalData>();
 
         public Nozzle? Nozzle { get; set; }
 
+        [NotMapped]
+        public string ReceivedPercentage => Quantity > 0 ? $"{(ReceivedQuantity / Quantity * 100):0}%" : "0%";
+
         #endregion
 
+        /// <summary>
+        /// Обновляет текущий объект данными из другого объекта того же типа.
+        /// </summary>
         public override void Update(DomainObject updatedItem)
         {
             if (updatedItem is FuelSale fuelSale)
@@ -276,6 +304,9 @@ namespace KIT.GasStation.Domain.Models
             }
         }
 
+        /// <summary>
+        /// Получает полную копию текущего объекта, включая все его свойства, но без навигационных свойств.
+        /// </summary>
         public FuelSale Clone()
         {
             return new FuelSale
@@ -291,7 +322,6 @@ namespace KIT.GasStation.Domain.Models
                 Quantity = Quantity,
                 ReceivedQuantity = ReceivedQuantity,
                 ReceivedCount = ReceivedCount,
-                CustomerSum = CustomerSum,
                 ChangeSum = ChangeSum,
                 ShiftId = ShiftId,
                 IsForSum = IsForSum,
@@ -302,11 +332,103 @@ namespace KIT.GasStation.Domain.Models
                 Tank = null,
                 Shift = null,
                 DiscountSale = null,
-                FiscalData = null,
+                FiscalDatas = null,
                 Nozzle = null
             };
         }
 
+        /// <summary>
+        /// Создать фискальные данные на основе текущей продажи топлива.
+        /// </summary>
+        public FiscalData AfterCreateFiscalData(OperationType type)
+        {
+            var fiscalData = new FiscalData
+            {
+                OperationType = type,
+                PaymentType = PaymentType,
+                Price = Price,
+                Quantity = ReceivedQuantity,
+                Total = ReceivedSum,
+                FuelSaleId = Id
+            };
+
+            if (Tank != null && Tank.Fuel != null)
+            {
+                fiscalData.UnitOfMeasurement = Tank.Fuel.UnitOfMeasurement?.Name;
+                fiscalData.ValueAddedTax = Tank.Fuel.ValueAddedTax;
+                fiscalData.SalesTax = Tank.Fuel.SalesTax;
+                fiscalData.FuelName = Tank.Fuel.Name;
+            }
+
+            return fiscalData;
+        }
+
+        public FiscalData CreateFiscalData(OperationType type)
+        {
+            var fiscalData = new FiscalData
+            {
+                OperationType = type,
+                PaymentType = PaymentType,
+                Price = Price,
+                Quantity = type is OperationType.Sale ? Quantity : ReceivedQuantity,
+                Total = type is OperationType.Sale ? Sum : ReceivedSum,
+                FuelSaleId = Id
+            };
+
+            if (Tank != null && Tank.Fuel != null)
+            {
+                fiscalData.UnitOfMeasurement = Tank.Fuel.UnitOfMeasurement?.Name;
+                fiscalData.ValueAddedTax = Tank.Fuel.ValueAddedTax;
+                fiscalData.SalesTax = Tank.Fuel.SalesTax;
+                fiscalData.FuelName = Tank.Fuel.Name;
+            }
+
+            return fiscalData;
+        }
+
+        public FiscalData CreateReturnFiscalData(Nozzle nozzle, FiscalData originalFiscalData)
+        {
+            var fiscalData = new FiscalData
+            {
+                FiscalDocument = originalFiscalData.FiscalDocument,
+                FiscalModule = originalFiscalData.FiscalModule,
+                OperationType = OperationType.Return,
+                PaymentType = PaymentType,
+                Price = Price,
+                Quantity = Quantity,
+                Total = Sum,
+                FuelSaleId = Id
+            };
+
+            if (nozzle.Tank != null && nozzle.Tank.Fuel != null)
+            {
+                fiscalData.UnitOfMeasurement = nozzle.Tank.Fuel.UnitOfMeasurement?.Name;
+                fiscalData.ValueAddedTax = nozzle.Tank.Fuel.ValueAddedTax;
+                fiscalData.SalesTax = nozzle.Tank.Fuel.SalesTax;
+                fiscalData.FuelName = nozzle.Tank.Fuel.Name;
+            }
+
+            return fiscalData;
+        }
+
+        public FiscalData UpdateFiscalData(FiscalData fiscalData, Nozzle nozzle, OperationType type)
+        {
+            if (nozzle.Tank != null && nozzle.Tank.Fuel != null)
+            {
+                fiscalData.OperationType = type;
+                fiscalData.PaymentType = PaymentType;
+                fiscalData.Price = Price;
+                fiscalData.Quantity = type is OperationType.Sale ? Quantity : ReceivedQuantity;
+                fiscalData.Total = type is OperationType.Sale ? Sum : ReceivedSum;
+                fiscalData.FuelSaleId = Id;
+                fiscalData.UnitOfMeasurement = nozzle.Tank.Fuel.UnitOfMeasurement?.Name;
+                fiscalData.ValueAddedTax = nozzle.Tank.Fuel.ValueAddedTax;
+                fiscalData.SalesTax = nozzle.Tank.Fuel.SalesTax;
+                fiscalData.FuelName = nozzle.Tank.Fuel.Name;
+            }
+
+            return fiscalData;
+        }
     }
 
     /// <summary>
@@ -403,12 +525,6 @@ namespace KIT.GasStation.Domain.Models
         /// Возврат
         /// </summary>
         [Display(Name = "Возврат")]
-        Return,
-
-        /// <summary>
-        /// Корректировка
-        /// </summary>
-        [Display(Name = "Корректировка")]
-        Correction
+        Return
     }
 }

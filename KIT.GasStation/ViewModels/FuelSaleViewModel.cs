@@ -29,6 +29,7 @@ namespace KIT.GasStation.ViewModels
         #region Private Members
 
         private readonly IFuelSaleService _fuelSaleService;
+        private readonly IFiscalDataService _fiscalDataService;
         private readonly INozzleStore _nozzleStore;
         private readonly IViewService<TankFuelQuantityView> _tankFuelQuantityView;
         private readonly ILogger<FuelSaleViewModel> _logger;
@@ -137,7 +138,8 @@ namespace KIT.GasStation.ViewModels
             IShiftStore shiftStore,
             IDisсountStore disсountStore,
             ICashRegisterStore cashRegisterStore,
-            IHotKeysService hotKeysService)
+            IHotKeysService hotKeysService,
+            IFiscalDataService fiscalDataService)
         {
             _nozzleStore = nozzleStore;
             _tankFuelQuantityView = tankFuelQuantityView;
@@ -148,6 +150,7 @@ namespace KIT.GasStation.ViewModels
             _disсountStore = disсountStore;
             _cashRegisterStore = cashRegisterStore;
             _hotKeysService = hotKeysService;
+            _fiscalDataService = fiscalDataService;
 
             Title = "Панель заявок";
 
@@ -266,12 +269,13 @@ namespace KIT.GasStation.ViewModels
 
                 if (Properties.Settings.Default.ReceiptPrintingMode == "Before")
                 {
-                    var fiscalData = _cashRegisterStore.SaleAsync(CreateFuelSale, SelectedNozzle.Tank.Fuel);
+                    var createFiscalData = CreateFuelSale.CreateFiscalData(OperationType.Sale);
+                    var fiscalData = await _cashRegisterStore.SaleAsync(createFiscalData);
 
                     if (fiscalData != null)
                     {
-                        CreateFuelSale.FiscalData = await fiscalData;
                         await _fuelSaleService.CreateAsync(CreateFuelSale);
+                        await _fiscalDataService.CreateAsync(fiscalData);
                     }
                 }
                 else
@@ -311,7 +315,7 @@ namespace KIT.GasStation.ViewModels
             CreateFuelSale.ReceivedCount = SelectedNozzle.LastCounter;
             CreateFuelSale.IsForSum = _isSumUpdating;
 
-            PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore)
+            PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore, _fiscalDataService)
             {
                 CreateFuelSale = CreateFuelSale,
                 SelectedNozzle = SelectedNozzle,
@@ -383,10 +387,10 @@ namespace KIT.GasStation.ViewModels
             {
                 Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.Id == fuelSale.NozzleId);
 
-                if (nozzle != null)
-                {
-                    nozzle.FuelSale = fuelSale;
-                }
+                //if (nozzle != null)
+                //{
+                //    nozzle.FuelSale = fuelSale;
+                //}
             }
             catch (Exception e)
             {

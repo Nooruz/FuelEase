@@ -14,7 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\KIT.GasStation.CashRegister\KIT.GasStation.CashRegisters.csproj" />
     <ProjectReference Include="..\KIT.GasStation.EKassa\KIT.GasStation.EKassa.csproj" />
-    <ProjectReference Include="..\KIT.GasStation.FuelDispenserEmulator\KIT.GasStation.FuelDispenserEmulator.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.FuelDispenserEmulator\KIT.GasStation.Emulator.csproj" />
     <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
     <ProjectReference Include="..\Kit.gasStation.Gilbarco\KIT.GasStation.Gilbarco.csproj" />
     <ProjectReference Include="..\KIT.GasStation.Lanfeng\KIT.GasStation.Lanfeng.csproj" />

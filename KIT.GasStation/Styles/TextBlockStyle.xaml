@@ -1,6 +1,19 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:KIT.GasStation.Converters">
 
+    <converters:BackgroundToForegroundConverter x:Key="BackgroundToForegroundConverter"/>
+
+    <Style TargetType="{x:Type TextBlock}">
+        <Setter Property="Foreground">
+            <Setter.Value>
+                <Binding Path="Background"
+                         RelativeSource="{RelativeSource AncestorType=Border}"
+                         Converter="{StaticResource BackgroundToForegroundConverter}"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
     <Style TargetType="TextBlock" x:Key="IconicTextBlock">
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontFamily" Value="{StaticResource FontAwesomeBold}"/>

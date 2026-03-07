@@ -184,6 +184,10 @@ namespace KIT.GasStation.Domain.Models
         public ICollection<FuelRevaluation> FuelRevaluations { get; set; }
         public ICollection<DiscountFuel> DiscountFuels { get; set; }
 
+        #endregion
+
+        #region Public Voids
+
         public override void Update(DomainObject updatedItem)
         {
             if (updatedItem is Fuel fuel)

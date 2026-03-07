@@ -1,6 +1,4 @@
 ﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Commands;
-using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.FuelDispenser.Services;
 using System.Buffers;
 
@@ -71,17 +69,24 @@ namespace KIT.GasStation.Lanfeng.Utilities
             }
         }
 
-        public static ControllerResponse ParseResponse(byte[] rawResponse)
+        public static LanfengResonse ParseResponse(byte[] rawResponse)
         {
+            var response = new LanfengResonse { Data = rawResponse };
             // Базовая валидация
             if (rawResponse == null || rawResponse.Length < FrameLength)
-                return new ControllerResponse { IsValid = false };
+            {
+                response.IsValid = false;
+                return response;
+            }
 
             // Проверяем стартовый байт
             if (rawResponse[0] != StartRx)
             {
                 if (!TryAlignAndExtractFrame(rawResponse, out var aligned))
-                    return new ControllerResponse { IsValid = false };
+                {
+                    response.IsValid = false;
+                    return response;
+                }
 
                 rawResponse = aligned;
             }
@@ -89,48 +94,64 @@ namespace KIT.GasStation.Lanfeng.Utilities
             // Проверяем контрольную сумму
             var checksum = CalculateChecksum(rawResponse, rawResponse.Length - 1);
             if (checksum != rawResponse[^1])
-                return new ControllerResponse { IsValid = false };
+                return new LanfengResonse { IsValid = false };
 
-            var receivedcmd = CommandEncoder.Decode(rawResponse[2]);
-            var address = (rawResponse[1] >> 4) & 0x0F;
+            response.Command = CommandEncoder.Decode(rawResponse[2]);
+            response.Address = (rawResponse[1] >> 4) & 0x0F;
 
             // Извлекаем статус колонки из 12-го байта (индекс 11)
             byte statusByte = rawResponse[11];
             var (statusAddress, status) = ParseStatusAndAddress(statusByte);
 
-            decimal sumValue = 0m;
-            decimal quantityValue = 0m;
+            response.StatusAddress = statusAddress;
+            response.Status = status;
 
             // Сумма хранится в байтах 3–6 (BCD), количество – в байтах 7–10 (BCD)
-            sumValue = ParseBcdQuantity(rawResponse, offset: 3);
-            quantityValue = ParseBcdQuantity(rawResponse, offset: 7);
+            if (response.Command != Command.CounterLiter)
+            {
+                response.Sum = ParseBcdQuantity(rawResponse, offset: 3);
+                response.Quantity = ParseBcdQuantity(rawResponse, offset: 7);
+            }
 
-            if (receivedcmd == Command.FirmwareVersion)
+            if (response.Command == Command.FirmwareVersion)
             {
                 _controllerType = (LanfengControllerType)rawResponse[3];
             }
 
-            if (receivedcmd == Command.CounterLiter)
+            if (response.Command == Command.CounterLiter)
             {
-                quantityValue = ParseBcdQuantity(rawResponse, offset: 6, endIndex: 5);
+                response.CounterQuantity = ParseBcdQuantity(rawResponse, offset: 6, endIndex: 5);
             }
 
-            return new ControllerResponse
-            {
-                Address = address,
-                Command = receivedcmd,
-                Data = rawResponse,
-                IsValid = true,
-                Status = status,
-                Sum = sumValue,
-                Quantity = quantityValue,
-                StatusAddress = statusAddress,
-            };
+            response.IsValid = true;
+
+            return response;
         }
 
         #endregion
 
         #region Private Voids
+
+        //Метод для выравнивания и извлечения кадра из необработанного ответа
+        private static bool TryAlignAndExtractFrame(byte[] rawResponse, out byte[] sorted)
+        {
+            sorted = Array.Empty<byte>();
+
+            int idx = Array.IndexOf(rawResponse, StartRx);
+            if (idx < 0)
+                return false; // стартовый байт не найден
+
+            int len = rawResponse.Length;
+            sorted = new byte[len];
+
+            // копируем хвост (с найденного индекса до конца)
+            Array.Copy(rawResponse, idx, sorted, 0, len - idx);
+
+            // копируем голову (всё, что было до стартового байта)
+            Array.Copy(rawResponse, 0, sorted, len - idx, idx);
+
+            return true;
+        }
 
         /// <summary>
         /// Считывает 4 BCD-байта (offset … offset+3) из rawResponse и возвращает decimal = (BCD-значение) / 100.
@@ -236,27 +257,6 @@ namespace KIT.GasStation.Lanfeng.Utilities
             };
 
             return (nozzleAddress, status);
-        }
-
-        //Метод для выравнивания и извлечения кадра из необработанного ответа
-        private static bool TryAlignAndExtractFrame(byte[] rawResponse, out byte[] sorted)
-        {
-            sorted = Array.Empty<byte>();
-
-            int idx = Array.IndexOf(rawResponse, StartRx);
-            if (idx < 0)
-                return false; // стартовый байт не найден
-
-            int len = rawResponse.Length;
-            sorted = new byte[len];
-
-            // копируем хвост (с найденного индекса до конца)
-            Array.Copy(rawResponse, idx, sorted, 0, len - idx);
-
-            // копируем голову (всё, что было до стартового байта)
-            Array.Copy(rawResponse, 0, sorted, len - idx, idx);
-
-            return true;
         }
 
         #endregion

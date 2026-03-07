@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.20" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.20">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.20" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KIT.GasStation.CashRegister\KIT.GasStation.CashRegisters.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.EKassa\KIT.GasStation.EKassa.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.EntityFramework\KIT.GasStation.EntityFramework.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.FuelDispenserEmulator\KIT.GasStation.Emulator.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
+    <ProjectReference Include="..\Kit.gasStation.Gilbarco\KIT.GasStation.Gilbarco.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.HardwareConfiguration\KIT.GasStation.HardwareConfigurations.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.Lanfeng\KIT.GasStation.Lanfeng.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.NewCas\KIT.GasStation.NewCas.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.PKElectronics\KIT.GasStation.PKElectronics.csproj" />
+  </ItemGroup>
+
+</Project>

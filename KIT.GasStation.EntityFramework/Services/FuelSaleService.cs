@@ -16,7 +16,8 @@ namespace KIT.GasStation.EntityFramework.Services
         );
         private readonly Task _processorTask;
         private GasStationDbContextFactory _contextFactory;
-        private readonly NonQueryDataService<FuelSale> _nonQueryDataService;
+        private readonly NonQueryDataService<FuelSale> _nonQueryFuelSaleDataService;
+        private readonly NonQueryDataService<FiscalData> _nonQueryFiscalDataDataService;
 
         #endregion
 
@@ -25,7 +26,8 @@ namespace KIT.GasStation.EntityFramework.Services
         public FuelSaleService(GasStationDbContextFactory contextFactory)
         {
             _contextFactory = contextFactory;
-            _nonQueryDataService = new NonQueryDataService<FuelSale>(_contextFactory);
+            _nonQueryFuelSaleDataService = new NonQueryDataService<FuelSale>(_contextFactory);
+            _nonQueryFiscalDataDataService = new NonQueryDataService<FiscalData>(_contextFactory);
 
             // Запускаем фоновый процесс «потребления» канала
             _processorTask = Task.Run(ProcessUpdateQueueAsync);
@@ -63,7 +65,7 @@ namespace KIT.GasStation.EntityFramework.Services
             try
             {
                 fuelSale.Tank = null;
-                var result = await _nonQueryDataService.Create(fuelSale);
+                var result = await _nonQueryFuelSaleDataService.Create(fuelSale);
                 if (result != null)
                 {
                     OnCreated?.Invoke(await GetFuelSaleWithPaymentType(result.Id));
@@ -80,7 +82,7 @@ namespace KIT.GasStation.EntityFramework.Services
         {
             try
             {
-                var result = await _nonQueryDataService.Delete(id);
+                var result = await _nonQueryFuelSaleDataService.Delete(id);
                 if (result)
                 {
                     OnDeleted?.Invoke(id);
@@ -102,7 +104,7 @@ namespace KIT.GasStation.EntityFramework.Services
                 {
                     if (item.ReceivedQuantity == 0)
                     {
-                        result = await _nonQueryDataService.Delete(item.Id);
+                        result = await _nonQueryFuelSaleDataService.Delete(item.Id);
                         if (result)
                         {
                             OnDeleted?.Invoke(item.Id);
@@ -172,7 +174,7 @@ namespace KIT.GasStation.EntityFramework.Services
                 await using var context = _contextFactory.CreateDbContext();
                 return await context.FuelSales
                     .Include(f => f.DiscountSale)
-                    .Include(f => f.FiscalData)
+                    .Include(f => f.FiscalDatas)
                     .Include(f => f.Tank)
                     .ThenInclude(t => t.Fuel)
                     .ThenInclude(f => f.UnitOfMeasurement)
@@ -190,9 +192,12 @@ namespace KIT.GasStation.EntityFramework.Services
             try
             {
                 await using var context = _contextFactory.CreateDbContext();
-                var result = await _nonQueryDataService.Update(id, entity);
-                var full = await GetFuelSaleWithPaymentType(result.Id);
-                OnUpdated?.Invoke(full);
+                var result = await _nonQueryFuelSaleDataService.Update(id, entity);
+                if (result != null)
+                {
+                    var full = await GetFuelSaleWithPaymentType(result.Id);
+                    OnUpdated?.Invoke(full);
+                }
                 return result;
             }
             catch (Exception)
@@ -225,7 +230,7 @@ namespace KIT.GasStation.EntityFramework.Services
                 await using var context = _contextFactory.CreateDbContext();
                 return await context.FuelSales.Where(f => f.NozzleId == nozzleId)
                     .Include(f => f.Nozzle)
-                    .Include(f => f.FiscalData)
+                    .Include(f => f.FiscalDatas)
                     .Include(f => f.DiscountSale)
                     .Include(f => f.Tank)
                     .ThenInclude(t => t.Fuel)
@@ -247,7 +252,7 @@ namespace KIT.GasStation.EntityFramework.Services
                 await using var context = _contextFactory.CreateDbContext();
                 return await context.FuelSales.Where(f => f.ShiftId == shiftId && f.FuelSaleStatus != FuelSaleStatus.Completed)
                     .Include(f => f.Nozzle)
-                    .Include(f => f.FiscalData)
+                    .Include(f => f.FiscalDatas)
                     .Include(f => f.Tank)
                     .ThenInclude(t => t.Fuel)
                     .ThenInclude(f => f.UnitOfMeasurement)
@@ -266,7 +271,7 @@ namespace KIT.GasStation.EntityFramework.Services
                 await using var context = _contextFactory.CreateDbContext();
                 return await context.FuelSales.Where(f => f.NozzleId == nozzleId && f.ShiftId == shiftId && f.FuelSaleStatus != FuelSaleStatus.Completed)
                     .Include(f => f.Nozzle)
-                    .Include(f => f.FiscalData)
+                    .Include(f => f.FiscalDatas)
                     .Include(f => f.Tank)
                     .ThenInclude(t => t.Fuel)
                     .ThenInclude(f => f.UnitOfMeasurement)
@@ -285,8 +290,10 @@ namespace KIT.GasStation.EntityFramework.Services
                 await using var context = _contextFactory.CreateDbContext();
                 return await context.FuelSales.Where(f => f.ShiftId == shiftId && f.FuelSaleStatus != FuelSaleStatus.Uncompleted)
                     .Include(f => f.Nozzle)
-                    .Include(f => f.FiscalData)
+                    .Include(f => f.FiscalDatas)
                     .Include(f => f.DiscountSale)
+                    .Include(f => f.Shift)
+                    .ThenInclude(s => s.User)
                     .Include(f => f.Tank)
                     .ThenInclude(t => t.Fuel)
                     .ThenInclude(t => t.UnitOfMeasurement)

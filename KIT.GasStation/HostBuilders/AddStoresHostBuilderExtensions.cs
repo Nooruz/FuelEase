@@ -1,4 +1,6 @@
 ﻿using DevExpress.Mvvm.POCO;
+using KIT.GasStation.Services;
+using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Authenticators;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Discounts;
@@ -18,6 +20,8 @@ namespace KIT.GasStation.HostBuilders
         {
             return host.ConfigureServices(services =>
             {
+                _ = services.AddSingleton<IHotKeysService, HotKeysService>();
+                _ = services.AddSingleton<ICustomSplashScreenService, CustomSplashScreenService>();
                 _ = services.AddSingleton<IUserStore, UserStore>();
                 _ = services.AddSingleton<IShiftStore, ShiftStore>();
                 _ = services.AddSingleton<INavigator, Navigator>();

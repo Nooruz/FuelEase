@@ -1,4 +1,4 @@
-using KIT.GasStation.Common.Factories;
+using KIT.App.Infrastructure.Factories;
 using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
@@ -30,7 +30,7 @@ namespace KIT.GasStation.Worker
             _portManager = portManager;
         }
 
-        
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             Log.Information("Worker started");
@@ -104,9 +104,9 @@ namespace KIT.GasStation.Worker
         /// <param name="ctrl">ТРК</param>
         /// <param name="token">Токен</param>
         /// <returns></returns>
-        private async Task RunControllerLoopAsync(Controller ctrl, 
-            int address, 
-            CancellationToken token, 
+        private async Task RunControllerLoopAsync(Controller ctrl,
+            int address,
+            CancellationToken token,
             ISharedSerialPortService port)
         {
             while (!token.IsCancellationRequested)
@@ -141,7 +141,7 @@ namespace KIT.GasStation.Worker
         }
 
         private async Task RunControllerLoopAsync(Controller ctrl,
-            CancellationToken token, 
+            CancellationToken token,
             ISharedSerialPortService port)
         {
             while (!token.IsCancellationRequested)
@@ -211,8 +211,8 @@ namespace KIT.GasStation.Worker
 
         #region Helpers
 
-        private void CreateLanfeng(Controller ctrl, 
-            ConcurrentDictionary<string, Task> activeTasks, 
+        private void CreateLanfeng(Controller ctrl,
+            ConcurrentDictionary<string, Task> activeTasks,
             CancellationToken token,
             ISharedSerialPortService port)
         {
@@ -233,7 +233,7 @@ namespace KIT.GasStation.Worker
                     ComPort = ctrl.ComPort,
                     BaudRate = ctrl.BaudRate,
                     Settings = ctrl.Settings,
-                    Columns = new(ctrl.Columns.Where(c => c.Address == addr).ToList())
+                    Columns = new([.. ctrl.Columns.Where(c => c.Address == addr)])
                 };
 
                 var taskKey = $"{ctrl.Id}_{addr}";
@@ -245,8 +245,8 @@ namespace KIT.GasStation.Worker
             }
         }
 
-        private void CreateGilbarco(Controller ctrl, 
-            ConcurrentDictionary<string, Task> activeTasks, 
+        private void CreateGilbarco(Controller ctrl,
+            ConcurrentDictionary<string, Task> activeTasks,
             CancellationToken token,
             ISharedSerialPortService port)
         {
@@ -262,12 +262,33 @@ namespace KIT.GasStation.Worker
             ConcurrentDictionary<string, Task> activeTasks,
             CancellationToken token)
         {
-            var taskKey = $"{ctrl.Id}";
+            // Берём адреса из конфигурации колонки, исключаем отключённые и дубли
+            var addresses = ctrl.Columns
+                .Select(c => c.Address)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToArray();
 
-            var task = RunControllerLoopAsync(ctrl, token);
+            foreach (var addr in addresses)
+            {
+                var controller = new Controller()
+                {
+                    Id = ctrl.Id,
+                    Name = ctrl.Name,
+                    Type = ctrl.Type,
+                    ComPort = ctrl.ComPort,
+                    BaudRate = ctrl.BaudRate,
+                    Settings = ctrl.Settings,
+                    Columns = new([.. ctrl.Columns.Where(c => c.Address == addr)])
+                };
 
-            // Сохраняем задачу для последующего отслеживания
-            activeTasks[taskKey] = task;
+                var taskKey = $"{ctrl.Id}_{addr}";
+
+                var task = RunControllerLoopAsync(controller, token);
+
+                // Сохраняем задачу для последующего отслеживания
+                activeTasks[taskKey] = task;
+            }
         }
 
         #endregion
@@ -311,8 +332,8 @@ namespace KIT.GasStation.Worker
                 var options = new SerialPortOptions(
                     RtsEnable: false,
                     DtrEnable: false,
-                    ReadTimeoutMs: 300,
-                    WriteTimeoutMs: 300,
+                    ReadTimeoutMs: 100,
+                    WriteTimeoutMs: 100,
                     ReadBufferSize: 1024,
                     WriteBufferSize: 1024
                 );

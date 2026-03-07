@@ -120,58 +120,58 @@ namespace KIT.GasStation.FuelDispenser.Services
             }
         }
 
-        public ControllerResponse ParseResponse(byte[] raw)
-        {
-            if (raw == null || raw.Length < FrameLength)
-                return new ControllerResponse { IsValid = false };
+        //public ControllerResponse ParseResponse(byte[] raw)
+        //{
+        //    if (raw == null || raw.Length < FrameLength)
+        //        return new ControllerResponse { IsValid = false };
 
-            // Выравниваем — ищем SOH
-            if (raw[0] != SOH)
-            {
-                if (!TryAlign(raw, out var aligned))
-                    return new ControllerResponse { IsValid = false };
-                raw = aligned;
-            }
+        //    // Выравниваем — ищем SOH
+        //    if (raw[0] != SOH)
+        //    {
+        //        if (!TryAlign(raw, out var aligned))
+        //            return new ControllerResponse { IsValid = false };
+        //        raw = aligned;
+        //    }
 
-            if (raw.Length < FrameLength) return new ControllerResponse { IsValid = false };
+        //    if (raw.Length < FrameLength) return new ControllerResponse { IsValid = false };
 
-            // Проверяем ETX
-            if (raw[21] != ETX) return new ControllerResponse { IsValid = false };
+        //    // Проверяем ETX
+        //    if (raw[21] != ETX) return new ControllerResponse { IsValid = false };
 
-            // Проверяем CRC
-            var crc = CalculateChecksum(raw, 1, 21);
-            if (raw[22] != crc) return new ControllerResponse { IsValid = false };
+        //    // Проверяем CRC
+        //    var crc = CalculateChecksum(raw, 1, 21);
+        //    if (raw[22] != crc) return new ControllerResponse { IsValid = false };
 
-            // Читаем поля
-            int address = ParseTrkNo(raw[1], raw[2]);
-            var command = _encoder.Decode(raw[3]);
+        //    // Читаем поля
+        //    int address = ParseTrkNo(raw[1], raw[2]);
+        //    var command = _encoder.Decode(raw[3]);
 
-            var priceAscii = Encoding.ASCII.GetString(raw, 5, 6);
-            var volumeAscii = Encoding.ASCII.GetString(raw, 11, 6);
+        //    var priceAscii = Encoding.ASCII.GetString(raw, 5, 6);
+        //    var volumeAscii = Encoding.ASCII.GetString(raw, 11, 6);
 
-            decimal price = ParsePriceFromAscii(priceAscii);   // копейки -> рубли
-            decimal quantity = ParseVolumeFromAscii(volumeAscii); // мл -> литры
+        //    decimal price = ParsePriceFromAscii(priceAscii);   // копейки -> рубли
+        //    decimal quantity = ParseVolumeFromAscii(volumeAscii); // мл -> литры
 
-            // Sost
-            string sost = Encoding.ASCII.GetString(raw, 19, 2);
-            NozzleStatus status = MapSostToNozzleStatus(sost);
+        //    // Sost
+        //    string sost = Encoding.ASCII.GetString(raw, 19, 2);
+        //    NozzleStatus status = MapSostToNozzleStatus(sost);
 
-            // Доп. код статуса/адреса можно извлечь из raw[17] / raw[18] по необходимости
-            byte statusByte = raw[17];
-            byte additional = raw[18];
+        //    // Доп. код статуса/адреса можно извлечь из raw[17] / raw[18] по необходимости
+        //    byte statusByte = raw[17];
+        //    byte additional = raw[18];
 
-            return new ControllerResponse
-            {
-                Address = address,
-                Command = command,
-                Data = raw,
-                IsValid = true,
-                Status = status,
-                Sum = price,
-                Quantity = quantity,
-                StatusAddress = (byte)(statusByte & 0x0F) // приблизительное значение (низкий ниббл)
-            };
-        }
+        //    return new ControllerResponse
+        //    {
+        //        Address = address,
+        //        Command = command,
+        //        Data = raw,
+        //        IsValid = true,
+        //        Status = status,
+        //        Sum = price,
+        //        Quantity = quantity,
+        //        StatusAddress = (byte)(statusByte & 0x0F) // приблизительное значение (низкий ниббл)
+        //    };
+        //}
 
         #region Helpers
 

@@ -11,10 +11,7 @@ using Serilog;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Printing;
-using System.Net.Http.Headers;
-using System.Net.NetworkInformation;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 
 namespace KIT.GasStation.EKassa
@@ -76,7 +73,7 @@ namespace KIT.GasStation.EKassa
             {
                 _settings = settings;
             }
-            
+
             _cashRegister = cashRegister;
 
             // Авторизация на сервере ЕКасса
@@ -101,34 +98,33 @@ namespace KIT.GasStation.EKassa
         }
 
         /// <inheritdoc/>
-        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName, bool isBefore = true)
+        public async Task<FiscalData?> SaleAsync(FiscalData fiscalData, string cashierName)
         {
-            _logger.Information("Начало продажи через ККМ. Сумма: {Sum}, Топливо: {Fuel}", fuelSale.Sum, fuel.Name);
+            _logger.Information("Начало продажи через ККМ. Сумма: {Sum}, Топливо: {Fuel}", fiscalData.Total, fiscalData.FuelName);
 
-            int price = (int)(fuelSale.Price * 100);
-            decimal quantity = Math.Round(fuelSale.Sum / fuelSale.Price, 6);
+            int price = (int)(fiscalData.Price * 100);
+            decimal quantity = Math.Round(fiscalData.Total / fiscalData.Price, 6);
             string discount = string.Empty;
-            string? received = fuelSale.CustomerSum != null ? (fuelSale.CustomerSum * 100).ToString() : string.Empty;
 
-            if (fuelSale.DiscountSale != null)
-            {
-                quantity = Math.Round(fuelSale.Sum / fuelSale.DiscountSale.DiscountPrice, 6);
-                price = (int)(fuelSale.DiscountSale.DiscountPrice * 100);
-                discount = (((quantity * fuelSale.Price) - fuelSale.Sum) * 100).ToString();
-            }
+            //if (fuelSale.DiscountSale != null)
+            //{
+            //    quantity = Math.Round(fuelSale.Sum / fuelSale.DiscountSale.DiscountPrice, 6);
+            //    price = (int)(fuelSale.DiscountSale.DiscountPrice * 100);
+            //    discount = (((quantity * fuelSale.Price) - fuelSale.Sum) * 100).ToString();
+            //}
 
             var googs = new List<ReceiptGood>()
             {
-                new() 
+                new()
                 {
                     CalcItemAttributeCode = 0,
-                    Name = fuel.Name,
-                    Sgtin = fuel.TNVED,
+                    Name = fiscalData.FuelName,
+                    Sgtin = fiscalData.Tnved,
                     Price = price,
                     Quantity = quantity,
-                    Unit = fuel.UnitOfMeasurement.Name,
-                    St = (int)(fuel.SalesTax * 100),
-                    Vat = fuel.ValueAddedTax ? 12 : 0
+                    Unit = fiscalData.UnitOfMeasurement,
+                    St = (int)(fiscalData.SalesTax * 100),
+                    Vat = fiscalData.ValueAddedTax ? 12 : 0
                 }
             };
 
@@ -137,8 +133,7 @@ namespace KIT.GasStation.EKassa
                 FiscalNumber = _cashRegister.RegistrationNumber,
                 Goods = googs,
                 Discount = discount,
-                Received = received,
-                Cash = fuelSale.PaymentType == PaymentType.Cash,
+                Cash = fiscalData.PaymentType == PaymentType.Cash,
                 Operation = ReceiptOperation.INCOME,
                 Txt = _settings.TapeType == TapeType.TXT ? true : null,
                 Txt80 = _settings.TapeType == TapeType.TXT80 ? true : null,
@@ -177,15 +172,9 @@ namespace KIT.GasStation.EKassa
         }
 
         /// <inheritdoc/>
-        public async Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAsync(FiscalData fiscalData)
         {
-            if (fuelSale.FiscalData == null)
-            {
-                _logger.Error("Нет данных для возврата по чеку. [{Timestamp}]", DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss.fff"));
-                throw new CashRegisterException("Нет данных для возврата по чеку.");
-            }
-
-            _logger.Information("Начало возврата через ККМ. Сумма: {Sum}, Топливо: {Fuel}", fuelSale.Sum, fuel.Name);
+            _logger.Information("Начало возврата через ККМ. Сумма: {Sum}, Топливо: {Fuel}", fiscalData.Total, fiscalData.FuelName);
 
             var receipt = new ReceiptV2Request
             {
@@ -195,18 +184,18 @@ namespace KIT.GasStation.EKassa
                     new()
                     {
                         CalcItemAttributeCode = 0,
-                        Name = fuel.Name,
-                        Sgtin = fuel.TNVED,
-                        Price = (int)(fuelSale.Price * 100),
-                        Quantity = Math.Round(fuelSale.Sum / fuelSale.Price, 6),
-                        Unit = fuel.UnitOfMeasurement.Name,
-                        St = (int)(fuel.SalesTax * 100),
-                        Vat = fuel.ValueAddedTax ? 12 : 0
+                        Name = fiscalData.FuelName,
+                        Sgtin = fiscalData.Tnved,
+                        Price = (int)(fiscalData.Price * 100),
+                        Quantity = Math.Round(fiscalData.Total / fiscalData.Price, 6),
+                        Unit = fiscalData.UnitOfMeasurement,
+                        St = (int)(fiscalData.SalesTax * 100),
+                        Vat = fiscalData.ValueAddedTax ? 12 : 0
                     }
                 },
-                Cash = fuelSale.PaymentType == PaymentType.Cash,
+                Cash = fiscalData.PaymentType == PaymentType.Cash,
                 Operation = ReceiptOperation.INCOME_RETURN,
-                OriginFdNumber = fuelSale.FiscalData.FiscalDocument,
+                OriginFdNumber = fiscalData.FiscalDocument,
             };
 
             var data = await _client.CreateReceiptV2Async(receipt);
@@ -265,68 +254,6 @@ namespace KIT.GasStation.EKassa
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
-        {
-            await ReturnAsync(fuelSale, fuel);
-
-            if (fuelSale.ReceivedSum == 0)
-            {
-                _logger.Information("Продажа полученных сумм не требуется, так как сумма равна 0.");
-                return null;
-            }
-
-            _logger.Information("Начало продажи через ККМ. Сумма: {Sum}, Топливо: {Fuel}", fuelSale.Sum, fuel.Name);
-
-            decimal price = fuelSale.Price * 100;
-            decimal quantity = Math.Round(fuelSale.ReceivedSum / fuelSale.Price, 6);
-            string discount = string.Empty;
-            string received = fuelSale.CustomerSum != null ? (fuelSale.CustomerSum * 100).ToString() : string.Empty;
-
-            if (fuelSale.DiscountSale != null)
-            {
-                quantity = Math.Round(fuelSale.ReceivedSum / fuelSale.DiscountSale.DiscountPrice, 6);
-                price = fuelSale.DiscountSale.DiscountPrice * 100;
-                discount = (((quantity * fuelSale.Price) - fuelSale.ReceivedSum) * 100).ToString();
-            }
-
-            var receipt = new ReceiptV2Request
-            {
-                FiscalNumber = _cashRegister.RegistrationNumber,
-                Received = received,
-                Discount = discount,
-                Txt = _settings.TapeType == TapeType.TXT ? true : null,
-                Txt80 = _settings.TapeType == TapeType.TXT80 ? true : null,
-                Goods = new List<ReceiptGood>
-                {
-                    new()
-                    {
-                        CalcItemAttributeCode = 0,
-                        Name = fuel.Name,
-                        Sgtin = fuel.TNVED,
-                        Price = (int)price,
-                        Quantity = quantity,
-                        Unit = fuel.UnitOfMeasurement.Name,
-                        St = (int)(fuel.SalesTax * 100),
-                        Vat = fuel.ValueAddedTax ? 12 : 0
-                    }
-                },
-                Cash = fuelSale.PaymentType == PaymentType.Cash,
-                Operation = ReceiptOperation.INCOME,
-            };
-
-            _logger.Information("Отправка данных в ККМ: {Data}", JsonSerializer.Serialize(receipt));
-
-            var data = await _client.CreateReceiptV2Async(receipt);
-
-            return new FiscalData
-            {
-                FiscalModule = GetFiscalModule(data),
-                FiscalDocument = GetFiscalDocument(data),
-                RegistrationNumber = data.FiscalNumber.ToString()
-            };
-        }
-
         #endregion
 
         #region Private Voids
@@ -334,54 +261,25 @@ namespace KIT.GasStation.EKassa
         /// <summary>
         /// Проверяет доступность интернета посредством ICMP-запроса.
         /// </summary>
-        private bool IsInternetConnectionAvailable()
+        private async Task<bool> IsInternetConnectionAvailable()
         {
             try
             {
-                using Ping ping = new();
-                string host = GetDomainFromUrl(_cashRegister.Address);
-
-                PingReply reply = ping.Send(host, 3000);
-
-                if (reply.Status != IPStatus.Success)
+                using var client = new HttpClient
                 {
-                    throw new CashRegisterException(
-                        "Не удалось связаться с сервером. Проверьте интернет-соединение или адрес кассы."
-                    );
-                }
+                    Timeout = TimeSpan.FromSeconds(5)
+                };
 
+                using var request = new HttpRequestMessage(HttpMethod.Head, _cashRegister.Address);
+                using var response = await client.SendAsync(request);
+
+                // Любой ответ = сервер доступен
                 return true;
-            }
-            catch (PingException ex)
-            {
-                _logger.Error(ex, "Ошибка при проверке соединения (Ping).");
-                throw new CashRegisterException(
-                    "Ошибка проверки интернет-соединения. Проверьте интернет или доступ к серверу."
-                );
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Неизвестная ошибка при проверке интернет-соединения.");
-                throw new CashRegisterException(
-                    "Не удалось проверить соединение с сервером. Проверьте интернет и попробуйте ещё раз."
-                );
-            }
-        }
-
-        /// <summary>
-        /// Извлекает доменное имя из URL.
-        /// </summary>
-        private string GetDomainFromUrl(string url)
-        {
-            try
-            {
-                Uri uri = new(url);
-                return uri.Host;
-            }
-            catch (UriFormatException e)
-            {
-                _logger.Error(e, "Неверный адрес URL адрес ККМ");
-                return string.Empty;
+                _logger.Error(ex, $"{_cashRegister.Address} недоступен (HTTPS).");
+                return false;
             }
         }
 
@@ -390,7 +288,7 @@ namespace KIT.GasStation.EKassa
         /// </summary>
         private async Task LoginAsync()
         {
-            if (!IsInternetConnectionAvailable())
+            if (!await IsInternetConnectionAvailable())
             {
                 return;
             }

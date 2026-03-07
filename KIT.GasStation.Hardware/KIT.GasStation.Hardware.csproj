@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\KIT.GasStation.Common\KIT.GasStation.Common.csproj" />
+    <ProjectReference Include="..\KIT.App.Infrastructure\KIT.App.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

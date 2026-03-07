@@ -171,19 +171,50 @@ namespace KIT.GasStation.EntityFramework.Migrations
                     b.Property<string>("FiscalModule")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("FuelName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("FuelSaleId")
                         .HasColumnType("int");
+
+                    b.Property<int>("OperationType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PaymentType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("RegistrationNumber")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ReturnCheck")
+                    b.Property<decimal>("SalesTax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("SourceFiscalData")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tnved")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("UnitOfMeasurement")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ValueAddedTax")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FuelSaleId")
-                        .IsUnique();
+                    b.HasIndex("FuelSaleId");
 
                     b.ToTable("FiscalDatas");
                 });
@@ -380,9 +411,6 @@ namespace KIT.GasStation.EntityFramework.Migrations
 
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("CustomerSum")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("FuelSaleStatus")
                         .HasColumnType("int");
@@ -635,11 +663,6 @@ namespace KIT.GasStation.EntityFramework.Migrations
                         {
                             Id = 2,
                             Name = "метр куб."
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "кВт*ч"
                         });
                 });
 
@@ -725,7 +748,7 @@ namespace KIT.GasStation.EntityFramework.Migrations
                         {
                             Id = 1,
                             CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            CreatedDate = new DateTime(2025, 12, 29, 21, 10, 38, 284, DateTimeKind.Local).AddTicks(6231),
+                            CreatedDate = new DateTime(2026, 2, 17, 16, 26, 46, 986, DateTimeKind.Local).AddTicks(9610),
                             FullName = "Администратор",
                             IsAdmin = false,
                             IsDeleted = false,
@@ -883,8 +906,8 @@ namespace KIT.GasStation.EntityFramework.Migrations
             modelBuilder.Entity("KIT.GasStation.Domain.Models.FiscalData", b =>
                 {
                     b.HasOne("KIT.GasStation.Domain.Models.FuelSale", "FuelSale")
-                        .WithOne("FiscalData")
-                        .HasForeignKey("KIT.GasStation.Domain.Models.FiscalData", "FuelSaleId")
+                        .WithMany("FiscalDatas")
+                        .HasForeignKey("FuelSaleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1082,7 +1105,7 @@ namespace KIT.GasStation.EntityFramework.Migrations
                 {
                     b.Navigation("DiscountSale");
 
-                    b.Navigation("FiscalData");
+                    b.Navigation("FiscalDatas");
                 });
 
             modelBuilder.Entity("KIT.GasStation.Domain.Models.Nozzle", b =>

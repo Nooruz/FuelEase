@@ -82,34 +82,34 @@ namespace KIT.GasStation.FuelDispenser.Services
             return list.ToArray();
         }
 
-        public ControllerResponse ParseResponse(byte[] rawResponse)
-        {
-            // Проверяем контрольную сумму
-            var checksum = CheckSum(rawResponse, rawResponse.Length - 1);
-            if (checksum != rawResponse[^1])
-                return new ControllerResponse { IsValid = false };
+        //public ControllerResponse ParseResponse(byte[] rawResponse)
+        //{
+        //    // Проверяем контрольную сумму
+        //    var checksum = CheckSum(rawResponse, rawResponse.Length - 1);
+        //    if (checksum != rawResponse[^1])
+        //        return new ControllerResponse { IsValid = false };
 
-            var receivedcmd = _commandEncoder.Decode(rawResponse[0]);
-            var columnAddress = rawResponse[1] & 0x0F;
+        //    var receivedcmd = _commandEncoder.Decode(rawResponse[0]);
+        //    var columnAddress = rawResponse[1] & 0x0F;
 
-            //var status = ConvertByteToNozzleStatus(rawResponse[2]);
+        //    //var status = ConvertByteToNozzleStatus(rawResponse[2]);
 
-            var lifted = rawResponse[2];
+        //    var lifted = rawResponse[2];
 
-            if (receivedcmd == Command.Screen)
-            {
+        //    if (receivedcmd == Command.Screen)
+        //    {
 
-            }
+        //    }
 
-            return new ControllerResponse
-            {
-                IsValid = true,
-                Command = receivedcmd,
-                //Status = status,
-                Address = columnAddress,
-                IsLifted = lifted is 0x93 or 0x83
-            };
-        }
+        //    return new ControllerResponse
+        //    {
+        //        IsValid = true,
+        //        Command = receivedcmd,
+        //        //Status = status,
+        //        Address = columnAddress,
+        //        IsLifted = lifted is 0x93 or 0x83
+        //    };
+        //}
 
         private byte GetNozzleSensorBytes()
         {

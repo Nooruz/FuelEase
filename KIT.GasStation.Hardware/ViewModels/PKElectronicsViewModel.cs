@@ -1,8 +1,6 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
-using KIT.GasStation.Common.Factories;
-using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Services;
+using KIT.App.Infrastructure.Factories;
 using KIT.GasStation.Hardware.Utilities;
 using KIT.GasStation.Hardware.ViewModels.Base;
 using KIT.GasStation.Hardware.Views;

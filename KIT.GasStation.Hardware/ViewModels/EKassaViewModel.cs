@@ -1,14 +1,13 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
+using KIT.App.Infrastructure.Factories;
 using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.CashRegisters.Services;
-using KIT.GasStation.Common.Factories;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using System;
 using System.Collections.Generic;
 using System.Drawing.Printing;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 

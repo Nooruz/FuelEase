@@ -6,10 +6,11 @@ using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace KIT.GasStation.FuelDispenserEmulator
+namespace KIT.GasStation.Emulator
 {
     public sealed class EmulatorFuelDispenser : FuelDispenserServiceBase
     {
@@ -23,8 +24,9 @@ namespace KIT.GasStation.FuelDispenserEmulator
         private volatile bool _hardwareAvailable = true;
         private string? _lastAvailabilityReason;
         private int _hubRestartLoop;
-        private readonly ControllerResponse _controllerResponse = new() { Status = NozzleStatus.Ready };
-        private CancellationToken _token; 
+        private readonly StatusResponse _response = new() { Status = NozzleStatus.Ready };
+        private CancellationToken _token;
+        private readonly ConcurrentDictionary<string, (CancellationTokenSource cts, Task task)> _fuelingJobs = new();
 
         #endregion
 
@@ -46,7 +48,7 @@ namespace KIT.GasStation.FuelDispenserEmulator
 
         protected override async Task OnTickAsync()
         {
-            _logger.Information("ТРК Эмулятор запущена, используется порт {Port}", Controller.ComPort);
+            _logger.Information("ТРК Эмулятор запущена");
 
             var column = Columns.First();
 
@@ -57,7 +59,10 @@ namespace KIT.GasStation.FuelDispenserEmulator
                     // Ждем, если опрос приостановлен
                     _pollingResumedEvent.Wait(_token);
 
-                    await _hub.InvokeAsync("PublishStatus", _controllerResponse, column.GroupName, cancellationToken: _token);
+                    _response.GroupName = column.GroupName;
+                    _response.Status = NozzleStatus.Ready;
+
+                    await _hub.InvokeAsync("PublishStatus", _response, cancellationToken: _token);
                 }
                 catch (OperationCanceledException ex) when (ex.CancellationToken == _token)
                 {
@@ -86,24 +91,33 @@ namespace KIT.GasStation.FuelDispenserEmulator
 
                 _logger.Debug("EnsureStartedAsync вызван. Текущее состояние: {State}", _hub.State);
 
-                _hub.On<StartPollingCommand>("StartPolling", async e =>
+                _hub.On<StartPollingCommand>("StartPolling", async command =>
                 {
-                    await StartPollingAsync(token);
+                    await ExecuteHubCommandAsync(command.CommandId, command.GroupName, StartPollingAsync);
                 });
 
-                _hub.On<string>("InitializeConfigurationAsync", async (groupName) =>
+                _hub.On<StopPollingCommand>("StopPolling", async command =>
                 {
-                    await InitializeConfigurationAsync(groupName);
+                    await ExecuteHubCommandAsync(command.CommandId, command.GroupName, StopPollingAsync);
                 });
 
-                _hub.On<StopPollingCommand>("StopPolling", async e =>
+                _hub.On<Guid, Dictionary<string, decimal>>("SetPricesAsync", async (commandId, prices) =>
                 {
-                    //await StopPollingAsync(_portKey);
+                    var groupName = prices.Keys.FirstOrDefault() ?? string.Empty;
+                    await ExecuteHubCommandAsync(commandId, groupName, async () => 
+                        await SetPricesAsync(prices));
                 });
 
-                _hub.On<string, decimal>("SetPriceAsync", async (groupName, price) =>
+                _hub.On<Guid, string, decimal>("SetPriceAsync", async (commandId, groupName, price) =>
                 {
-                    SetPriceAsync(groupName, price);
+                    await ExecuteHubCommandAsync(commandId, groupName, async () => 
+                        await SetPriceAsync(groupName, price));
+                });
+
+                _hub.On<Guid, string>("InitializeConfigurationAsync", async (commandId, groupName) =>
+                {
+                    await ExecuteHubCommandAsync(commandId, groupName,
+                        () => Task.CompletedTask);
                 });
 
                 _hub.On<string, decimal, bool>("StartFuelingAsync", async (groupName, sum, bySum) =>
@@ -123,12 +137,12 @@ namespace KIT.GasStation.FuelDispenserEmulator
 
                 _hub.On<string>("StopFuelingAsync", async (groupName) =>
                 {
-                    //await StopFuelingAsync(groupName);
+                    await StopFuelingAsync(groupName);
                 });
 
-                _hub.On<string>("ResumeFuelingAsync", async (groupName) =>
+                _hub.On<string, decimal>("ResumeFuelingAsync", async (groupName, sum) =>
                 {
-                    //await ResumeFuelingAsync(groupName);
+                    await ResumeFuelingAsync(groupName, sum);
                 });
 
                 _hub.On<string>("GetStatusByAddressAsync", async (groupName) =>
@@ -152,13 +166,14 @@ namespace KIT.GasStation.FuelDispenserEmulator
                     }
                 });
 
-                _hub.On<string>("GetCountersAsync", async (groupName) =>
+                _hub.On<Guid, string>("GetCountersAsync", async (commandId, groupName) =>
                 {
-                    var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
-                    if (column is not null)
-                    {
-                        //await ExecuteCommandAsync(Command.CounterLiter, Address, column.LanfengAddress);
-                    }
+                    await ExecuteHubCommandAsync(commandId, groupName, () => Task.CompletedTask);
+                });
+
+                _hub.On<Guid, string>("GetCounterAsync", async (commandId, groupName) =>
+                {
+                    await ExecuteHubCommandAsync(commandId, groupName, () => Task.CompletedTask);
                 });
 
                 // 1. СНАЧАЛА запускаем SignalR (синхронно)
@@ -180,7 +195,7 @@ namespace KIT.GasStation.FuelDispenserEmulator
 
         #region Private Voids
 
-        private async Task StartPollingAsync(CancellationToken token)
+        private async Task StartPollingAsync()
         {
             if (_pollingTask == null || _pollingTask.IsCompleted)
             {
@@ -211,24 +226,63 @@ namespace KIT.GasStation.FuelDispenserEmulator
 
             var column = Columns.First();
 
-            _controllerResponse.Address = column.Address;
-            _controllerResponse.StatusAddress = column.Nozzle;
-            _controllerResponse.Group = column.GroupName;
+            _response.GroupName = column.GroupName;
 
-            await _hub.InvokeAsync("PublishStatus", _controllerResponse, column.GroupName, cancellationToken: token);
+            await _hub.InvokeAsync("PublishStatus", _response, cancellationToken: _token);
         }
 
-        private async Task InitializeConfigurationAsync(string groupName)
+        private async Task StopPollingAsync()
         {
-            
+            Task? toAwait = null;
+            lock (_pollLock)
+            {
+                if (!_pollingEnabled) return;
+                _pollingEnabled = false;
+                toAwait = _pollingTask;
+            }
+
+            if (toAwait != null)
+                await toAwait;
         }
 
         private async Task StartFuelingAsync(string groupName, decimal value, bool bySum)
         {
+            var cts = new CancellationTokenSource();
+
+            var task = Task.Run(async () =>
+            {
+                try
+                {
+                    await StartFuelingLoopAsync(groupName, value, bySum, cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.Information("Fueling cancelled: {GroupName}", groupName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Fueling crashed: {GroupName}", groupName);
+                }
+                finally
+                {
+                    // убираем запись, только если это она (защита от гонок)
+                    if (_fuelingJobs.TryGetValue(groupName, out var cur) && cur.cts == cts)
+                        _fuelingJobs.TryRemove(groupName, out _);
+
+                    cts.Dispose();
+                }
+            });
+
+            _fuelingJobs[groupName] = (cts, task);
+        }
+
+        private async Task StartFuelingLoopAsync(string groupName, decimal value, bool bySum, CancellationToken token)
+        {
             try
             {
-                var column = GetColumnByGroupName(groupName);
+                await PausePollingAsync(); // если нужно — тут ок
 
+                var column = GetColumnByGroupName(groupName);
                 if (column is null)
                 {
                     _logger.Warning("Колонка {GroupName} не найдена", groupName);
@@ -240,52 +294,164 @@ namespace KIT.GasStation.FuelDispenserEmulator
 
                 var rnd = new Random();
                 decimal receivedQuantity = 0;
+                _response.GroupName = groupName;
+                _response.Status = NozzleStatus.WaitingRemoved;
+                await _hub.InvokeAsync("PublishStatus", _response, cancellationToken: token);
 
+                await Task.Delay(1000, token);
 
-                while (receivedQuantity < quantity)
+                _response.Status = NozzleStatus.PumpWorking;
+                await _hub.InvokeAsync("PublishStatus", _response, cancellationToken: token);
+
+                while (true)
                 {
-                    decimal step = (decimal)(rnd.NextDouble() * 0.5); // 0..10 за тик
-                    receivedQuantity += step;
+                    token.ThrowIfCancellationRequested();
 
+                    decimal step = (decimal)rnd.NextDouble() * 0.5m;
+                    receivedQuantity += step;
+                    decimal receivedSum = Math.Round(receivedQuantity * column.Price, 2);
                     if (receivedQuantity > quantity)
                     {
                         receivedQuantity = quantity;
+                        receivedSum = sum;
                     }
 
-                    _controllerResponse.Status = NozzleStatus.PumpWorking;
+                    var fuelingResponse = new FuelingResponse
+                    {
+                        GroupName = groupName,
+                        Quantity = receivedQuantity,
+                        Sum = receivedSum
+                    };
 
-                    _controllerResponse.Group = groupName;
+                    await _hub.InvokeAsync("OnFuelingAsync", fuelingResponse, cancellationToken: token);
 
-                    _controllerResponse.Quantity = receivedQuantity;
-                    _controllerResponse.Sum = Math.Round(receivedQuantity * column.Price, 2);
+                    if (receivedQuantity >= quantity)
+                        break;
 
-                    await _hub.InvokeAsync("PublishStatus", _controllerResponse, groupName);
-
-                    await Task.Delay(300);
+                    await Task.Delay(300, token);
                 }
 
-                await Task.Delay(1000);
+                await Task.Delay(1000, token);
+                await _hub.InvokeAsync("OnCompletedFuelingAsync", groupName, cancellationToken: token);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
 
-                _controllerResponse.Status = NozzleStatus.PumpStop;
-                _controllerResponse.Address = column.Address;
-                _controllerResponse.StatusAddress = column.Address;
-                await _hub.InvokeAsync("PublishStatus", _controllerResponse, groupName);
+        private void StopFueling(string groupName)
+        {
+            if (_fuelingJobs.TryRemove(groupName, out var job))
+            {
+                job.cts.Cancel();
+                // Dispose будет в finally у таски — так безопаснее
+            }
+        }
+
+        private async Task StopFuelingAsync(string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+
+                StopFueling(groupName);
+
+                var column = GetColumnByGroupName(groupName);
+                if (column is null)
+                {
+                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                _response.GroupName = groupName;
+                _response.Status = NozzleStatus.WaitingRemoved;
+                await _hub.InvokeAsync("PublishStatus", _response, cancellationToken: _token);
+
+                await Task.Delay(500, _token);
+
+                await _hub.InvokeAsync("OnWaitingAsync", groupName, cancellationToken: _token);
             }
             catch (Exception e)
             {
                 _logger.Error(e, e.Message);
             }
+            finally
+            {
+                await ResumePollingAsync();
+            }
         }
 
-        private void SetPriceAsync(string groupName, decimal price)
+        private async Task ResumeFuelingAsync(string groupName, decimal sum)
+        {
+            var cts = new CancellationTokenSource();
+
+            var task = Task.Run(async () =>
+            {
+                try
+                {
+                    await StartFuelingLoopAsync(groupName, sum, true, cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.Information("Fueling cancelled: {GroupName}", groupName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Fueling crashed: {GroupName}", groupName);
+                }
+                finally
+                {
+                    // убираем запись, только если это она (защита от гонок)
+                    if (_fuelingJobs.TryGetValue(groupName, out var cur) && cur.cts == cts)
+                        _fuelingJobs.TryRemove(groupName, out _);
+
+                    cts.Dispose();
+                }
+            });
+
+            _fuelingJobs[groupName] = (cts, task);
+        }
+
+        private async Task SetPricesAsync(Dictionary<string, decimal> prices)
         {
             try
             {
-                var column = GetColumnByGroupName(groupName);
+                await PausePollingAsync();
+
+                foreach (var (group, price) in prices)
+                {
+                    var column = GetColumnByGroupName(group);
+
+                    if (column is null)
+                    {
+                        _logger.Warning("Колонка {GroupName} не найдена", group);
+                        return;
+                    }
+
+                    column.Price = price;
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        private async Task SetPriceAsync(string group, decimal price)
+        {
+            try
+            {
+                await PausePollingAsync();
+
+                var column = GetColumnByGroupName(group);
 
                 if (column is null)
                 {
-                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
+                    _logger.Warning("Колонка {GroupName} не найдена", group);
                     return;
                 }
 
@@ -295,12 +461,15 @@ namespace KIT.GasStation.FuelDispenserEmulator
             {
                 _logger.Error(e, e.Message);
             }
+            finally
+            {
+                await ResumePollingAsync();
+            }
         }
 
         private async Task CompleteFuelingAsync(string groupName)
         {
-            _controllerResponse.Status = NozzleStatus.Ready;
-            await _hub.InvokeAsync("PublishStatus", _controllerResponse, groupName);
+            await _hub.InvokeAsync("OnCompletedFuelingAsync", groupName, cancellationToken: _token);
         }
 
         #endregion
@@ -352,6 +521,45 @@ namespace KIT.GasStation.FuelDispenserEmulator
         #endregion
 
         #region Hub
+
+        private async Task ExecuteHubCommandAsync(Guid commandId, string groupName, Func<Task> action)
+        {
+            Exception? error = null;
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+                _logger.Error(ex, "Ошибка выполнения команды {CommandId} для {Group}", commandId, groupName);
+            }
+
+            await ReportCommandCompletedAsync(commandId, groupName, error);
+        }
+
+        private async Task ReportCommandCompletedAsync(Guid commandId, string groupName, Exception? error)
+        {
+            if (_hub is null || _hub.State != HubConnectionState.Connected)
+                return;
+
+            var completion = new CommandCompletion
+            {
+                CommandId = commandId,
+                GroupName = groupName,
+                IsSuccess = error is null,
+                ErrorMessage = error?.Message
+            };
+
+            try
+            {
+                await _hub.InvokeAsync("ReportCommandCompleted", completion);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Не удалось отправить подтверждение команды {CommandId}", commandId);
+            }
+        }
 
         private void RegisterHubConnectionHandlers()
         {

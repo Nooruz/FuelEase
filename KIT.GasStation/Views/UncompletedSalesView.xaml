@@ -31,11 +31,6 @@
                                                Command="{Binding DataContext.CompleteFuelSaleCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
                                                Glyph="{dx:DXImage SvgImages/Outlook Inspired/MarkComplete.svg}" 
                                                BarItemDisplayMode="ContentAndGlyph"/>
-                            <dxb:BarButtonItem Content="Завершить все"
-                                               Command="{Binding DataContext.CompleteAllFuelSaleCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
-                                               Glyph="{dx:DXImage SvgImages/Outlook Inspired/Tasks.svg}" 
-                                               BarItemDisplayMode="ContentAndGlyph"/>
-
                             <dxb:BarButtonItem Content="Продолжить"
                                                Command="{Binding DataContext.ContinueFuelingCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" 
                                                Glyph="{dx:DXImage SvgImages/XAF/Action_Debug_Start.svg}" 

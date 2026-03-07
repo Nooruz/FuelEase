@@ -21,6 +21,7 @@ namespace KIT.GasStation.ViewModels
         #region Private Members
 
         private readonly IFuelSaleService _fuelSaleService;
+        private readonly IFiscalDataService _fiscalDataService;
         private readonly IDisсountStore _disсountStore;
         private readonly ICashRegisterStore _cashRegisterStore;
         private FuelSale _createFuelSale;
@@ -107,11 +108,13 @@ namespace KIT.GasStation.ViewModels
         /// </summary>
         public PayViewModel(IFuelSaleService fuelSaleService,
             IDisсountStore disсountStore,
-            ICashRegisterStore cashRegisterStore)
+            ICashRegisterStore cashRegisterStore,
+            IFiscalDataService fiscalDataService)
         {
             _fuelSaleService = fuelSaleService;
             _disсountStore = disсountStore;
             _cashRegisterStore = cashRegisterStore;
+            _fiscalDataService = fiscalDataService;
         }
 
         #endregion
@@ -128,30 +131,25 @@ namespace KIT.GasStation.ViewModels
             {
                 // Устанавливаем дату создания продажи
                 CreateFuelSale.CreateDate = DateTime.Now;
-                CreateFuelSale.CustomerSum = PaySum;
 
                 // Если тип оплаты - наличные или безналичные средства, обрабатываем продажу через ККМ
                 if (CreateFuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
                 {
                     if (Properties.Settings.Default.ReceiptPrintingMode == "Before")
                     {
-                        var fiscalData = await _cashRegisterStore.SaleAsync(CreateFuelSale, SelectedNozzle.Tank.Fuel);
+                        var newFilscalData = CreateFuelSale.CreateFiscalData(OperationType.Sale);
+                        var fiscalData = await _cashRegisterStore.SaleAsync(newFilscalData);
 
                         if (fiscalData is not null)
                         {
-                            CreateFuelSale.FiscalData = fiscalData;
                             await _fuelSaleService.CreateAsync(CreateFuelSale);
+
+                            fiscalData.FuelSaleId = CreateFuelSale.Id;
+                            await _fiscalDataService.CreateAsync(fiscalData);
                         }
                         else
                         {
-                            if (CreateFuelSale.FiscalData is not null)
-                            {
-                                await _fuelSaleService.CreateAsync(CreateFuelSale);
-                            }
-                            else
-                            {
-                                MessageBoxService.ShowMessage("Не удалось получить фискальные данные от ККМ.", "Ошибка", MessageButton.OK, MessageIcon.Error);
-                            }
+                            MessageBoxService.ShowMessage("Не удалось получить фискальные данные от ККМ.", "Ошибка", MessageButton.OK, MessageIcon.Error);
                         }
                     }
                     else

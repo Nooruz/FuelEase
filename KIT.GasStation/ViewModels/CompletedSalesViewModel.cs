@@ -2,11 +2,14 @@
 using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.Helpers;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels
@@ -20,13 +23,15 @@ namespace KIT.GasStation.ViewModels
         private readonly ICashRegisterStore _cashRegisterStore;
         private readonly IFiscalDataService _fiscalDataService;
         private ObservableCollection<FuelSale> _fuelSales = new();
-        private ObservableCollection<FuelSale> _selectedFuelSales = new();
         private FuelSale _selectedFuelSale;
+        private FiscalData _selectedFiscalData;
+        private bool _showLoadingPanel;
 
         #endregion
 
         #region Public Properties
 
+        public List<KeyValuePair<OperationType, string>> OperationTypes => new(EnumHelper.GetLocalizedEnumValues<OperationType>());
         public ObservableCollection<FuelSale> FuelSales
         {
             get => _fuelSales;
@@ -36,15 +41,7 @@ namespace KIT.GasStation.ViewModels
                 OnPropertyChanged(nameof(FuelSales));
             }
         }
-        public ObservableCollection<FuelSale> SelectedFuelSales
-        {
-            get => _selectedFuelSales;
-            set
-            {
-                _selectedFuelSales = value;
-                OnPropertyChanged(nameof(SelectedFuelSales));
-            }
-        }
+
         public FuelSale SelectedFuelSale
         {
             get => _selectedFuelSale;
@@ -52,8 +49,26 @@ namespace KIT.GasStation.ViewModels
             {
                 _selectedFuelSale = value;
                 OnPropertyChanged(nameof(SelectedFuelSale));
-                SelectedFuelSales.Clear();
-                SelectedFuelSales.Add(SelectedFuelSale);
+            }
+        }
+
+        public FiscalData SelectedFiscalData
+        {
+            get => _selectedFiscalData;
+            set
+            {
+                _selectedFiscalData = value;
+                OnPropertyChanged(nameof(SelectedFiscalData));
+            }
+        }
+
+        public bool ShowLoadingPanel
+        {
+            get => _showLoadingPanel;
+            set
+            {
+                _showLoadingPanel = value;
+                OnPropertyChanged(nameof(ShowLoadingPanel));
             }
         }
 
@@ -77,34 +92,30 @@ namespace KIT.GasStation.ViewModels
         #region Public Voids
 
         [Command]
-        public async void Return()
+        public async Task Return()
         {
-            if (SelectedFuelSale == null)
+            if (SelectedFiscalData == null)
             {
-                MessageBoxService.ShowMessage("Для возврата необходимо сначала выбрать продажу.", 
-                    "Выбор продажи",
+                MessageBoxService.ShowMessage("Для возврата необходимо сначала выбрать чек.", 
+                    "Выборерите чек",
                     MessageButton.OK,
                     MessageIcon.Warning);
                 return;
             }
 
-            if (SelectedFuelSale.FiscalData == null)
+            var returnedFiscalData = SelectedFuelSale.FiscalDatas.FirstOrDefault(fd => fd.OperationType == OperationType.Return);
+
+            if (returnedFiscalData != null)
             {
-                MessageBoxService.ShowMessage("Возврат через ККМ невозможен, так как у выбранной продажи отсутствуют фискальные данные.", 
-                    "Ошибка возврата",
+                var saleSum = SelectedFuelSale.FiscalDatas.Where(fd => fd.OperationType == OperationType.Sale).Sum(fd => fd.Total);
+                var returnSum = SelectedFuelSale.FiscalDatas.Where(fd => fd.OperationType == OperationType.Return).Sum(fd => fd.Total);
+
+                MessageBoxService.ShowMessage("Возврат по данной продаже уже был произведен ранее.",
+                    "Возврат невозможен",
                     MessageButton.OK,
-                    MessageIcon.Error);
+                    MessageIcon.Warning);
                 return;
             }
-
-            //if (SelectedFuelSale.FiscalData.ReturnCheck != null)
-            //{
-            //    MessageBoxService.ShowMessage("Возврат по данной продаже уже был произведен ранее.", 
-            //        "Возврат невозможен",
-            //        MessageButton.OK,
-            //        MessageIcon.Warning);
-            //    return;
-            //}
 
             if (SelectedFuelSale.Tank == null)
             {
@@ -116,13 +127,26 @@ namespace KIT.GasStation.ViewModels
                 return;
             }
 
-            var fiscalData = await _cashRegisterStore.ReturnAsync(SelectedFuelSale, SelectedFuelSale.Tank.Fuel);
+            ShowLoadingPanel = true;
 
-            if (fiscalData != null)
+            try
             {
-                await _fiscalDataService.UpdateAsync(fiscalData.Id, fiscalData);
-            }
+                var fuelSale = SelectedFuelSale.Clone();
 
+                fuelSale.Sum = fuelSale.ReceivedSum;
+                fuelSale.Quantity = fuelSale.ReceivedQuantity;
+
+                //var fiscalData = await _cashRegisterStore.ReturnAsync(fuelSale, SelectedFuelSale.Tank.Fuel);
+
+                //if (fiscalData != null)
+                //{
+                //    await _fiscalDataService.UpdateAsync(fiscalData.Id, fiscalData);
+                //}
+            }
+            finally
+            {
+                ShowLoadingPanel = false;
+            }
         }
 
         #endregion

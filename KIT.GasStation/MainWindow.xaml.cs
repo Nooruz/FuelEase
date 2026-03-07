@@ -1,7 +1,6 @@
 ﻿using DevExpress.Mvvm.UI;
 using DevExpress.Mvvm.UI.Interactivity;
 using DevExpress.Xpf.Core;
-using KIT.GasStation.SplashScreen.ThemedSplashScreen;
 using System.Windows;
 
 namespace KIT.GasStation

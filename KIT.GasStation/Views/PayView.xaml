@@ -1,89 +1,93 @@
 ﻿<local:BaseView
+    x:Class="KIT.GasStation.Views.PayView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
     xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
     xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-    x:Class="KIT.GasStation.Views.PayView"
-             mc:Ignorable="d" 
-    Width="400">
+    xmlns:local="clr-namespace:KIT.GasStation.Views.Base"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Width="400"
+    mc:Ignorable="d">
 
     <dxlc:LayoutControl Orientation="Vertical">
 
-        <Label Content="{Binding CreateFuelSale.PaymentType, Converter={StaticResource EnumToStringConvertert}}"
-               FontSize="26"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Top"/>
+        <Label
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Content="{Binding CreateFuelSale.PaymentType, Converter={StaticResource EnumToStringConvertert}}"
+            FontSize="26" />
 
-        <Separator VerticalAlignment="Top"/>
+        <Separator VerticalAlignment="Top" />
 
         <dxlc:LayoutGroup Orientation="Vertical">
 
             <dxlc:LayoutItem Label="Цена">
-                <dxe:TextEdit IsReadOnly="True" Text="{Binding PriceCaption, Mode=OneWay}"/>
+                <dxe:TextEdit IsReadOnly="True" Text="{Binding PriceCaption, Mode=OneWay}" />
             </dxlc:LayoutItem>
 
             <dxlc:LayoutItem Label="Количество">
-                <dxe:TextEdit IsReadOnly="True" Text="{Binding QuantityCaption, Mode=OneWay}"/>
+                <dxe:TextEdit IsReadOnly="True" Text="{Binding QuantityCaption, Mode=OneWay}" />
             </dxlc:LayoutItem>
 
             <dxlc:LayoutItem Label="Сумма">
-                <dxe:TextEdit IsReadOnly="True" Text="{Binding CoustCaption, Mode=OneWay}"/>
+                <dxe:TextEdit IsReadOnly="True" Text="{Binding CoustCaption, Mode=OneWay}" />
             </dxlc:LayoutItem>
 
             <dxlc:LayoutItem Label="Получить">
-                <dxe:TextEdit IsReadOnly="True"
-                              MaskUseAsDisplayFormat="True" 
-                              MaskType="Numeric"
-                              Mask="n2"
-                              EditValue="{Binding Amount, Mode=OneWay}"/>
+                <dxe:TextEdit
+                    EditValue="{Binding Amount, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n2"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
             </dxlc:LayoutItem>
 
             <dxlc:LayoutItem Label="Сумма клиента">
-                <dxe:TextEdit MaskUseAsDisplayFormat="True" 
-                              MaskType="Numeric" 
-                              SelectAllOnMouseUp="True"
-                              Mask="n2"
-                              EditValue="{Binding PaySum, UpdateSourceTrigger=PropertyChanged}">
+                <dxe:TextEdit
+                    EditValue="{Binding PaySum, UpdateSourceTrigger=PropertyChanged}"
+                    Mask="n2"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True"
+                    SelectAllOnMouseUp="True">
                     <dxmvvm:Interaction.Behaviors>
-                        <dxmvvm:EventToCommand EventName="Loaded"
-                                               Command="{Binding PaySumLoadedCommand}"
-                                               PassEventArgsToCommand="True"/>
+                        <dxmvvm:EventToCommand
+                            Command="{Binding PaySumLoadedCommand}"
+                            EventName="Loaded"
+                            PassEventArgsToCommand="True" />
                     </dxmvvm:Interaction.Behaviors>
                 </dxe:TextEdit>
             </dxlc:LayoutItem>
 
             <dxlc:LayoutItem Label="Сдача">
-                <dxe:TextEdit MaskUseAsDisplayFormat="True" 
-                              MaskType="Numeric"
-                              Mask="n2"
-                              IsReadOnly="True"
-                              Text="{Binding Change, Mode=OneWay}"/>
+                <dxe:TextEdit
+                    IsReadOnly="True"
+                    Mask="n2"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True"
+                    Text="{Binding Change, Mode=OneWay}" />
             </dxlc:LayoutItem>
 
         </dxlc:LayoutGroup>
 
-        <Separator VerticalAlignment="Top"/>
+        <Separator VerticalAlignment="Top" />
 
         <dxlc:LayoutGroup>
 
             <dxlc:LayoutGroup>
 
-                <Button Content="Скидка"/>
+                <!--<Button Content="Скидка"/>
 
-                <Button Content="Купоны"/>
+                <Button Content="Купоны"/>-->
 
             </dxlc:LayoutGroup>
 
             <dxlc:LayoutGroup HorizontalAlignment="Right">
 
-                <Button Style="{StaticResource SaveBtton}"
-                        Content="Ок"/>
+                <Button Content="Ок" Style="{StaticResource SaveBtton}" />
 
-                <Button Style="{StaticResource CancelButton}"/>
+                <Button Style="{StaticResource CancelButton}" />
 
             </dxlc:LayoutGroup>
 

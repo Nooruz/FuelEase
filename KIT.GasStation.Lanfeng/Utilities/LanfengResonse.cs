@@ -1,12 +1,8 @@
 ﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Commands;
 
-namespace KIT.GasStation.FuelDispenser.Models
+namespace KIT.GasStation.Lanfeng.Utilities
 {
-    /// <summary>
-    /// DTO, представляющий проанализированный ответ устройства.
-    /// </summary>
-    public class ControllerResponse
+    public class LanfengResonse
     {
         public int Address { get; set; }
         public int? StatusAddress { get; set; }
@@ -18,5 +14,6 @@ namespace KIT.GasStation.FuelDispenser.Models
         public bool IsLifted { get; set; }
         public string Group { get; set; }
         public NozzleStatus Status { get; set; }
+        public decimal CounterQuantity { get; set; }
     }
 }

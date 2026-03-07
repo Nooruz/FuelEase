@@ -2,9 +2,8 @@
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Sinks.MSSqlServer;
-using System.IO;
 
-namespace KIT.GasStation.HostBuilders
+namespace KIT.App.Infrastructure.HostBuilders
 {
     public static class AddLoggingHostBuilderExtensions
     {

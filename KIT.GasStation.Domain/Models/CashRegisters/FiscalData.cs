@@ -7,9 +7,19 @@
         private int? _fiscalDocument;
         private string? _fiscalModule;
         private string? _check;
-        private string? _returnCheck;
         private string? _registrationNumber;
         private int _fuelSaleId;
+        private OperationType _operationType;
+        private PaymentType _paymentType;
+        private decimal _price;
+        private decimal _quantity;
+        private decimal _total;
+        private string? _sourceFiscalData;
+        private string _fuelName = string.Empty;
+        private string _unitOfMeasurement = string.Empty;
+        private bool _valueAddedTax;
+        private string? _tnved;
+        private decimal _salesTax;
 
         #endregion
 
@@ -55,15 +65,15 @@
         }
 
         /// <summary>
-        /// Чек возврата
+        /// Опциональный параметр, исходный номер ФД
         /// </summary>
-        public string? ReturnCheck
+        public string? SourceFiscalData
         {
-            get => _returnCheck;
+            get => _sourceFiscalData;
             set
             {
-                _returnCheck = value;
-                OnPropertyChanged(nameof(ReturnCheck));
+                _sourceFiscalData = value;
+                OnPropertyChanged(nameof(SourceFiscalData));
             }
         }
 
@@ -80,6 +90,100 @@
             }
         }
 
+        /// <summary>
+        /// Наименование топлива
+        /// </summary>
+        public string FuelName
+        {
+            get => _fuelName;
+            set
+            {
+                _fuelName = value;
+                OnPropertyChanged(nameof(FuelName));
+            }
+        }
+
+        /// <summary>
+        /// Единица измерения
+        /// </summary>
+        public string UnitOfMeasurement
+        {
+            get => _unitOfMeasurement;
+            set
+            {
+                _unitOfMeasurement = value;
+                OnPropertyChanged(nameof(UnitOfMeasurement));
+            }
+        }
+
+        /// <summary>
+        /// Наличие НДС
+        /// </summary>
+        public bool ValueAddedTax
+        {
+            get => _valueAddedTax;
+            set
+            {
+                _valueAddedTax = value;
+                OnPropertyChanged(nameof(ValueAddedTax));
+            }
+        }
+
+        /// <summary>
+        /// Налоговая ставка
+        /// </summary>
+        public decimal SalesTax
+        {
+            get => _salesTax;
+            set
+            {
+                _salesTax = value;
+                OnPropertyChanged(nameof(SalesTax));
+            }
+        }
+
+        /// <summary>
+        /// ТНВЭД - товарная номенклатура внешнеэкономической деятельности
+        /// </summary>
+        public string? Tnved
+        {
+            get => _tnved;
+            set
+            {
+                _tnved = value;
+                OnPropertyChanged(nameof(Tnved));
+            }
+        }
+
+        /// <summary>
+        /// Тип данных для фискальных данных
+        /// </summary>
+        public OperationType OperationType
+        {
+            get => _operationType;
+            set
+            {
+                _operationType = value;
+                OnPropertyChanged(nameof(OperationType));
+            }
+        }
+
+        /// <summary>
+        /// Тип оплаты
+        /// </summary>
+        public PaymentType PaymentType
+        {
+            get => _paymentType;
+            set
+            {
+                _paymentType = value;
+                OnPropertyChanged(nameof(PaymentType));
+            }
+        }
+
+        /// <summary>
+        /// Идентификатор продажи топлива
+        /// </summary>
         public int FuelSaleId
         {
             get => _fuelSaleId;
@@ -91,15 +195,72 @@
         }
 
         /// <summary>
+        /// Цена
+        /// </summary>
+        public decimal Price
+        {
+            get => _price;
+            set
+            {
+                _price = value;
+                OnPropertyChanged(nameof(Price));
+            }
+        }
+
+        /// <summary>
+        /// Количество
+        /// </summary>
+        public decimal Quantity
+        {
+            get => _quantity;
+            set
+            {
+                _quantity = value;
+                OnPropertyChanged(nameof(Quantity));
+            }
+        }
+
+        /// <summary>
+        /// Итоговая сумма
+        /// </summary>
+        public decimal Total
+        {
+            get => _total;
+            set
+            {
+                _total = value;
+                OnPropertyChanged(nameof(Total));
+            }
+        }
+
+        /// <summary>
         /// Продажа топлива
         /// </summary>
         public FuelSale FuelSale { get; set; } = null!;
 
         #endregion
 
+        #region Public Voids
+
         public override void Update(DomainObject updatedItem)
         {
             throw new NotImplementedException();
         }
+
+        public FiscalData? UpdatedFiscalData(FiscalData? fiscalData)
+        {
+            if (fiscalData is not null)
+            {
+                FiscalModule = fiscalData.FiscalModule;
+                FiscalDocument = fiscalData.FiscalDocument;
+                RegistrationNumber = fiscalData.RegistrationNumber;
+                Check = fiscalData.Check;
+            }
+
+            return this;
+        }
+
+        #endregion
     }
+
 }

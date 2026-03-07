@@ -123,6 +123,7 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IViewService<TankFuelQuantityView>>(),
                 services.GetRequiredService<IHotKeysService>(),
                 services.GetRequiredService<INozzleService>(),
+                services.GetRequiredService<IFiscalDataService>(),
                 services.GetRequiredService<ILogger<FuelDispenserViewModel>>());
         }
 
@@ -189,7 +190,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<ICustomSplashScreenService>(),
                 services.GetRequiredService<IDisñountStore>(),
                 services.GetRequiredService<ICashRegisterStore>(),
-                services.GetRequiredService<IFuelService>());
+                services.GetRequiredService<IFuelService>(),
+                services.GetRequiredService<IFiscalDataService>());
         }
 
         private static RevaluationViewModel CreateRevaluationViewModel(IServiceProvider services)
@@ -204,7 +206,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IShiftStore>(),
                 services.GetRequiredService<IFuelSaleService>(),
                 services.GetRequiredService<ICashRegisterStore>(),
-                services.GetRequiredService<IUserStore>());
+                services.GetRequiredService<IUserStore>(),
+                services.GetRequiredService<IFiscalDataService>());
         }
 
         private static CompletedSalesViewModel CreateCompletedSalesViewModel(IServiceProvider services)
@@ -282,7 +285,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IShiftStore>(),
                 services.GetRequiredService<IDisñountStore>(),
                 services.GetRequiredService<ICashRegisterStore>(),
-                services.GetRequiredService<IHotKeysService>());
+                services.GetRequiredService<IHotKeysService>(),
+                services.GetRequiredService<IFiscalDataService>());
         }
 
         private static LoginViewModel CreateLoginViewModel(IServiceProvider services)

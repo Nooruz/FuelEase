@@ -58,11 +58,7 @@ namespace KIT.GasStation.NewCas
                 var response = await SendRequest("/fiscal/shifts/closeDay", request);
 
                 var message = JsonSerializer.Deserialize<OpenAndCloseRecResp>(
-                    await response.Content.ReadAsStringAsync());
-
-                if (message == null)
-                    throw new CashRegisterException("ККМ вернула пустой ответ при закрытии смены.");
-
+                    await response.Content.ReadAsStringAsync()) ?? throw new CashRegisterException("ККМ вернула пустой ответ при закрытии смены.");
                 if (message.Status != OpenAndCloseRecRespStatus.Success)
                     throw new CashRegisterException($"Ошибка ККМ при закрытии смены: {message.ErrorMessage}");
 
@@ -128,10 +124,8 @@ namespace KIT.GasStation.NewCas
         }
 
         /// <inheritdoc/>
-        public async Task<FiscalData?> SaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName, bool isBefore = true)
+        public async Task<FiscalData?> SaleAsync(FiscalData fiscalData, string cashierName)
         {
-            decimal sum = isBefore ? fuelSale.Sum : fuelSale.ReceivedSum;
-
             // Данные для отправки в запросе
             var openAndCloseRec = new OpenAndCloseRec()
             {
@@ -141,31 +135,31 @@ namespace KIT.GasStation.NewCas
                 {
                     new Goods
                     {
-                        Count    = Math.Round(sum / fuelSale.Price, 6),
-                        Price    = fuelSale.Price,
-                        ItemName = fuel.Name,
+                        Count    = Math.Round(fiscalData.Total / fiscalData.Price, 6),
+                        Price    = fiscalData.Price,
+                        ItemName = fiscalData.UnitOfMeasurement,
                         Article  = "",
-                        Total    = sum.ToString(),
+                        Total    = fiscalData.Total.ToString(),
                         Unit     = "л",
-                        VatNum   = fuel.ValueAddedTax ? 1 : 0,
-                        StNum    = (int)(fuel.SalesTax * 100)
+                        VatNum   = fiscalData.ValueAddedTax ? 1 : 0,
+                        StNum    = (int)(fiscalData.SalesTax * 100)
                     }
                 },
                 PayItems = new[]
                 {
                     new PayItems
                     {
-                        PayType = GetPayType(fuelSale.PaymentType),
-                        Total   = sum.ToString()
+                        PayType = GetPayType(fiscalData.PaymentType),
+                        Total   = fiscalData.Total.ToString()
                     }
                 }
             };
 
             var response = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
 
-            var fiscalData = await CreateFiscalDataAsync(response);
+            var newfiscalData = await CreateFiscalDataAsync(response);
 
-            return fiscalData!;
+            return fiscalData.UpdatedFiscalData(newfiscalData);
         }
 
         /// <inheritdoc/>
@@ -192,45 +186,41 @@ namespace KIT.GasStation.NewCas
         }
 
         /// <inheritdoc/>
-        public async Task<FiscalData?> ReturnAsync(FuelSale fuelSale, Fuel fuel)
+        public async Task<FiscalData?> ReturnAsync(FiscalData fiscalData)
         {
-            if (fuelSale.FiscalData == null)
-                throw new CashRegisterException("У продажи отсутствуют фискальные данные для возврата.");
-
-
             //Данные для отправки в запросе
             var openAndCloseRec = new OpenAndCloseRec()
             {
                 RecType = RecType.ReturnComing,
-                SourceFDNumber = fuelSale.FiscalData.FiscalDocument,
-                SourceFMNumber = fuelSale.FiscalData.FiscalModule,
+                SourceFDNumber = fiscalData.FiscalDocument,
+                SourceFMNumber = fiscalData.FiscalModule,
                 Goods = new[]
                 {
                     new Goods {
-                        Count = Math.Round(fuelSale.Sum / fuelSale.Price, 6),
-                        Price = fuelSale.Price,
-                        ItemName = fuel.Name,
-                        Article = "",
-                        Total = fuelSale.Sum.ToString(),
-                        Unit = fuel.UnitOfMeasurement.Name,
-                        VatNum = fuel.ValueAddedTax ? 1 : 0,
-                        StNum = (int)(fuel.SalesTax * 100) } 
+                        Count = Math.Round(fiscalData.Total / fiscalData.Price, 6),
+                        Price = fiscalData.Price,
+                        ItemName = fiscalData.FuelName,
+                        Article = string.IsNullOrEmpty(fiscalData.Tnved) ? "" : fiscalData.Tnved,
+                        Total = fiscalData.Total.ToString(),
+                        Unit = fiscalData.UnitOfMeasurement,
+                        VatNum = fiscalData.ValueAddedTax ? 1 : 0,
+                        StNum = (int)(fiscalData.SalesTax * 100) } 
                 },
                 PayItems = new []
                 {
                     new PayItems() 
                     {
-                             PayType = GetPayType(fuelSale.PaymentType),
-                             Total = fuelSale.Sum.ToString()
+                             PayType = GetPayType(fiscalData.PaymentType),
+                             Total = fiscalData.Total.ToString()
                     }
                 }
             };
 
             var response = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
 
-            var fiscalData = await CreateFiscalDataAsync(response);
+            var newFiscalData = await CreateFiscalDataAsync(response);
 
-            return fiscalData!;
+            return fiscalData.UpdatedFiscalData(newFiscalData);
         }
 
         /// <inheritdoc/>
@@ -261,51 +251,6 @@ namespace KIT.GasStation.NewCas
             }
 
             return shiftState;
-        }
-
-        /// <inheritdoc/>
-        public async Task<FiscalData?> ReturnAndReceivedSaleAsync(FuelSale fuelSale, Fuel fuel, string cashierName)
-        {
-            // 1) Возврат старой продажи
-            var returnFiscalData = await ReturnAsync(fuelSale, fuel);
-
-            if (fuelSale.ReceivedQuantity <= 0)
-                return returnFiscalData; // ничего нового продавать не нужно
-
-            // 2) Новая продажа на реально полученное количество
-            var openAndCloseRec = new OpenAndCloseRec()
-            {
-                RecType = RecType.Coming,
-                CashierName = cashierName,
-                Goods = new[]
-                {
-                        new Goods()
-                        {
-                            Count = Math.Round(fuelSale.ReceivedSum / fuelSale.Price, 6),
-                            Price = fuelSale.Price,
-                            ItemName = fuelSale.Tank.Fuel.Name,
-                            Article = "",
-                            Total = fuelSale.ReceivedSum.ToString(),
-                            Unit = fuelSale.Tank.Fuel.UnitOfMeasurement.Name,
-                            VatNum = fuelSale.Tank.Fuel.ValueAddedTax ? 1 : 0,
-                            StNum = (int)(fuelSale.Tank.Fuel.SalesTax * 100)
-                        }
-                    },
-                PayItems = new[]
-                {
-                        new PayItems()
-                        {
-                            PayType = GetPayType(fuelSale.PaymentType),
-                            Total = fuelSale.ReceivedSum.ToString()
-                        }
-                    }
-            };
-
-            var saleResponse = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
-
-            var newFiscalData = await CreateFiscalDataAsync(saleResponse);
-
-            return returnFiscalData;
         }
 
         #region Private Helpers

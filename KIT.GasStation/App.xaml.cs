@@ -1,18 +1,15 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.POCO;
 using DevExpress.Xpf.Core;
-using KIT.GasStation.Common.HostBuilders;
+using KIT.App.Infrastructure.HostBuilders;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.EntityFramework;
-using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.HostBuilders;
-using KIT.GasStation.Security;
 using KIT.GasStation.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels;
 using KIT.GasStation.Views;
-using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +23,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using NotifyIcon = System.Windows.Forms.NotifyIcon;
 
 namespace KIT.GasStation
 {
@@ -39,6 +37,8 @@ namespace KIT.GasStation
         private ThemedWindow _loginWindow;
         private Mutex _instanceMutex;
         private bool _ownsMutex;
+        private NotifyIcon _notifyIcon;
+
 
         #endregion
 
@@ -91,11 +91,11 @@ namespace KIT.GasStation
             }
             catch (Exception e)
             {
-                #if DEBUG
-                    MessageBox.Show($"Ошибка: {e.Message}\nИсточник: {e.Source}\nТрассировка: {e.StackTrace}");
-                #else
+#if DEBUG
+                MessageBox.Show($"Ошибка: {e.Message}\nИсточник: {e.Source}\nТрассировка: {e.StackTrace}");
+#else
                     MessageBox.Show($"Ошибка при запуске.");
-                #endif
+#endif
 
                 throw;
             }
@@ -135,7 +135,7 @@ namespace KIT.GasStation
         private IHostBuilder CreateHostBuilder(string[] args = null)
         {
             var host = Host.CreateDefaultBuilder(args);
-            
+
             _splashScreenViewModel.Status = "Загрузка конфигурации...";
             host.AddConfiguration();
 
@@ -150,39 +150,7 @@ namespace KIT.GasStation
             host.AddStores();
 
             _splashScreenViewModel.Status = "Настройки подключения к серверу...";
-            host.ConfigureServices((hostContext, services) =>
-            {
-                var cfg = hostContext.Configuration;
-                var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-                var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-                var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
-
-                // 1) Само соединение — Singleton
-                services.AddTransient(sp =>
-                    new HubConnectionBuilder()
-                        .WithUrl(hubUrl)
-                        .WithAutomaticReconnect()
-                        .Build());
-
-                //services.AddSingleton(sp =>
-                //{
-                //    var cfg = sp.GetRequiredService<IConfiguration>();
-                //    var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-                //    var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-                //    var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
-
-                //    return new HubConnectionBuilder()
-                //        .WithUrl(hubUrl)
-                //        .WithAutomaticReconnect(new[] {
-                //            TimeSpan.Zero, 
-                //            TimeSpan.FromSeconds(2), 
-                //            TimeSpan.FromSeconds(10), 
-                //            TimeSpan.FromSeconds(30)})
-                //        .Build();
-                //});
-
-                services.AddTransient<IHubClient, HubClient>();
-            });
+            host.AddHubs();
 
             _splashScreenViewModel.Status = "Регистрация моделей представления...";
             host.AddViewModels();
@@ -213,7 +181,7 @@ namespace KIT.GasStation
                 // Обработка sqlEx
             }
 
-            
+
 
             // Добавление логирования после проверки базы данных
             Log.Logger = new LoggerConfiguration()
@@ -239,6 +207,19 @@ namespace KIT.GasStation
                     Shutdown();
                     return;
                 }
+
+                _notifyIcon = new NotifyIcon
+                {
+                    Icon = new System.Drawing.Icon("logo.ico"),
+                    Visible = true,
+                    Text = "КИТ-АЗС"
+                };
+
+                var menu = new System.Windows.Forms.ContextMenuStrip();
+                menu.Items.Add("Выход", null, (s, args) => CloseApplication());
+
+                _notifyIcon.ContextMenuStrip = menu;
+                _notifyIcon.DoubleClick += (s, args) => ShowMainWindow();
 
                 //_splashScreenViewModel.Status = "Проверка привязки к оборудованию...";
                 //var bindingService = new MachineBindingService();
@@ -300,15 +281,17 @@ namespace KIT.GasStation
                 userStore.OnLogout += UserStore_OnLogout;
 
                 _splashScreenViewModel.Status = "Запуск сервисов...";
-                //await ServiceManager.StartWebAsync();
-                //await ServiceManager.StartWorkerAsync();
+#if !DEBUG
+                await ServiceManager.StartWebAsync();
+                await ServiceManager.StartWorkerAsync();
+#endif
 
                 _splashScreenViewModel.Status = "Загрузка основного окна...";
                 // Получаем главное окно из DI и устанавливаем DataContext
                 _window = _host.Services.GetRequiredService<MainWindow>();
                 _window.DataContext = _host.Services.GetRequiredService<MainWindowViewModel>();
 
-                #if DEBUG
+#if DEBUG
                 await Task.Delay(1000);
 #else
                 await Task.Delay(5000);
@@ -328,6 +311,24 @@ namespace KIT.GasStation
             }
 
             base.OnStartup(e);
+        }
+
+        private void CloseApplication()
+        {
+            _notifyIcon.Visible = false;
+            _notifyIcon.Dispose();
+            Shutdown();
+        }
+
+        private void ShowMainWindow()
+        {
+            if (MainWindow == null)
+            {
+                MainWindow = new MainWindow();
+            }
+
+            MainWindow.Show();
+            MainWindow.Activate();
         }
 
         private void UserStore_OnLogout()

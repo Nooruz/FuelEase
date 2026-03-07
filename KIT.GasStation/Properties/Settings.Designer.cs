@@ -106,5 +106,17 @@ namespace KIT.GasStation.Properties {
                 this["DefaultUserPassword"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public decimal LimitLitersFullFueling {
+            get {
+                return ((decimal)(this["LimitLitersFullFueling"]));
+            }
+            set {
+                this["LimitLitersFullFueling"] = value;
+            }
+        }
     }
 }

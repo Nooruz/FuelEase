@@ -24,6 +24,7 @@ namespace KIT.GasStation.ViewModels
         private readonly ILogger<UncompletedSalesViewModel> _logger;
         private readonly IShiftStore _shiftStore;
         private readonly IFuelSaleService _fuelSaleService;
+        private readonly IFiscalDataService _fiscalDataService;
         private readonly ICashRegisterStore _cashRegisterStore;
         private readonly IUserStore _userStore;
         private ObservableCollection<FuelSale> _fuelSales = new();
@@ -72,13 +73,15 @@ namespace KIT.GasStation.ViewModels
             IShiftStore shiftStore,
             IFuelSaleService fuelSaleService,
             ICashRegisterStore cashRegisterStore,
-            IUserStore userStore)
+            IUserStore userStore,
+            IFiscalDataService fiscalDataService)
         {
             _logger = logger;
             _shiftStore = shiftStore;
             _fuelSaleService = fuelSaleService;
             _cashRegisterStore = cashRegisterStore;
             _userStore = userStore;
+            _fiscalDataService = fiscalDataService;
         }
 
         #endregion
@@ -106,8 +109,15 @@ namespace KIT.GasStation.ViewModels
                         ShowLoadingPanel = true;
                         foreach (var item in SelectedFuelSales)
                         {
-                            await _cashRegisterStore
-                            .ReturnAndReceivedSaleAsync(item, item.Tank.Fuel, _userStore.CurrentUser.FullName);
+                            var createdFiscalData = item.CreateFiscalData(OperationType.Return);
+
+                            var fiscalData = await _cashRegisterStore.ReturnAsync(createdFiscalData);
+                            if (fiscalData != null)
+                            {
+                                await _fiscalDataService.CreateAsync(fiscalData);
+                            }
+                            item.FuelSaleStatus = FuelSaleStatus.Completed;
+                            await _fuelSaleService.UpdateAsync(item.Id, item);
                         }
                     }
                     else
@@ -120,6 +130,11 @@ namespace KIT.GasStation.ViewModels
                         }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK);
             }
             finally
             {

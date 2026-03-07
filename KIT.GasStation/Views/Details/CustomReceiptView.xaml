@@ -1,65 +1,69 @@
 ﻿<base:BaseView
+    x:Class="KIT.GasStation.Views.Details.CustomReceiptView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:base="clr-namespace:KIT.GasStation.Views.Base"
-    x:Class="KIT.GasStation.Views.Details.CustomReceiptView"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
     Width="400">
 
     <dxlc:LayoutControl Orientation="Vertical">
 
         <dxlc:LayoutGroup Orientation="Vertical">
 
-            <dxlc:LayoutItem Label="Вид топлива:">
-                <dxe:ComboBoxEdit ItemsSource="{Binding Fuels}"
-                                  DisplayMember="Name"
-                                  SelectedItem="{Binding SelectedFuel}"
-                                  ShowError="False"
-                                  ShowErrorToolTip="False"/>
+            <dxlc:LayoutItem Label="Вид топлива">
+                <dxe:ComboBoxEdit
+                    DisplayMember="Name"
+                    ItemsSource="{Binding Fuels}"
+                    SelectedItem="{Binding SelectedFuel}"
+                    ShowError="False"
+                    ShowErrorToolTip="False" />
             </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Количество:">
-                <dxe:TextEdit EditValue="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
-                              MaskUseAsDisplayFormat="True"
-                              MaskType="Numeric"
-                              Mask="n"/>
+            <dxlc:LayoutItem Label="Количество">
+                <dxe:TextEdit
+                    EditValue="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
             </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Цена за литр:">
-                <dxe:TextEdit EditValue="{Binding Price, UpdateSourceTrigger=PropertyChanged}"
-                              MaskUseAsDisplayFormat="True"
-                              MaskType="Numeric"
-                              Mask="n"/>
+            <dxlc:LayoutItem Label="Цена за литр">
+                <dxe:TextEdit
+                    EditValue="{Binding Price, UpdateSourceTrigger=PropertyChanged}"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
             </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Сумма:">
-                <dxe:TextEdit EditValue="{Binding Sum, UpdateSourceTrigger=PropertyChanged}"
-                              MaskUseAsDisplayFormat="True"
-                              MaskType="Numeric"
-                              Mask="n"/>
+            <dxlc:LayoutItem Label="Сумма">
+                <dxe:TextEdit
+                    EditValue="{Binding Sum, UpdateSourceTrigger=PropertyChanged}"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
             </dxlc:LayoutItem>
 
-            <dxlc:LayoutItem Label="Вид оплаты"
-                             TabIndex="2">
-                <dxe:ComboBoxEdit ItemsSource="{Binding PaymentTypes}"
-                                  DisplayMember="Value"
-                                  ShowError="False"
-                                  ShowErrorToolTip="False"
-                                  ValueMember="Key"
-                                  EditValue="{Binding CreateFuelSale.PaymentType, UpdateSourceTrigger=PropertyChanged}"/>
+            <dxlc:LayoutItem Label="Вид оплаты" TabIndex="2">
+                <dxe:ComboBoxEdit
+                    DisplayMember="Value"
+                    EditValue="{Binding CreateFuelSale.PaymentType, UpdateSourceTrigger=PropertyChanged}"
+                    ItemsSource="{Binding PaymentTypes}"
+                    ShowError="False"
+                    ShowErrorToolTip="False"
+                    ValueMember="Key" />
             </dxlc:LayoutItem>
 
         </dxlc:LayoutGroup>
 
-        <dxlc:LayoutGroup HorizontalAlignment="Right"
-                          VerticalAlignment="Bottom">
+        <dxlc:LayoutGroup HorizontalAlignment="Right" VerticalAlignment="Bottom">
 
-            <Button Content="Распечатать"
-                    Command="{Binding SaleCommand}"
-                    Width="100"/>
+            <Button
+                Width="100"
+                Command="{Binding SaleCommand}"
+                Content="Распечатать" />
 
-            <Button Style="{StaticResource CancelButton}"/>
+            <Button Style="{StaticResource CancelButton}" />
 
         </dxlc:LayoutGroup>
 

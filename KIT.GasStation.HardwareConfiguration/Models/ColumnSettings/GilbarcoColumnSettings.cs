@@ -6,6 +6,8 @@ namespace KIT.GasStation.HardwareConfigurations.Models
     [Serializable]
     public class GilbarcoColumnSettings : ColumnSettings
     {
+        #region Public Properties
+
         /// <summary>
         /// Тип счетчика
         /// </summary>
@@ -24,11 +26,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         [XmlAttribute]
         public PriceDecimalPoint PriceDecimalPoint { get; set; }
 
-        /// <summary>
-        /// Статус пистолета
-        /// </summary>
-        [XmlIgnore]
-        public ColumnStatus Status { get; set; }
+        #endregion
     }
 
     /// <summary>
@@ -89,41 +87,5 @@ namespace KIT.GasStation.HardwareConfigurations.Models
 
         [Display(Name = "3 знака")]
         Three
-    }
-
-    /// <summary>
-    /// Статус пистолета
-    /// </summary>
-    public enum ColumnStatus
-    {
-        /// <summary>
-        /// Неизвестный
-        /// </summary>
-        Unknown,
-
-        /// <summary>
-        /// Пистолет находится в гнезде [2, 14]
-        /// </summary>
-        NozzleIn = 0,
-
-        /// <summary>
-        /// Пистолет снят [2, 14]
-        /// </summary>
-        NozzleOut = 1,
-
-        /// <summary>
-        /// Требуется выбор уровня цены [2, 14]
-        /// </summary>
-        PriceLevelNeeded = 2, 
-
-        /// <summary>
-        /// Требуется выбор сорта топлива [2, 14]
-        /// </summary>
-        GradeNeeded = 3,
-
-        /// <summary>
-        /// Ожидание нажатия кнопки «Старт» на ТРК [2, 15]
-        /// </summary>
-        PushToStartNeeded = 4
     }
 }

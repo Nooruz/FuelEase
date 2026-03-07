@@ -5,7 +5,7 @@ namespace KIT.GasStation.Web.Hubs
     public interface IDeviceResponseClient
     {
         // Сильная типизация на сервере (по желанию)
-        Task StatusChanged(ControllerResponse e);
+        Task StatusChanged(StatusResponse status);
         
         /// <summary>
         /// Сообщает об изменении статуса подключения воркера для указанной группы.
@@ -15,7 +15,16 @@ namespace KIT.GasStation.Web.Hubs
         Task WorkerStateChanged(WorkerStateNotification notification);
         Task StartPolling(StartPollingCommand command);
         Task StopPolling(StopPollingCommand command);
-        Task SetPriceAsync(Guid commandId, Dictionary<string, decimal> prices);
+
+        /// <summary>
+        /// Установить цены на все топлива
+        /// </summary>
+        Task SetPricesAsync(Guid commandId, Dictionary<string, decimal> prices);
+
+        /// <summary>
+        /// Установить цену на одно топливо
+        /// </summary>
+        Task SetPriceAsync(Guid commandId, string groupName, decimal price);
 
         /// <summary>
         /// Начать заправку по сумме или литрам
@@ -33,7 +42,7 @@ namespace KIT.GasStation.Web.Hubs
         /// <summary>
         /// Продолжить заправку
         /// </summary>
-        Task ResumeFuelingAsync(string groupName);
+        Task ResumeFuelingAsync(string groupName, decimal sum);
 
         /// <summary>
         /// Получить статус по адресу
@@ -47,15 +56,39 @@ namespace KIT.GasStation.Web.Hubs
         Task CompleteFuelingAsync(string groupName);
 
         /// <summary>
-        /// Получить счетчики
+        /// Получить счетчики ТРК по одному пистолету
         /// </summary>
         /// <param name="groupName">Название группы</param>
+        Task GetCounterAsync(Guid commandId, string groupName);
+
+        /// <summary>
+        /// Получить счетчики ТРК по всей колонке
+        /// </summary>
         Task GetCountersAsync(Guid commandId, string groupName);
 
         /// <summary>
         /// Поднята или опущена колонка
         /// </summary>
         Task ColumnLiftedChanged(string groupName, bool isLifted);
+
+        /// <summary>
+        /// Получены обновленные счетчики ТРК
+        /// </summary>
+        /// <returns></returns>
+        Task OnCountersUpdated(string groupName, List<CounterData> counterDatas);
+
+        /// <summary>
+        /// Получен обновленный счетчик ТРК
+        /// </summary>
+        Task OnCounterUpdated(CounterData counterData);
+
+        Task OnFuelingAsync(FuelingResponse response);
+
+        Task OnCompletedFuelingAsync(string groupName, decimal? quantity = null);
+
+        Task OnWaitingAsync(string groupName);
+
+        Task OnPumpStopAsync(FuelingResponse response);
 
         /// <summary>
         /// Меняет режим управления колонкой (программный/ручной)

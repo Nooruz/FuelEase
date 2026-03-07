@@ -1,4 +1,4 @@
-﻿using KIT.GasStation.Common.HostBuilders;
+﻿using KIT.App.Infrastructure.HostBuilders;
 using KIT.GasStation.Hardware.HostBuilders;
 using KIT.GasStation.Hardware.ViewModels;
 using KIT.GasStation.HardwareConfigurations.Services;

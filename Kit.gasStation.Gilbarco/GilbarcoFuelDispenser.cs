@@ -1,5 +1,4 @@
 ﻿using KIT.GasStation.FuelDispenser;
-using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.FuelDispenser.Services;
@@ -11,6 +10,7 @@ using Serilog;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
+using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 
 namespace KIT.GasStation.Gilbarco
@@ -71,10 +71,10 @@ namespace KIT.GasStation.Gilbarco
             {
                 _token = token;
 
-                _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
-
                 _hub = _hubClient.Connection;
                 RegisterHubConnectionHandlers();
+
+                _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
 
                 _logger.Debug("EnsureStartedAsync вызван. Текущее состояние: {State}", _hub.State);
 
@@ -89,10 +89,16 @@ namespace KIT.GasStation.Gilbarco
                     await ExecuteHubCommandAsync(command.CommandId, command.GroupName, StopPollingAsync);
                 });
 
-                _hub.On<Guid, Dictionary<string, decimal>>("SetPriceAsync", async (commandId, prices) =>
+                _hub.On<Guid, Dictionary<string, decimal>>("SetPricesAsync", async (commandId, prices) =>
                 {
                     var groupName = prices.Keys.FirstOrDefault() ?? string.Empty;
-                    await ExecuteHubCommandAsync(commandId, groupName, () => SetPriceAsync(prices));
+                    await ExecuteHubCommandAsync(commandId, groupName, () => SetPricesAsync(prices));
+                });
+
+                _hub.On<Guid, string, decimal>("SetPriceAsync", async (commandId, groupName, price) =>
+                {
+                    await ExecuteHubCommandAsync(commandId, groupName,
+                        () => SetPriceAsync(groupName, price));
                 });
 
                 _hub.On<Guid, string>("InitializeConfigurationAsync", async (commandId, groupName) =>
@@ -106,9 +112,9 @@ namespace KIT.GasStation.Gilbarco
                     await StartRefuelingAsync(groupName, sum, bySum);
                 });
 
-                _hub.On<string>("CompleteFuelingAsync", async _ =>
+                _hub.On<string>("CompleteFuelingAsync", async (groupName) =>
                 {
-                    await CompleteRefuelingAsync();
+                    await CompleteRefuelingAsync(groupName);
                 });
 
                 _hub.On<string>("StopFuelingAsync", async (groupName) =>
@@ -116,14 +122,14 @@ namespace KIT.GasStation.Gilbarco
                     await StopFuelingAsync(groupName);
                 });
 
-                _hub.On<string>("ResumeFuelingAsync", async (groupName) =>
+                _hub.On<string, decimal>("ResumeFuelingAsync", async (groupName, sum) =>
                 {
-                    await ResumeFuelingAsync(groupName);
+                    await ResumeFuelingAsync(groupName, sum);
                 });
 
                 _hub.On<Guid, string>("GetCountersAsync", async (commandId, groupName) =>
                 {
-                    await ExecuteHubCommandAsync(commandId, groupName, () => Task.CompletedTask);
+                    await ExecuteHubCommandAsync(commandId, groupName, () => GetCountersAsync());
                 });
 
                 await _hubClient.EnsureStartedAsync(token);
@@ -175,72 +181,32 @@ namespace KIT.GasStation.Gilbarco
                             case GilbarcoStatus.DataError:
                                 break;
                             case GilbarcoStatus.Off:
-                                
+                                await PublishStatusAsync(controller, status);
                                 break;
                             case GilbarcoStatus.Call:
+                                await PublishStatusAsync(controller, status);
                                 await PollingExtendedStatusAsync(controller);
                                 break;
                             case GilbarcoStatus.AuthorizedNotDelivering:
+                                await PublishAuthorizedStatusAsync(controller, status);
                                 break;
                             case GilbarcoStatus.Busy:
+                                await PublishBussyStatusAsync(controller);
                                 break;
                             case GilbarcoStatus.TransactionCompletePeot:
+                                await PublishTransactionCompletePeot(controller);
                                 break;
                             case GilbarcoStatus.TransactionCompleteFeot:
+                                await PublishTransactionCompletePeot(controller);
                                 break;
                             case GilbarcoStatus.PumpStop:
+                                await PublishPumpStop(controller, status);
                                 break;
                             case GilbarcoStatus.SendData:
                                 break;
                             default:
                                 break;
                         }
-
-                        await PublishStatusAsync(controller, status);
-
-                        //if (parsed != null)
-                        //{
-                        //    parsed.Group = controller.Columns.FirstOrDefault(c => c.Address == parsed.Address)?.GroupName;
-
-                        //    if (!string.IsNullOrEmpty(parsed.Group))
-                        //    {
-                        //        await _hub.InvokeAsync("PublishStatus", parsed, parsed.Group, cancellationToken: token);
-                        //    }
-
-                        //    if (parsed.IsLifted)
-                        //    {
-                        //        //var liftedStatusData = ProtocolParser.BuildRequest(Command.LiftedStatus, controller.Address);
-                        //        //var dataNext = new byte[] { liftedStatusData[0] };
-
-                        //        //_logger.Information("[Tx] {Frame}", BitConverter.ToString(dataNext));
-
-                        //        //var rx = await _sharedSerialPortService.WriteReadAsync(
-                        //        //    dataNext,
-                        //        //    expectedRxLength: 2, // минимум 1 слово (1 байт)
-                        //        //    writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
-                        //        //    readTimeoutMs: _defaultTimeoutMs,
-                        //        //    maxRetries: 3,
-                        //        //    ct: token);
-
-                        //        //_logger.Information("[Rx] {Response}", BitConverter.ToString(rx));
-
-                        //        //if ((byte)(rx[1] >> 4) == 0x0D)
-                        //        //{
-                        //        //    _logger.Information("[Tx] {Frame}", BitConverter.ToString(liftedStatusData.Skip(1).ToArray()));
-
-                        //        //    rx = await _sharedSerialPortService.WriteReadAsync(
-                        //        //        liftedStatusData.Skip(1).ToArray(),
-                        //        //        expectedRxLength: 28, // минимум 1 слово (1 байт)
-                        //        //        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
-                        //        //        readTimeoutMs: _defaultTimeoutMs,
-                        //        //        maxRetries: 3);
-
-                        //        //    _logger.Information("[Rx] {Response}", BitConverter.ToString(rx.Skip(9).ToArray()));
-
-                        //        //    parsed = ProtocolParser.ParseResponse(rx.Skip(9).ToArray());
-                        //        //}
-                        //    }
-                        //}
                     }
                 }
                 catch (OperationCanceledException e)
@@ -316,46 +282,43 @@ namespace KIT.GasStation.Gilbarco
             {
                 await PausePollingAsync();
 
-                foreach (var controller in Controllers)
+                var controller = Controllers.FirstOrDefault(c => c.Columns.Any(col => col.GroupName == groupName));
+
+                if (controller == null) return;
+
+                var dataNext = ProtocolParser.BuildPackCommand(Command.DataNext, controller.Address);
+
+                var rx = await _sharedSerialPortService.WriteReadAsync(
+                        dataNext,
+                        expectedRxLength: 2, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                var status = ProtocolParser.GetStatus(rx);
+
+                if (status is GilbarcoStatus.SendData)
                 {
-                    var column = controller.Columns.FirstOrDefault(c => c.GroupName == groupName);
+                    var sendData = ProtocolParser.BuildMiscPumpDataBlock();
 
-                    if (column == null) return;
+                    _logger.Information("[Tx] {Frame}", BitConverter.ToString(dataNext.Concat(sendData).ToArray()));
 
-                    var dataNext = ProtocolParser.BuildDataNextCommand(controller.Address);
+                    rx = await _sharedSerialPortService.WriteReadAsync(
+                        sendData,
+                        expectedRxLength: sendData.Length + 27, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
 
-                    var rx = await _sharedSerialPortService.WriteReadAsync(
-                            dataNext,
-                            expectedRxLength: 2, // минимум 1 слово (1 байт)
-                            writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
-                            readTimeoutMs: _defaultTimeoutMs,
-                            maxRetries: 3,
-                            ct: _token);
+                    rx = ProtocolParser.RemoveEcho(rx, sendData);
 
-                    var status = ProtocolParser.GetStatus(rx);
+                    _logger.Information("[Rx] {Response}", BitConverter.ToString(rx));
 
-                    if (status is GilbarcoStatus.SendData)
-                    {
-                        var sendData = ProtocolParser.BuildMiscPumpDataBlock();
+                    var config = ProtocolParser.ParseConfig(rx);
 
-                        _logger.Information("[Tx] {Frame}", BitConverter.ToString(dataNext.Concat(sendData).ToArray()));
-
-                        rx = await _sharedSerialPortService.WriteReadAsync(
-                            sendData,
-                            expectedRxLength: sendData.Length + 27, // минимум 1 слово (1 байт)
-                            writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
-                            readTimeoutMs: _defaultTimeoutMs,
-                            maxRetries: 3,
-                            ct: _token);
-
-                        rx = ProtocolParser.RemoveEcho(rx, sendData);
-
-                        _logger.Information("[Rx] {Response}", BitConverter.ToString(rx));
-
-                        var config = ProtocolParser.ParseConfig(rx);
-
-                        controller.Settings.SetConfig(config);
-                    }
+                    controller.Settings.SetConfig(config);
                 }
             }
             finally
@@ -364,7 +327,7 @@ namespace KIT.GasStation.Gilbarco
             }
         }
 
-        private async Task SetPriceAsync(Dictionary<string, decimal> prices)
+        private async Task SetPricesAsync(Dictionary<string, decimal> prices)
         {
             try
             {
@@ -375,7 +338,7 @@ namespace KIT.GasStation.Gilbarco
                     var column = Controller.Columns.FirstOrDefault(c => c.GroupName == group);
                     if (column == null) return;
 
-                    var dataNext = ProtocolParser.BuildDataNextCommand(column.Address);
+                    var dataNext = ProtocolParser.BuildPackCommand(Command.DataNext, column.Address);
 
                     var rx = await _sharedSerialPortService.WriteReadAsync(
                             dataNext,
@@ -407,13 +370,110 @@ namespace KIT.GasStation.Gilbarco
             }
         }
 
+        private async Task SetPriceAsync(string groupName, decimal price)
+        {
+            try
+            {
+                await PausePollingAsync();
+
+                var column = Controller.Columns.FirstOrDefault(c => c.GroupName == groupName);
+                if (column == null) return;
+
+                var dataNext = ProtocolParser.BuildPackCommand(Command.DataNext, column.Address);
+
+                var rx = await _sharedSerialPortService.WriteReadAsync(
+                        dataNext,
+                        expectedRxLength: 2, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3);
+
+                var status = ProtocolParser.GetStatus(rx);
+
+                if (status is GilbarcoStatus.SendData)
+                {
+                    var sendData = ProtocolParser.BuildPriceChangeBlock(column, price);
+
+                    _logger.Information("[Tx] {Frame}", BitConverter.ToString(dataNext.Concat(sendData).ToArray()));
+
+                    rx = await _sharedSerialPortService.WriteReadAsync(
+                        sendData,
+                        expectedRxLength: 0, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3);
+                }
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
         private async Task StartRefuelingAsync(string groupName, decimal amount, bool bySum)
         {
             try
             {
                 await PausePollingAsync();
 
+                await Task.Delay(200);
 
+                var controller = Controllers.FirstOrDefault(c => c.Columns.Any(col => col.GroupName == groupName));
+
+                if (controller == null) return;
+
+                var dataNext = ProtocolParser.BuildPackCommand(Command.DataNext, controller.Address);
+
+                var rx = await _sharedSerialPortService.WriteReadAsync(
+                        dataNext,
+                        expectedRxLength: 2, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                var status = ProtocolParser.GetStatus(rx);
+
+                if (status is GilbarcoStatus.SendData)
+                {
+                    var column = controller.Columns.First(c => c.GroupName == groupName);
+                    var grade = column.Nozzle;
+                    var presetBlock = ProtocolParser.BuildPresetBlock(controller, column, grade, amount, bySum);
+
+                    _logger.Information("[Tx] {Frame} (старт налива)", BitConverter.ToString(dataNext.Concat(presetBlock).ToArray()));
+                    
+                    rx = await _sharedSerialPortService.WriteReadAsync(
+                        presetBlock,
+                        expectedRxLength: 0, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                    status = await PollingStatusAsync(controller);
+
+                    if (status is GilbarcoStatus.Off or GilbarcoStatus.Call)
+                    {
+                        var authorize = ProtocolParser.BuildPackCommand(Command.Authorization, controller.Address);
+
+                        _logger.Information("[Tx] {Frame}", BitConverter.ToString(authorize));
+
+                        rx = await _sharedSerialPortService.WriteReadAsync(
+                            authorize,
+                            expectedRxLength: 0, // минимум 1 слово (1 байт)
+                            writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                            readTimeoutMs: _defaultTimeoutMs,
+                            maxRetries: 3,
+                            ct: _token);
+
+                        column.Settings.Status = ColumnStatus.Waiting;
+                    }
+                }
+                else
+                {
+                    _logger.Warning("Не удалось начать заправку для группы {GroupName}, статус ТРК: {Status}", groupName, status);
+                    _ = new InvalidOperationException($"Невозможно начать заправку, статус ТРК: {status}");
+                }
             }
             finally
             {
@@ -421,38 +481,36 @@ namespace KIT.GasStation.Gilbarco
             }
         }
 
-        private async Task CompleteRefuelingAsync()
+        private async Task CompleteRefuelingAsync(string groupName)
         {
             try
             {
                 await PausePollingAsync();
 
+                await Task.Delay(200);
 
+                var controller = Controllers.FirstOrDefault(c => c.Columns.Any(col => col.GroupName == groupName));
+
+                if (controller == null) return;
+
+                var dataNext = ProtocolParser.BuildPackCommand(Command.PumpStop, controller.Address);
+
+                _logger.Information("[Tx] {Frame}", BitConverter.ToString(dataNext));
+
+                var rx = await _sharedSerialPortService.WriteReadAsync(
+                        dataNext,
+                        expectedRxLength: 1, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                await _hub.InvokeAsync("OnWaitingAsync", groupName, cancellationToken: _token);
             }
             finally
             {
                 await ResumePollingAsync();
             }
-        }
-
-        private async Task ChangeControlModeAsync(string groupName, bool isProgramMode)
-        {
-            //try
-            //{
-            //    var column = GetColumnByGroupName(groupName);
-            //    if (column is null)
-            //    {
-            //        _logger.Warning("Колонка {GroupName} не найдена", groupName);
-            //        return;
-            //    }
-
-            //    var cmd = isProgramMode ? Command.ProgramControlMode : Command.KeyboardControlMode;
-            //    await ExecuteCommandAsync(cmd, Address, column.LanfengAddress);
-            //}
-            //catch (Exception e)
-            //{
-            //    _logger.Error(e, e.Message);
-            //}
         }
 
         private async Task StopFuelingAsync(string groupName)
@@ -461,7 +519,23 @@ namespace KIT.GasStation.Gilbarco
             {
                 await PausePollingAsync();
 
+                var controller = Controllers.FirstOrDefault(c => c.Columns.Any(col => col.GroupName == groupName));
 
+                if (controller == null) return;
+
+                var command = ProtocolParser.BuildPackCommand(Command.PumpStop, controller.Address);
+
+                _logger.Information("[Tx] {Frame}", BitConverter.ToString(command));
+
+                var rx = await _sharedSerialPortService.WriteReadAsync(
+                        command,
+                        expectedRxLength: 1, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                await _hub.InvokeAsync("OnWaitingAsync", groupName, cancellationToken: _token);
             }
             finally
             {
@@ -469,12 +543,90 @@ namespace KIT.GasStation.Gilbarco
             }
         }
 
-        private async Task ResumeFuelingAsync(string groupName)
+        private async Task ResumeFuelingAsync(string groupName, decimal sum)
         {
             try
             {
                 await PausePollingAsync();
 
+                await Task.Delay(200);
+
+                var controller = Controllers.FirstOrDefault(c => c.Columns.Any(col => col.GroupName == groupName));
+
+                if (controller == null) return;
+
+                var column = Controller.Columns.First(c => c.GroupName == groupName);
+
+                if (column.Settings.Status is ColumnStatus.PumpStop)
+                {
+                    var resume = ProtocolParser.BuildPackCommand(Command.Authorization, controller.Address);
+
+                    _logger.Information("[Tx] {Frame}", BitConverter.ToString(resume));
+
+                    var rxResume = await _sharedSerialPortService.WriteReadAsync(
+                        resume,
+                        expectedRxLength: 0, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                    column.Settings.Status = ColumnStatus.Waiting;
+
+                    return;
+                }
+
+                var dataNext = ProtocolParser.BuildPackCommand(Command.DataNext, controller.Address);
+
+                var rx = await _sharedSerialPortService.WriteReadAsync(
+                        dataNext,
+                        expectedRxLength: 2, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                var status = ProtocolParser.GetStatus(rx);
+
+                if (status is GilbarcoStatus.SendData)
+                {
+                    var grade = column.Nozzle;
+                    var presetBlock = ProtocolParser.BuildPresetBlock(controller, column, grade, sum, true);
+
+                    _logger.Information("[Tx] {Frame} (старт налива)", BitConverter.ToString(dataNext.Concat(presetBlock).ToArray()));
+
+                    rx = await _sharedSerialPortService.WriteReadAsync(
+                        presetBlock,
+                        expectedRxLength: 0, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                    status = await PollingStatusAsync(controller);
+
+                    if (status is GilbarcoStatus.Off or GilbarcoStatus.Call)
+                    {
+                        var authorize = ProtocolParser.BuildPackCommand(Command.Authorization, controller.Address);
+
+                        _logger.Information("[Tx] {Frame}", BitConverter.ToString(authorize));
+
+                        rx = await _sharedSerialPortService.WriteReadAsync(
+                            authorize,
+                            expectedRxLength: 0, // минимум 1 слово (1 байт)
+                            writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                            readTimeoutMs: _defaultTimeoutMs,
+                            maxRetries: 3,
+                            ct: _token);
+
+                        column.Settings.Status = ColumnStatus.Waiting;
+                    }
+                }
+                else
+                {
+                    _logger.Warning("Не удалось начать заправку для группы {GroupName}, статус ТРК: {Status}", groupName, status);
+                    _ = new InvalidOperationException($"Невозможно начать заправку, статус ТРК: {status}");
+                }
 
             }
             finally
@@ -483,28 +635,12 @@ namespace KIT.GasStation.Gilbarco
             }
         }
 
-        private async Task GetStatusByAddressAsync(string groupName)
-        {
-            //try
-            //{
-            //    var column = GetColumnByGroupName(groupName);
-
-            //    if (column is null)
-            //    {
-            //        _logger.Warning("Колонка {GroupName} не найдена", groupName);
-            //        return;
-            //    }
-            //    await ExecuteCommandAsync(Command.Status, Address, column.LanfengAddress);
-            //}
-            //catch (Exception e)
-            //{
-            //    _logger.Error(e, e.Message);
-            //}
-        }
-
+        /// <summary>
+        /// Опрос статуса ТРК
+        /// </summary>
         private async Task<GilbarcoStatus> PollingStatusAsync(Controller controller)
         {
-            var frame = ProtocolParser.PackCommand(controller.Address);
+            var frame = ProtocolParser.BuildPackCommand(Command.Status, controller.Address);
             _logger.Information("[Tx] {Frame}", BitConverter.ToString(frame));
 
             var rx = await _sharedSerialPortService.WriteReadAsync(
@@ -522,49 +658,158 @@ namespace KIT.GasStation.Gilbarco
             return ProtocolParser.GetStatus(rx);
         }
 
+        /// <summary>
+        /// Публикация статуса ТРК на Hub
+        /// </summary>
         private async Task PublishStatusAsync(Controller controller, GilbarcoStatus status)
         {
+            var column = controller.Columns.First();
+
             if (status is GilbarcoStatus.Off)
             {
-                var column = controller.Columns.FirstOrDefault(c => c.IsLifted);
+                var liftedColumn = controller.Columns.FirstOrDefault(c => c.IsLifted);
 
-                if (column != null)
+                if (liftedColumn != null)
                 {
-                    _logger.Information("Нашел подняттый пистолет {address} когда статус уже было Off (PublishStatusAsync)", column.Nozzle);
-                    column.IsLifted = false;
-                    await _hub.InvokeAsync("ColumnLiftedChanged", column.GroupName, column.IsLifted, _token);
-                }
-                else
-                {
+                    liftedColumn.IsLifted = false;
+                    await _hub.InvokeAsync("ColumnLiftedChanged", liftedColumn.GroupName, liftedColumn.IsLifted, _token);
                     controller.Settings.SetIsLifted(false);
-                    _logger.Information("Установлен значение на false для ТРК {address} (PublishStatusAsync)", controller.Address);
                 }
             }
-            var parsed = new ControllerResponse
+
+            var parsed = new StatusResponse
             {
-                Address = controller.Address,
                 Status = ProtocolParser.GilbarcoStatusToNozzleStatusConverter(status),
-                Group = controller.Columns.FirstOrDefault()?.GroupName
+                GroupName = column.GroupName,
             };
 
-            await _hub.InvokeAsync("PublishStatus", parsed, parsed.Group, cancellationToken: _token);
+            await _hub.InvokeAsync("PublishStatus", parsed, cancellationToken: _token);
         }
 
+        private async Task PublishBussyStatusAsync(Controller controller)
+        {
+            var column = controller.Columns.FirstOrDefault(c => c.Settings.Status == ColumnStatus.Waiting);
+
+            if (column == null)
+            {
+                _logger.Information("Пистолет не найдено 687");
+                return;
+            }
+
+            var command = ProtocolParser.BuildPackCommand(Command.RealTimeMoneyRequest, controller.Address);
+
+            _logger.Information("[Tx] {Frame}", BitConverter.ToString(command));
+
+            var rx = await _sharedSerialPortService.WriteReadAsync(
+                    command,
+                    expectedRxLength: command.Length + 6, // минимум 1 слово (1 байт)
+                    writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                    readTimeoutMs: _defaultTimeoutMs,
+                    maxRetries: 3,
+                    ct: _token);
+
+            rx = ProtocolParser.RemoveEcho(rx, command);
+
+            _logger.Information("[Rx] {Response}", BitConverter.ToString(rx));
+
+            decimal money = ProtocolParser.ParseRealTimeMoney(rx);
+
+            var fuelingResponse = new FuelingResponse
+            {
+                GroupName = column.GroupName,
+                Quantity = money,
+            };
+
+            await _hub.InvokeAsync("OnFuelingAsync", fuelingResponse, cancellationToken: _token);
+        }
+
+        private async Task PublishPumpStop(Controller controller, GilbarcoStatus status)
+        {
+            var column = controller.Columns.FirstOrDefault(c => c.Settings.Status == ColumnStatus.Waiting);
+
+            if (column == null) return;
+
+            column.Settings.Status = ColumnStatus.PumpStop;
+
+            var statusResponse = new StatusResponse
+            {
+                Status = ProtocolParser.GilbarcoStatusToNozzleStatusConverter(status),
+                GroupName = column.GroupName,
+            };
+
+            await _hub.InvokeAsync("PublishStatus", statusResponse, cancellationToken: _token);
+        }
+
+        private async Task PublishTransactionCompletePeot(Controller controller)
+        {
+            try
+            {
+                await PausePollingAsync();
+
+                var column = controller.Columns.FirstOrDefault(c => c.Settings.Status == ColumnStatus.Waiting);
+
+                if (column == null) return;
+
+                column.Settings.Status = ColumnStatus.Unknown;
+
+                await _hub.InvokeAsync("OnWaitingAsync", column.GroupName, cancellationToken: _token);
+
+                _logger.Information("Вызван метод Ожидания");
+
+                var command = ProtocolParser.BuildPackCommand(Command.TransactionDataRequest, controller.Address);
+
+                _logger.Information("[Tx] {Frame}", BitConverter.ToString(command));
+
+                var rx = await _sharedSerialPortService.WriteReadAsync(
+                        command,
+                        expectedRxLength: command.Length + 33, // минимум 1 слово (1 байт)
+                        writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                        readTimeoutMs: _defaultTimeoutMs,
+                        maxRetries: 3,
+                        ct: _token);
+
+                rx = ProtocolParser.RemoveEcho(rx, command);
+
+                _logger.Information("[Rx] {Response}", BitConverter.ToString(rx));
+
+                var requestTransactionData = ProtocolParser.ParseRequestTransactionData(rx);
+
+                await _hub.InvokeAsync("OnCompletedFuelingAsync", column.GroupName, requestTransactionData.Volume, cancellationToken: _token);
+
+                _logger.Information("Volume {Volume}, Price {Price}, Amount {Amount}", requestTransactionData.Volume, requestTransactionData.Price, requestTransactionData.Amount);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        private async Task PublishAuthorizedStatusAsync(Controller controller, GilbarcoStatus status)
+        {
+            var column = controller.Columns.FirstOrDefault(c => c.Settings.Status == ColumnStatus.Waiting);
+
+            if (column == null) return;
+
+            var parsed = new StatusResponse
+            {
+                Status = ProtocolParser.GilbarcoStatusToNozzleStatusConverter(status),
+                GroupName = column.GroupName,
+            };
+
+            await _hub.InvokeAsync("PublishStatus", parsed, cancellationToken: _token);
+        }
+
+        /// <summary>
+        /// Расширенный опрос статуса (подъём/опускание пистолета)
+        /// </summary>
         private async Task PollingExtendedStatusAsync(Controller controller)
         {
             var isLifted = controller.Settings.GetIsLifted();
 
-            _logger.Information("Язычек: {lifted} колонка: {address}", isLifted, controller.Address);
-
             if (!isLifted)
             {
-                _logger.Information("Поднятие язычка обнаружено на ТРК {address}", controller.Address);
                 controller.Settings.SetIsLifted(true);
-                _logger.Information("Установлен значение ТРК на true", controller.Address);
-
-                var dataNext = ProtocolParser.BuildDataNextCommand(controller.Address);
-
-                _logger.Information("[Tx] {Frame}", BitConverter.ToString(dataNext));
+                var dataNext = ProtocolParser.BuildPackCommand(Command.DataNext, controller.Address);
 
                 var rx = await _sharedSerialPortService.WriteReadAsync(
                             dataNext,
@@ -573,8 +818,6 @@ namespace KIT.GasStation.Gilbarco
                             readTimeoutMs: _defaultTimeoutMs,
                             maxRetries: 3,
                             ct: _token);
-
-                _logger.Information("[Rx] {Response}", BitConverter.ToString(rx));
 
                 var status = ProtocolParser.GetStatus(rx);
 
@@ -586,7 +829,7 @@ namespace KIT.GasStation.Gilbarco
 
                     rx = await _sharedSerialPortService.WriteReadAsync(
                             sendData,
-                            expectedRxLength: 28, // минимум 1 слово (1 байт)
+                            expectedRxLength: sendData.Length + 19, // минимум 1 слово (1 байт)
                             writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
                             readTimeoutMs: _defaultTimeoutMs,
                             maxRetries: 3,
@@ -601,20 +844,73 @@ namespace KIT.GasStation.Gilbarco
                     var column = controller.Columns.First(c => c.Nozzle == extendedStatus.SelectedGrade);
                     column.IsLifted = extendedStatus.IsNozzleLifted;
 
-                    _logger.Information("Установлен значение на true для пистолета {address}", column.Nozzle);
-
                     await _hub.InvokeAsync("ColumnLiftedChanged", column.GroupName, column.IsLifted, _token);
                 }
             }
-            else
-            {
-                _logger.Information("Поднятие язычка НЕ обнаружено на ТРК {address}", controller.Address);
-            }
         }
 
-        private async Task PollingSendDataAsync(Controller controller)
+        /// <summary>
+        /// Получение счётчиков по одному пистолету
+        /// </summary>
+        private async Task GetCountersAsync()
         {
-            
+            try
+            {
+                await PausePollingAsync();
+
+                await Task.Delay(200);
+
+                foreach (var controller in Controllers.OrderBy(c => c.Address))
+                {
+                    if (controller != null && controller.Settings is GilbarcoControllerSettings settings)
+                    {
+                        var firstColumn = controller.Columns.First();
+
+                        var countCommand = ProtocolParser.BuildPackCommand(Command.PumpTotalsDataRequest, controller.Address);
+
+                        // расчетный размер ответ, каждый пистолет добавляет 30 байт
+                        var totalBytes = 34 + (controller.Columns.Count - 1) * 30; // расчетный размер ответа
+
+                        _logger.Information("[Tx] {Frame}", BitConverter.ToString(countCommand));
+
+                        var rx = await _sharedSerialPortService.WriteReadTwotpFrameAsync(
+                                    countCommand,
+                                    writeToReadDelayMs: 68, // TWOTP: min delay между словами — 68 мс
+                                    readTimeoutMs: _defaultTimeoutMs,
+                                    maxRetries: 3,
+                                    ct: _token);
+
+                        rx = ProtocolParser.RemoveEcho(rx, countCommand);
+
+                        _logger.Information("[Rx] {Response}", BitConverter.ToString(rx));
+
+                        var counters = ProtocolParser.ParseCounters(rx);
+
+                        var counterData = new List<CounterData>();
+
+                        foreach (var item in counters)
+                        {
+                            var column = controller.Columns.FirstOrDefault(c => c.Nozzle == item.Nozzle);
+                            if (column == null)
+                            {
+                                return;
+                            }
+
+                            counterData.Add(new CounterData
+                            {
+                                Counter = item.Counter,
+                                GroupName = column.GroupName
+                            });
+                        }
+
+                        await _hub.InvokeAsync("OnCountersUpdated", firstColumn.GroupName, counterData);
+                    }
+                }
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
         }
 
         #endregion
@@ -668,12 +964,6 @@ namespace KIT.GasStation.Gilbarco
                 _lease = null;
             }
             _sharedSerialPortService = null!;
-
-            try
-            {
-                //await _portManager.CloseIfIdleAsync(key);
-            }
-            catch { }
         }
 
         #endregion

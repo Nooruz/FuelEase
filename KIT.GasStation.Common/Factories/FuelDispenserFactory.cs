@@ -1,6 +1,6 @@
 ﻿using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.FuelDispenserEmulator;
+using KIT.GasStation.Emulator;
 using KIT.GasStation.Gilbarco;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;

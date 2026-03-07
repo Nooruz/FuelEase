@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.Common.HostBuilders;
-using KIT.GasStation.Web.HostBuilders;
+﻿using KIT.App.Infrastructure.HostBuilders;
 using KIT.GasStation.Web.Hubs;
 using KIT.GasStation.Web.Services;
 using Microsoft.AspNetCore.Diagnostics;

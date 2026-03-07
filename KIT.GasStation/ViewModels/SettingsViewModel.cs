@@ -69,6 +69,7 @@ namespace KIT.GasStation.ViewModels
     {
         public const string Identification = "Идентификация";
         public const string Shift = "Смена";
+        public const string Sales = "Продажи";
 
         public const string HotKeys = "Горячие клавиши";
         public const string HotKeys_Payment = HotKeys + @": Способы оплаты";
@@ -96,6 +97,7 @@ namespace KIT.GasStation.ViewModels
         private string _nameGasStationDraft = Properties.Settings.Default.NameGasStation;
         private string _idGasStationDraft = Properties.Settings.Default.IdGasStation;
         private bool _autoClosingShiftDraft = Properties.Settings.Default.AutoClosingShift;
+        private decimal _limitLitersFullFueling = Properties.Settings.Default.LimitLitersFullFueling;
         private ReceiptPrintingModeType _receiptPrintingModeType;
 
         #endregion
@@ -140,6 +142,19 @@ namespace KIT.GasStation.ViewModels
         {
             get => _autoClosingShiftDraft;
             set { _autoClosingShiftDraft = value; OnPropertyChanged(nameof(AutoClosingShift)); }
+        }
+
+        [Category(Cat.Sales), Description("Объём в литрах, заданный в данном параметре, " +
+            "автоматически передаётся на ТРК при выполнении команды «ДО ПОЛНОГО БАКА».\r\nЕсли указано значение «0»," +
+            " лимит объёма задаётся пользователем вручную перед каждой отправкой команды «ДО ПОЛНОГО БАКА»."), Display(Name = "Ограничение в литрах продажи \"До полного бака\":")]
+        public decimal LimitLitersFullFueling
+        {
+            get => _limitLitersFullFueling;
+            set
+            {
+                _limitLitersFullFueling = value;
+                OnPropertyChanged(nameof(LimitLitersFullFueling));    
+            }
         }
 
         [Category(Cat.Shift), Description("Определяет, когда печатать чек"), Display(Name = "Режим печати чека")]
@@ -220,6 +235,7 @@ namespace KIT.GasStation.ViewModels
             Properties.Settings.Default.IdGasStation = _idGasStationDraft?.Trim() ?? "";
             Properties.Settings.Default.AutoClosingShift = _autoClosingShiftDraft;
             Properties.Settings.Default.ReceiptPrintingMode = _receiptPrintingModeType.ToString();
+            Properties.Settings.Default.LimitLitersFullFueling = _limitLitersFullFueling;
 
 
             Properties.Settings.Default.Save();
