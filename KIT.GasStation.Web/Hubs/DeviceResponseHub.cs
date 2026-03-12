@@ -1,9 +1,10 @@
 ﻿using KIT.GasStation.FuelDispenser.Models;
+using KIT.GasStation.Web.Hubs;
 using KIT.GasStation.Web.Services;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
-namespace KIT.GasStation.Web.Hubs
+namespace KIT.GasStation.Worker.Hubs
 {
     public sealed class DeviceResponseHub : Hub<IDeviceResponseClient>
     {
@@ -15,13 +16,14 @@ namespace KIT.GasStation.Web.Hubs
         private static readonly ConcurrentDictionary<string, byte> _workerConnections = new();
         private static readonly ConcurrentDictionary<Guid, TaskCompletionSource<CommandCompletion>> _pendingCommands = new();
         private static readonly TimeSpan CommandTimeout = TimeSpan.FromSeconds(15);
+        private static readonly ConcurrentDictionary<string, string> _groupWorkers = new(StringComparer.Ordinal);
 
         #endregion
 
         #region Constructors
 
-        public DeviceResponseHub(IGroupRegistry groups, 
-            IWorkerStateStore workerStateStore, 
+        public DeviceResponseHub(IGroupRegistry groups,
+            IWorkerStateStore workerStateStore,
             ILogger<DeviceResponseHub> log)
         {
             _groups = groups;
@@ -42,6 +44,7 @@ namespace KIT.GasStation.Web.Hubs
             if (isWorker)
             {
                 _workerConnections.TryAdd(Context.ConnectionId, 0);
+                _groupWorkers[groupName] = Context.ConnectionId;
                 await BroadcastWorkerStateChangedAsync(groupName, true, "Worker connected");
             }
             else if (_workerStateStore.TryGet(groupName, out var state))
@@ -54,6 +57,11 @@ namespace KIT.GasStation.Web.Hubs
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
             _groups.Remove(Context.ConnectionId, groupName);
+            if (_groupWorkers.TryGetValue(groupName, out var workerConnId) && workerConnId == Context.ConnectionId)
+            {
+                _groupWorkers.TryRemove(groupName, out _);
+                await BroadcastWorkerStateChangedAsync(groupName, false, "Worker left group");
+            }
             _log.LogInformation("LEAVE {Conn} -> {Group}", Context.ConnectionId, groupName);
         }
 
@@ -66,6 +74,11 @@ namespace KIT.GasStation.Web.Hubs
             {
                 foreach (var g in groups)
                 {
+                    if (_groupWorkers.TryGetValue(g, out var workerConnId) && workerConnId == Context.ConnectionId)
+                    {
+                        _groupWorkers.TryRemove(g, out _);
+                    }
+
                     await BroadcastWorkerStateChangedAsync(g, false, "SignalR disconnected");
                 }
             }
@@ -81,24 +94,30 @@ namespace KIT.GasStation.Web.Hubs
         public Task<IReadOnlyCollection<string>> GetAllGroups() =>
             Task.FromResult(_groups.GetAllGroups());
 
-        public Task SetPricesAsync(Dictionary<string, decimal> prices)
+        public async Task SetPricesAsync(Dictionary<string, decimal> prices)
         {
             if (prices == null || prices.Count == 0)
-                return Task.CompletedTask;
+                return;
 
-            var group = prices.Keys.First();
-            return ExecuteCommandAsync(group, commandId =>
-                Clients.Group(group).SetPricesAsync(commandId, prices));
+            foreach (var (groupName, price) in prices)
+            {
+                var payload = new Dictionary<string, decimal>(1)
+                {
+                    [groupName] = price
+                };
+                await ExecuteCommandAsync(groupName, commandId =>
+                    GetWorkerClient(groupName).SetPricesAsync(commandId, payload));
+            }
         }
 
         public Task SetPriceAsync(string groupName, decimal price)
         {
             return ExecuteCommandAsync(groupName, commandId =>
-                Clients.Group(groupName).SetPriceAsync(commandId, groupName, price));
+                GetWorkerClient(groupName).SetPriceAsync(commandId, groupName, price));
         }
 
         public Task StartFuelingAsync(string groupName, decimal sum, bool bySum) =>
-            Clients.Group(groupName).StartFuelingAsync(groupName, sum, bySum);
+            GetWorkerClient(groupName).StartFuelingAsync(groupName, sum, bySum);
 
         public Task StopFuelingAsync(string groupName) =>
             Clients.Group(groupName).StopFuelingAsync(groupName);
@@ -132,7 +151,7 @@ namespace KIT.GasStation.Web.Hubs
 
         public Task CompleteFuelingAsync(string groupName) =>
             Clients.Group(groupName).CompleteFuelingAsync(groupName);
-        
+
         public Task GetCounterAsync(string groupName) =>
             ExecuteCommandAsync(groupName, commandId =>
                 Clients.Group(groupName).GetCounterAsync(commandId, groupName));
@@ -146,33 +165,33 @@ namespace KIT.GasStation.Web.Hubs
                 Clients.Group(groupName).ChangeControlModeAsync(commandId, groupName, isProgramMode));
 
         public Task InitializeConfigurationAsync(string groupName) =>
-            ExecuteCommandAsync (groupName, commandId =>
+            ExecuteCommandAsync(groupName, commandId =>
                 Clients.Group(groupName).InitializeConfigurationAsync(commandId, groupName));
 
         public Task RegisterWorker(string groupName) =>
             Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
-        public async Task StartPolling(string groupName)
-        {
-            _log.LogInformation("Start polling {groupName}", groupName);
-            await ExecuteCommandAsync(groupName, commandId =>
-                Clients.Group(groupName).StartPolling(new StartPollingCommand
-                {
-                    GroupName = groupName,
-                    CommandId = commandId
-                }));
-        }
+        //public async Task StartPolling(string groupName)
+        //{
+        //    _log.LogInformation("Start polling {groupName}", groupName);
+        //    await ExecuteCommandAsync(groupName, commandId =>
+        //        Clients.Group(groupName).StartPolling(new StartPollingCommand
+        //        {
+        //            GroupName = groupName,
+        //            CommandId = commandId
+        //        }));
+        //}
 
-        public async Task StopPolling(string groupName)
-        {
-            _log.LogInformation("Stop polling {groupName}", groupName);
-            await ExecuteCommandAsync(groupName, commandId =>
-                Clients.Group(groupName).StopPolling(new StopPollingCommand
-                {
-                    GroupName = groupName,
-                    CommandId = commandId
-                }));
-        }
+        //public async Task StopPolling(string groupName)
+        //{
+        //    _log.LogInformation("Stop polling {groupName}", groupName);
+        //    await ExecuteCommandAsync(groupName, commandId =>
+        //        Clients.Group(groupName).StopPolling(new StopPollingCommand
+        //        {
+        //            GroupName = groupName,
+        //            CommandId = commandId
+        //        }));
+        //}
 
         public async Task ReportWorkerAvailability(WorkerAvailabilityReport report)
         {
@@ -222,6 +241,17 @@ namespace KIT.GasStation.Web.Hubs
         }
 
         #endregion
+
+        private IDeviceResponseClient GetWorkerClient(string groupName)
+        {
+            if (string.IsNullOrWhiteSpace(groupName))
+                throw new HubException("Не указана группа контроллера");
+
+            if (!_groupWorkers.TryGetValue(groupName, out var workerConnId))
+                throw new HubException($"Нет активного воркера для группы {groupName}.");
+
+            return Clients.Client(workerConnId);
+        }
 
         private Task BroadcastWorkerStateChangedAsync(string groupName, bool isOnline, string? reason = null)
         {

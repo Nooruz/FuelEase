@@ -1,67 +1,25 @@
-﻿namespace KIT.GasStation.FuelDispenser.Services
+﻿using KIT.GasStation.HardwareConfigurations.Models;
+
+namespace KIT.GasStation.FuelDispenser.Services
 {
     public interface IFuelDispenserService : IAsyncDisposable
     {
-        #region Actions
-
-        /// <summary>
-        /// Событие изменения статуса колонки.
-        /// </summary>
-        //event Action<Guid, ColumnStatus> OnStatusChanged;
-
-        /// <summary>
-        /// Событие получения счетчика.
-        /// </summary>
-        //event Action<Guid, decimal> OnCounterReceived;
-
-        /// <summary>
-        /// Событие при поднятии пистолета.
-        /// </summary>
-        //event Action<Guid> OnColumnLifted;
-
-        /// <summary>
-        /// Событие при опускании пистолета.
-        /// </summary>
-        //event Action OnColumnLowered;
-
-        /// <summary>
-        /// Событие при старте заправки.
-        /// </summary>
-        //event Action<Guid, decimal, decimal> OnStartedFueling;
-
-        /// <summary>
-        /// Событие при ожидании снятия пистолета.
-        /// </summary>
-        //event Action<int> OnWaitingRemoved;
-
-        /// <summary>
-        /// Событие при завершении заправки.
-        /// </summary>
-        //event Action<int> OnCompletedFueling;
-
-        /// <summary>
-        /// Событие при потере соединения.
-        /// </summary>
-        //event Action OnConnectionLost;
-
-        #endregion
-
         #region Public Properties
 
-        /// <summary>
-        /// Наименование типа ТРК.
-        /// </summary>
-        string DispenserName { get; }
+        ///// <summary>
+        ///// Наименование типа ТРК.
+        ///// </summary>
+        //string DispenserName { get; }
 
-        /// <summary>
-        /// Версия устройства, получаемая из версии проекта.
-        /// </summary>
-        string Version { get; }
+        ///// <summary>
+        ///// Версия устройства, получаемая из версии проекта.
+        ///// </summary>
+        //string Version { get; }
 
         /// <summary>
         /// Идентификатор контроллера (для групп SignalR)
         /// </summary>
-        Guid ControllerId { get; }
+        Controller Controller { get; set; }
 
         /// <summary>
         /// Статус ТРК.
@@ -72,107 +30,11 @@
 
         #region Public Voids
 
-        Task RunAsync(CancellationToken token);
+        Task RunAsync(CancellationToken token, Controller controller);
+
+        Task StartFuelingAsync(string groupName, decimal value, bool bySum);
 
         #endregion
-
-        //#region Voids
-
-        ///// <summary>
-        ///// Подключение к устройству.
-        ///// </summary>
-        //Task Connect(string comPort, int baudRate);
-
-        ///// <summary>
-        ///// Инициализация устройства.
-        ///// </summary>
-        ///// <param name="columnId">Идентификатор колонки</param>
-        ///// <returns></returns>
-        //Task Connect(ObservableCollection<Nozzle> nozzles);
-
-        ///// <summary>
-        ///// Инициализация устройства.
-        ///// </summary>
-        //Task InitializeAsync(int side);
-
-        ///// <summary>
-        ///// Получение текущего статуса колонки.
-        ///// </summary>
-        ///// <param name="tube">Номер колонки.</param>
-        ///// <returns>Текущий статус колонки.</returns>
-        //Task<ColumnStatus> GetStatusAsync(int tube);
-
-
-        ///// <summary>
-        ///// Проверка текущего статуса колонки.
-        ///// </summary>
-        ///// <param name="column">Колонки.</param>
-        ///// <returns>Текущий статус колонки.</returns>
-        //Task<ColumnStatus> CheckStatusAsync(Column column);
-
-        ///// <summary>
-        ///// Установка цены топлива.
-        ///// </summary>
-        ///// <param name="price">Цена за литр.</param>
-        ///// <param name="tube">Номер колонки.</param>
-        ///// <returns>Задача.</returns>
-        //Task SetPriceAsync(Nozzle nozzle, decimal? price = null);
-
-        ///// <summary>
-        ///// Начало заправки на определенный объем на литр.
-        ///// </summary>
-        ///// <param name="quantity">Объем топлива в литрах.</param>
-        ///// <param name="tube">Номер колонки.</param>
-        ///// <returns>Задача.</returns>
-        //Task StartFuelingQuantityAsync(Nozzle nozzle, decimal? quantity = null);
-
-        ///// <summary>
-        ///// Начало заправки на определенный объем на сумму.
-        ///// </summary>
-        ///// <param name="tube">Номер колонки.</param>
-        ///// <param name="sum">Сумма</param>
-        ///// <returns></returns>
-        //Task StartFuelingSumAsync(Nozzle nozzle, decimal? sum = null);
-
-        ///// <summary>
-        ///// Прекращение заправки.
-        ///// </summary>
-        ///// <returns>Задача.</returns>
-        //Task StopFuelingAsync(Nozzle nozzle);
-
-        ///// <summary>
-        ///// Продолжение заправки.
-        ///// </summary>
-        ///// <param name="tube">Номер колонки.</param>
-        ///// <returns>Задача</returns>
-        //Task ContinueFuelingAsync(int tube);
-
-        ///// <summary>
-        ///// Завершение заправки.
-        ///// </summary>
-        ///// <param name="tube">Номер колонки.</param>
-        ///// <returns>Задача</returns>
-        //Task CompleteFuelingAsync(int tube);
-
-        ///// <summary>
-        ///// Запрос текущих счетчиков.
-        ///// </summary>
-        ///// <param name="tube">Номер колонки.</param>
-        //Task GetCountersAsync(Nozzle nozzle);
-
-        ///// <summary>
-        ///// Запускает фоновый цикл периодической проверки статуса колонок.
-        ///// </summary>
-        ///// <param name="interval">Интервал между запросами (например, 1 секунда).</param>
-        ///// <returns>Задача (Task), которая будет выполняться в фоне.</returns>
-        //void StartStatusLoopAsync(TimeSpan interval);
-
-        ///// <summary>
-        ///// Останавливает фоновый цикл периодической проверки статуса.
-        ///// </summary>
-        //void StopStatusLoop();
-
-        //#endregion
     }
 
     /// <summary>

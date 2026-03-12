@@ -1,5 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser;
+﻿using KIT.GasStation.FuelDispenser;
 using KIT.GasStation.FuelDispenser.Commands;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
@@ -9,10 +8,9 @@ using KIT.GasStation.HardwareConfigurations.Services;
 using KIT.GasStation.TechnoProjekt.Utilities;
 using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
-using System.IO.Ports;
 using System.Text.RegularExpressions;
 
-namespace KIT.GasStation.Technoproject
+namespace KIT.GasStation.TechnoProjekt
 {
     public sealed class TechnoprojectFuelDispenser : FuelDispenserServiceBase
     {
@@ -35,16 +33,16 @@ namespace KIT.GasStation.Technoproject
 
         #region Constructors
 
-        public TechnoprojectFuelDispenser(Controller controller,
-            int address,
-            ISharedSerialPortService sharedSerialPortService,
-            IHubClient hubClient)
-            : base(controller, address, sharedSerialPortService, hubClient)
-        {
-            _hubClient = hubClient;
+        //public TechnoprojectFuelDispenser(Controller controller,
+        //    int address,
+        //    ISharedSerialPortService sharedSerialPortService,
+        //    IHubClient hubClient)
+        //    : base(controller, address, sharedSerialPortService, hubClient)
+        //{
+        //    _hubClient = hubClient;
 
-            CreateLogger();
-        }
+        //    CreateLogger();
+        //}
 
         #endregion
 
@@ -318,7 +316,7 @@ namespace KIT.GasStation.Technoproject
             }
             _sharedSerialPortService = null!;
 
-            
+
         }
 
         private async Task StartPollingAsync(CancellationToken token)

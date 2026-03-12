@@ -1,33 +1,43 @@
 using KIT.App.Infrastructure.Factories;
-using KIT.GasStation.FuelDispenser.Services;
+using KIT.App.Infrastructure.Services.Hubs;
+using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Serilog;
 using System.Collections.Concurrent;
 using System.IO.Ports;
 
-namespace KIT.GasStation.Worker
+namespace KIT.GasStation.Web
 {
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
         private readonly IHardwareConfigurationService _hardwareConfigurationService;
         private readonly IFuelDispenserFactory _fuelDispenserFactory;
+        private readonly IFuelDispenserRegistry _registry;
+        private readonly IHubCommandRouter _router;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPortManager _portManager;
+        private readonly IHubClient _hubClient;
         private PortLease? _lease;
 
         public Worker(ILogger<Worker> logger,
             IHardwareConfigurationService hardwareConfigurationService,
             IFuelDispenserFactory fuelDispenserFactory,
             IServiceScopeFactory scopeFactory,
-            IPortManager portManager)
+            IPortManager portManager,
+            IFuelDispenserRegistry registry,
+            IHubCommandRouter router,
+            IHubClient hubClient)
         {
             _logger = logger;
             _hardwareConfigurationService = hardwareConfigurationService;
             _fuelDispenserFactory = fuelDispenserFactory;
             _scopeFactory = scopeFactory;
             _portManager = portManager;
+            _registry = registry;
+            _router = router;
+            _hubClient = hubClient;
         }
 
 
@@ -57,28 +67,55 @@ namespace KIT.GasStation.Worker
 
                     foreach (var ctrl in controllers)
                     {
-                        var port = await OpenPort(ctrl, currentCycleCts.Token);
+                        var addresses = ctrl.Columns
+                            .Select(c => c.Address)
+                            .Distinct()
+                            .OrderBy(a => a)
+                            .ToArray();
 
-                        switch (ctrl.Type)
+                        foreach (var addr in addresses)
                         {
-                            case ControllerType.None:
-                                break;
-                            case ControllerType.Lanfeng:
-                                CreateLanfeng(ctrl, activeTasks, currentCycleCts.Token, port);
-                                break;
-                            case ControllerType.Gilbarco:
-                                CreateGilbarco(ctrl, activeTasks, currentCycleCts.Token, port);
-                                break;
-                            case ControllerType.Emulator:
-                                CreateEmulator(ctrl, activeTasks, currentCycleCts.Token);
-                                break;
-                            case ControllerType.PKElectronics:
-                                break;
-                            case ControllerType.TechnoProjekt:
-                                break;
-                            default:
-                                break;
+                            var controller = new Controller()
+                            {
+                                Id = ctrl.Id,
+                                Name = ctrl.Name,
+                                Type = ctrl.Type,
+                                ComPort = ctrl.ComPort,
+                                BaudRate = ctrl.BaudRate,
+                                Settings = ctrl.Settings,
+                                Columns = new(ctrl.Columns.Where(c => c.Address == addr).ToList())
+                            };
+
+                            var taskKey = $"{ctrl.Id}_{addr}";
+
+                            var task = RunControllerLoopAsync(controller, currentCycleCts.Token);
+
+                            // Сохраняем задачу для последующего отслеживания
+                            activeTasks[taskKey] = task;
                         }
+
+                        //var port = await OpenPort(ctrl, currentCycleCts.Token);
+
+                        //switch (ctrl.Type)
+                        //{
+                        //    case ControllerType.None:
+                        //        break;
+                        //    case ControllerType.Lanfeng:
+                        //        CreateLanfeng(ctrl, activeTasks, currentCycleCts.Token, port);
+                        //        break;
+                        //    case ControllerType.Gilbarco:
+                        //        CreateGilbarco(ctrl, activeTasks, currentCycleCts.Token, port);
+                        //        break;
+                        //    case ControllerType.Emulator:
+                        //        CreateEmulator(ctrl, activeTasks, currentCycleCts.Token);
+                        //        break;
+                        //    case ControllerType.PKElectronics:
+                        //        break;
+                        //    case ControllerType.TechnoProjekt:
+                        //        break;
+                        //    default:
+                        //        break;
+                        //}
                     }
 
                     // 4. Ожидаем отмены основного токена (остановки службы) БЕЗ активного цикла.
@@ -98,82 +135,82 @@ namespace KIT.GasStation.Worker
             await Task.WhenAll(activeTasks.Values);
         }
 
-        /// <summary>
-        /// Эта функция запускает цикл обработки для каждого ТРК.
-        /// </summary>
-        /// <param name="ctrl">ТРК</param>
-        /// <param name="token">Токен</param>
-        /// <returns></returns>
-        private async Task RunControllerLoopAsync(Controller ctrl,
-            int address,
-            CancellationToken token,
-            ISharedSerialPortService port)
-        {
-            while (!token.IsCancellationRequested)
-            {
-                using var scope = _scopeFactory.CreateAsyncScope();
-                var sp = scope.ServiceProvider;
-                IFuelDispenserService? service = null;
+        ///// <summary>
+        ///// Эта функция запускает цикл обработки для каждого ТРК.
+        ///// </summary>
+        ///// <param name="ctrl">ТРК</param>
+        ///// <param name="token">Токен</param>
+        ///// <returns></returns>
+        //private async Task RunControllerLoopAsync(Controller ctrl,
+        //    int address,
+        //    CancellationToken token,
+        //    ISharedSerialPortService port)
+        //{
+        //    while (!token.IsCancellationRequested)
+        //    {
+        //        using var scope = _scopeFactory.CreateAsyncScope();
+        //        var sp = scope.ServiceProvider;
+        //        IFuelDispenserService? service = null;
 
-                try
-                {
-                    _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
-                    service = _fuelDispenserFactory.Create(sp, ctrl, address, port);
-                    await service.RunAsync(token);
-                }
-                catch (OperationCanceledException)
-                {
-                    _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Сбой в цикле ТРК {Id}", ctrl.Id);
-                    // Ждем перед перезапуском
-                    await Task.Delay(TimeSpan.FromSeconds(5), token);
-                }
-                finally
-                {
-                    if (service != null)
-                        await service.DisposeAsync();
-                }
-            }
-        }
+        //        try
+        //        {
+        //            _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
+        //            service = _fuelDispenserFactory.Create(sp, ctrl, address, port);
+        //            await service.RunAsync(token);
+        //        }
+        //        catch (OperationCanceledException)
+        //        {
+        //            _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
+        //            break;
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, "Сбой в цикле ТРК {Id}", ctrl.Id);
+        //            // Ждем перед перезапуском
+        //            await Task.Delay(TimeSpan.FromSeconds(5), token);
+        //        }
+        //        finally
+        //        {
+        //            if (service != null)
+        //                await service.DisposeAsync();
+        //        }
+        //    }
+        //}
 
-        private async Task RunControllerLoopAsync(Controller ctrl,
-            CancellationToken token,
-            ISharedSerialPortService port)
-        {
-            while (!token.IsCancellationRequested)
-            {
-                using var scope = _scopeFactory.CreateAsyncScope();
-                var sp = scope.ServiceProvider;
-                IFuelDispenserService? service = null;
+        //private async Task RunControllerLoopAsync(Controller ctrl,
+        //    CancellationToken token,
+        //    ISharedSerialPortService port)
+        //{
+        //    while (!token.IsCancellationRequested)
+        //    {
+        //        using var scope = _scopeFactory.CreateAsyncScope();
+        //        var sp = scope.ServiceProvider;
+        //        IFuelDispenserService? service = null;
 
-                try
-                {
-                    _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
-                    service = _fuelDispenserFactory.Create(sp, ctrl, port);
-                    await service.RunAsync(token);
-                }
-                catch (OperationCanceledException)
-                {
-                    _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Сбой в цикле ТРК {Id}", ctrl.Id);
-                    // Ждем перед перезапуском
-                    await Task.Delay(TimeSpan.FromSeconds(5), token);
-                }
-                finally
-                {
-                    if (service != null)
-                        await service.DisposeAsync();
-                }
-            }
-        }
+        //        try
+        //        {
+        //            _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
+        //            service = _fuelDispenserFactory.Create(sp, ctrl, port);
+        //            await service.RunAsync(token);
+        //        }
+        //        catch (OperationCanceledException)
+        //        {
+        //            _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
+        //            break;
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, "Сбой в цикле ТРК {Id}", ctrl.Id);
+        //            // Ждем перед перезапуском
+        //            await Task.Delay(TimeSpan.FromSeconds(5), token);
+        //        }
+        //        finally
+        //        {
+        //            if (service != null)
+        //                await service.DisposeAsync();
+        //        }
+        //    }
+        //}
 
         private async Task RunControllerLoopAsync(Controller ctrl,
             CancellationToken token)
@@ -182,13 +219,21 @@ namespace KIT.GasStation.Worker
             {
                 using var scope = _scopeFactory.CreateAsyncScope();
                 var sp = scope.ServiceProvider;
-                IFuelDispenserService? service = null;
+                var dispenser = _fuelDispenserFactory.Create(ctrl.Type);
 
                 try
                 {
                     _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
-                    service = _fuelDispenserFactory.Create(sp, ctrl);
-                    await service.RunAsync(token);
+
+                    _registry.Register(dispenser, ctrl);
+
+                    await _hubClient.EnsureStartedAsync(token);
+
+                    _router.RegisterHandlers();
+
+                    var hash = dispenser.GetHashCode();
+
+                    await dispenser.RunAsync(token, ctrl);
                 }
                 catch (OperationCanceledException)
                 {
@@ -203,60 +248,60 @@ namespace KIT.GasStation.Worker
                 }
                 finally
                 {
-                    if (service != null)
-                        await service.DisposeAsync();
+                    if (dispenser != null)
+                        await dispenser.DisposeAsync();
                 }
             }
         }
 
         #region Helpers
 
-        private void CreateLanfeng(Controller ctrl,
-            ConcurrentDictionary<string, Task> activeTasks,
-            CancellationToken token,
-            ISharedSerialPortService port)
-        {
-            // Берём адреса из конфигурации колонки, исключаем отключённые и дубли
-            var addresses = ctrl.Columns
-                .Select(c => c.Address)
-                .Distinct()
-                .OrderBy(a => a)
-                .ToArray();
+        //private void CreateLanfeng(Controller ctrl,
+        //    ConcurrentDictionary<string, Task> activeTasks,
+        //    CancellationToken token,
+        //    ISharedSerialPortService port)
+        //{
+        //    // Берём адреса из конфигурации колонки, исключаем отключённые и дубли
+        //    var addresses = ctrl.Columns
+        //        .Select(c => c.Address)
+        //        .Distinct()
+        //        .OrderBy(a => a)
+        //        .ToArray();
 
-            foreach (var addr in addresses)
-            {
-                var controller = new Controller()
-                {
-                    Id = ctrl.Id,
-                    Name = ctrl.Name,
-                    Type = ctrl.Type,
-                    ComPort = ctrl.ComPort,
-                    BaudRate = ctrl.BaudRate,
-                    Settings = ctrl.Settings,
-                    Columns = new([.. ctrl.Columns.Where(c => c.Address == addr)])
-                };
+        //    foreach (var addr in addresses)
+        //    {
+        //        var controller = new Controller()
+        //        {
+        //            Id = ctrl.Id,
+        //            Name = ctrl.Name,
+        //            Type = ctrl.Type,
+        //            ComPort = ctrl.ComPort,
+        //            BaudRate = ctrl.BaudRate,
+        //            Settings = ctrl.Settings,
+        //            Columns = new([.. ctrl.Columns.Where(c => c.Address == addr)])
+        //        };
 
-                var taskKey = $"{ctrl.Id}_{addr}";
+        //        var taskKey = $"{ctrl.Id}_{addr}";
 
-                var task = RunControllerLoopAsync(controller, addr, token, port);
+        //        var task = RunControllerLoopAsync(controller, addr, token, port);
 
-                // Сохраняем задачу для последующего отслеживания
-                activeTasks[taskKey] = task;
-            }
-        }
+        //        // Сохраняем задачу для последующего отслеживания
+        //        activeTasks[taskKey] = task;
+        //    }
+        //}
 
-        private void CreateGilbarco(Controller ctrl,
-            ConcurrentDictionary<string, Task> activeTasks,
-            CancellationToken token,
-            ISharedSerialPortService port)
-        {
-            var taskKey = $"{ctrl.Id}";
+        //private void CreateGilbarco(Controller ctrl,
+        //    ConcurrentDictionary<string, Task> activeTasks,
+        //    CancellationToken token,
+        //    ISharedSerialPortService port)
+        //{
+        //    var taskKey = $"{ctrl.Id}";
 
-            var task = RunControllerLoopAsync(ctrl, token, port);
+        //    var task = RunControllerLoopAsync(ctrl, token, port);
 
-            // Сохраняем задачу для последующего отслеживания
-            activeTasks[taskKey] = task;
-        }
+        //    // Сохраняем задачу для последующего отслеживания
+        //    activeTasks[taskKey] = task;
+        //}
 
         private void CreateEmulator(Controller ctrl,
             ConcurrentDictionary<string, Task> activeTasks,

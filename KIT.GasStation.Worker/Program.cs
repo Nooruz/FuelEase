@@ -1,7 +1,5 @@
 ﻿using KIT.App.Infrastructure.HostBuilders;
-using KIT.GasStation.FuelDispenser.Hubs;
-using KIT.GasStation.Worker;
-using Microsoft.AspNetCore.SignalR.Client;
+using KIT.GasStation.Web;
 using Serilog;
 
 var logDirectory = Path.Combine(AppContext.BaseDirectory, "logs");
@@ -27,21 +25,23 @@ try
         {
             options.ServiceName = "KIT.GasStation.Worker";
         })
+        .AddHubs()
+        .AddFuelDispenserServices()
         .AddHardwareConfigurationsServices()
-        .AddCashRegisters() 
+        .AddCashRegisters()
         .ConfigureServices((hostContext, services) =>
         {
-            var cfg = hostContext.Configuration;
-            var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
-            var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
-            var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
+            //var cfg = hostContext.Configuration;
+            //var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
+            //var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";
+            //var hubUrl = new Uri(new Uri(baseUrl), hubPath).ToString();
 
-            services.AddTransient(sp =>
-                new HubConnectionBuilder()
-                    .WithUrl(hubUrl)
-                    .WithAutomaticReconnect()
-                    .Build());
-            services.AddSignalR();
+            //services.AddTransient(sp =>
+            //    new HubConnectionBuilder()
+            //        .WithUrl(hubUrl)
+            //        .WithAutomaticReconnect()
+            //        .Build());
+            //services.AddSignalR();
 
             //services.AddTransient<IHubClient, HubClient>();
 
@@ -58,9 +58,9 @@ try
             //        .Build();
             //});
 
-            services.AddTransient<IHubClient, HubClient>();
+            //services.AddSingleton<IHubClient, HubClient>();
 
-            services.AddHostedService<Worker>(); 
+            services.AddHostedService<Worker>();
         });
 
     AppDomain.CurrentDomain.UnhandledException += (sender, e) =>

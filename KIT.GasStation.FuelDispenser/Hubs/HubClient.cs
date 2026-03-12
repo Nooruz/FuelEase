@@ -1,66 +1,35 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
-using Serilog;
 
 namespace KIT.GasStation.FuelDispenser.Hubs
 {
-    public class HubClient : IHubClient
+    public sealed class HubClient : IHubClient
     {
-        #region Private Members
+        private readonly SemaphoreSlim _startLock = new(1, 1);
 
-        private readonly HubConnection _hub;
-        private int _started;
-        private readonly ILogger? _logger = Log.ForContext<HubClient>();
+        public HubConnection Connection { get; }
 
-        #endregion
-
-        #region Public Properties
-
-        public HubConnection Connection => _hub;
-
-        #endregion
-
-        #region Constructors
-
-        public HubClient(HubConnection hub)
+        public HubClient(HubConnection connection)
         {
-            _hub = hub;
+            Connection = connection;
         }
 
-        #endregion
-
-        #region Public Voids
-
-        public async Task EnsureStartedAsync(CancellationToken ct = default)
+        public async Task EnsureStartedAsync(CancellationToken cancellationToken = default)
         {
-            if (Interlocked.Exchange(ref _started, 1) == 1) return;
-            await _hub.StartAsync(ct);
-            //if (_hub.State == HubConnectionState.Connected)
-            //    return;
+            if (Connection.State == HubConnectionState.Connected)
+                return;
 
-            //if (_hub.State != HubConnectionState.Disconnected)
-            //{
-            //    // Если соединение в промежуточном состоянии, ждем или останавливаем
-            //    try
-            //    {
-            //        await _hub.StopAsync(ct);
-            //    }
-            //    catch { /* Игнорируем ошибки остановки */ }
-            //}
-
-            //var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            //timeoutCts.CancelAfter(TimeSpan.FromSeconds(30));
-
-            //try
-            //{
-            //    await _hub.StartAsync(timeoutCts.Token);
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger?.Error(ex, "Ошибка запуска HubConnection");
-            //    throw;
-            //}
+            await _startLock.WaitAsync(cancellationToken);
+            try
+            {
+                if (Connection.State == HubConnectionState.Disconnected)
+                {
+                    await Connection.StartAsync(cancellationToken);
+                }
+            }
+            finally
+            {
+                _startLock.Release();
+            }
         }
-
-        #endregion
     }
 }

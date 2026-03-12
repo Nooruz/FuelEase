@@ -1,20 +1,16 @@
-﻿using KIT.App.Infrastructure.Factories;
-using KIT.GasStation.HardwareConfigurations.Services;
+﻿using KIT.GasStation.Emulator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace KIT.App.Infrastructure.HostBuilders
 {
-    public static class AddHardwareConfigurationsServicesHostBuilderExtensions
+    public static class AddFuelDispenserServicesHostBuilderExtensions
     {
-        public static IHostBuilder AddHardwareConfigurationsServices(this IHostBuilder host)
+        public static IHostBuilder AddFuelDispenserServices(this IHostBuilder host)
         {
-            return host.ConfigureServices(services =>
+            return host.ConfigureServices((context, services) =>
             {
-                services.AddSingleton<IPortManager, PortManager>();
-                services.AddSingleton<ISharedSerialPortService, SharedSerialPortService>();
-                services.AddSingleton<IHardwareConfigurationService, HardwareConfigurationService>();
-                services.AddSingleton<IFuelDispenserFactory, FuelDispenserFactory>();
+                services.AddTransient<EmulatorFuelDispenser>();
             });
         }
     }

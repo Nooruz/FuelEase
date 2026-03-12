@@ -60,7 +60,7 @@ namespace KIT.GasStation.ViewModels
         private const string WorkerOfflineDueToHubMessage = "Нет связи с сервером";
         private decimal _receivedSum;
         private decimal _receivedQuantity;
-        private FuelSale _currentFuelSale = new();
+        private readonly List<IDisposable> _hubSubscriptions = new();
 
         #endregion
 
@@ -407,10 +407,7 @@ namespace KIT.GasStation.ViewModels
 
                 await _hubClient.EnsureStartedAsync(token);
 
-                await JoinAndStartPollingAsync();
-
-                // Запускаем цикл опроса статуса
-                //await _fuelDispenserService.StartStatusPolling(0);
+                await JoinAndSubscribeAsync();
             }
             catch (OperationCanceledException)
             {
@@ -429,7 +426,6 @@ namespace KIT.GasStation.ViewModels
 
                 foreach (var item in Nozzles)
                 {
-                    await _hub.InvokeAsync("StopPolling", item.Group);
                     await _hub.InvokeAsync("LeaveController", item.Group);
                 }
 
@@ -442,6 +438,8 @@ namespace KIT.GasStation.ViewModels
                 _shiftStore.OnClosed -= ShiftStore_OnClosed;
                 _fuelService.OnUpdated -= FuelService_OnUpdated;
                 _userStore.OnLogout -= UserStore_OnLogout;
+
+                UnregisterHubHandlers();
 
                 _cts?.Cancel();
 
@@ -1028,15 +1026,33 @@ namespace KIT.GasStation.ViewModels
             _hub.Closed += OnHubClosed;
             _hubHandlersRegistered = true;
 
-            _hub.On<StatusResponse>("StatusChanged", e => OnStatusChanged(e));
-            _hub.On<string, bool>("ColumnLiftedChanged", (groupName, isLifted) => OnColumnLifted(groupName, isLifted));
-            _hub.On<WorkerStateNotification>("WorkerStateChanged", notification => OnWorkerStateChanged(notification));
-            _hub.On<string, List<CounterData>>("OnCountersUpdated", (groupName, counterDatas) => OnCountersUpdated(counterDatas));
-            _hub.On<CounterData>("OnCounterUpdated", (counterData) => OnCounterUpdated(counterData));
-            _hub.On<string, decimal?>("OnCompletedFuelingAsync", (groupName, quantity) => OnCompletedFuelingAsync(groupName, quantity));
-            _hub.On<string>("OnWaitingAsync", (groupName) => OnWaitingAsync(groupName));
-            _hub.On<FuelingResponse>("OnPumpStopAsync", (response) => OnPumpStopAsync(response));
-            _hub.On<FuelingResponse>("OnFuelingAsync", (response) => OnFuelingAsync(response));
+            _hubSubscriptions.Add(_hub.On<StatusResponse>("StatusChanged", e => OnStatusChanged(e)));
+            _hubSubscriptions.Add(_hub.On<string, bool>("ColumnLiftedChanged", (groupName, isLifted) => OnColumnLifted(groupName, isLifted)));
+            _hubSubscriptions.Add(_hub.On<WorkerStateNotification>("WorkerStateChanged", notification => OnWorkerStateChanged(notification)));
+            _hubSubscriptions.Add(_hub.On<string, List<CounterData>>("OnCountersUpdated", (groupName, counterDatas) => OnCountersUpdated(counterDatas)));
+            _hubSubscriptions.Add(_hub.On<CounterData>("OnCounterUpdated", (counterData) => OnCounterUpdated(counterData)));
+            _hubSubscriptions.Add(_hub.On<string, decimal?>("OnCompletedFuelingAsync", (groupName, quantity) => OnCompletedFuelingAsync(groupName, quantity)));
+            _hubSubscriptions.Add(_hub.On<string>("OnWaitingAsync", (groupName) => OnWaitingAsync(groupName)));
+            _hubSubscriptions.Add(_hub.On<FuelingResponse>("OnPumpStopAsync", (response) => OnPumpStopAsync(response)));
+            _hubSubscriptions.Add(_hub.On<FuelingResponse>("OnFuelingAsync", (response) => OnFuelingAsync(response)));
+        }
+
+        private void UnregisterHubHandlers()
+        {
+            if (_hub is null || !_hubHandlersRegistered)
+                return;
+
+            _hub.Reconnecting -= OnHubReconnecting;
+            _hub.Reconnected -= OnHubReconnected;
+            _hub.Closed -= OnHubClosed;
+
+            foreach (var subscription in _hubSubscriptions)
+            {
+                subscription.Dispose();
+            }
+
+            _hubSubscriptions.Clear();
+            _hubHandlersRegistered = false;
         }
 
         private Task OnHubReconnecting(Exception? error)
@@ -1049,7 +1065,7 @@ namespace KIT.GasStation.ViewModels
         private async Task OnHubReconnected(string? connectionId)
         {
             Interlocked.Exchange(ref _connectionLostHandled, 0);
-            await JoinAndStartPollingAsync();
+            await JoinAndSubscribeAsync();
         }
 
         private Task OnHubClosed(Exception? error)
@@ -1075,8 +1091,8 @@ namespace KIT.GasStation.ViewModels
                     {
                         try
                         {
-                            await _hub.StartAsync();
-                            await JoinAndStartPollingAsync();
+                            await _hubClient.EnsureStartedAsync();
+                            await JoinAndSubscribeAsync();
                             break;
                         }
                         catch
@@ -1092,7 +1108,7 @@ namespace KIT.GasStation.ViewModels
             });
         }
 
-        private async Task JoinAndStartPollingAsync()
+        private async Task JoinAndSubscribeAsync()
         {
             if (_hub is null || Nozzles is null || Nozzles.Count == 0)
                 return;
@@ -1108,21 +1124,21 @@ namespace KIT.GasStation.ViewModels
                 await _hub.InvokeAsync("JoinController", group, false);
             }
 
-            var nozzle = Nozzles.FirstOrDefault();
+            //var nozzle = Nozzles.FirstOrDefault();
 
-            if (nozzle != null)
-            {
-                await _hub.InvokeAsync("StartPolling", nozzle.Group);
+            //if (nozzle != null)
+            //{
+            //    await _hub.InvokeAsync("StartPolling", nozzle.Group);
 
-                await Task.Delay(2000);
+            //    await Task.Delay(2000);
 
-                await _hub.InvokeAsync("InitializeConfigurationAsync", nozzle.Group);
+            //    await _hub.InvokeAsync("InitializeConfigurationAsync", nozzle.Group);
 
-                var dict = Nozzles.ToDictionary(n => n.Group, n => n.Tank.Fuel.Price);
-                await _hub.InvokeAsync("SetPricesAsync", dict);
+            //    var dict = Nozzles.ToDictionary(n => n.Group, n => n.Tank.Fuel.Price);
+            //    await _hub.InvokeAsync("SetPricesAsync", dict);
 
-                await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
-            }
+            //    await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
+            //}
 
             await RequestWorkerStateSnapshotAsync(groups);
         }
@@ -1198,7 +1214,8 @@ namespace KIT.GasStation.ViewModels
                 }
                 else
                 {
-                    await _hub.InvokeAsync("StartPolling", nozzle.Group);
+                    // UI только подписывается на события состояния воркера
+                    //await _hub.InvokeAsync("StartPolling", nozzle.Group);
                 }
             }
             catch (Exception)
@@ -1313,7 +1330,6 @@ namespace KIT.GasStation.ViewModels
             var firstNozzle = Nozzles.First();
 
             await _hub.InvokeAsync("GetCountersAsync", firstNozzle.Group);
-
 
             //Ждем пол секунды
             await Task.Delay(1500);
@@ -1522,7 +1538,7 @@ namespace KIT.GasStation.ViewModels
 
             if (!Nozzles.Any())
             {
-                await _hub.InvokeAsync("StopPolling", nozzle.Group);
+                //await _hub.InvokeAsync("StopPolling", nozzle.Group);
                 await _hub.InvokeAsync("LeaveController", nozzle.Group);
             }
         }

@@ -116,6 +116,17 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         {
             var configuration = await ReadConfigurationFileAsync();
 
+            foreach (var controller in configuration.Controllers)
+            {
+                if (controller.Columns == null)
+                    continue;
+
+                foreach (var column in controller.Columns)
+                {
+                    column.Controller = controller;
+                }
+            }
+
             return configuration.Controllers;
         }
 

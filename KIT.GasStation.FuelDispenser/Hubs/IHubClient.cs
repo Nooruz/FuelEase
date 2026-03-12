@@ -5,6 +5,6 @@ namespace KIT.GasStation.FuelDispenser.Hubs
     public interface IHubClient
     {
         HubConnection Connection { get; }
-        Task EnsureStartedAsync(CancellationToken ct = default);
+        Task EnsureStartedAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -1,14 +1,12 @@
 ﻿using KIT.GasStation.FuelDispenser.Hubs;
-using KIT.GasStation.FuelDispenser.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using Serilog;
 
 namespace KIT.GasStation.FuelDispenser
 {
-    public abstract class FuelDispenserServiceBase : IFuelDispenserService
+    public abstract class FuelDispenserServiceBaseCopy
     {
-        protected readonly Controller Controller;
         protected readonly int Address;
         protected readonly IReadOnlyList<Column> Columns;
         protected ISharedSerialPortService _sharedSerialPortService;
@@ -19,29 +17,29 @@ namespace KIT.GasStation.FuelDispenser
 
         public string Version => throw new NotImplementedException();
 
-        public Guid ControllerId => throw new NotImplementedException();
+        public Controller Controller { get; set; }
 
-        protected FuelDispenserServiceBase(Controller controller,
-            int address,
-            ISharedSerialPortService sharedSerialPortService,
-            IHubClient hubClient)
-        {
-            Controller = controller;
-            Columns = Controller.Columns.Where(c => c.Address == address).ToList();
-            Address = address;
-            _sharedSerialPortService = sharedSerialPortService;
-            _hubClient = hubClient;
-        }
+        //protected FuelDispenserServiceBase(Controller controller,
+        //    int address,
+        //    ISharedSerialPortService sharedSerialPortService,
+        //    IHubClient hubClient)
+        //{
+        //    Controller = controller;
+        //    Columns = Controller.Columns.Where(c => c.Address == address).ToList();
+        //    Address = address;
+        //    _sharedSerialPortService = sharedSerialPortService;
+        //    _hubClient = hubClient;
+        //}
 
-        protected FuelDispenserServiceBase(Controller controller,
-            ISharedSerialPortService sharedSerialPortService,
-            IHubClient hubClient)
-        {
-            Controller = controller;
-            Columns = Controller.Columns.ToList();
-            _sharedSerialPortService = sharedSerialPortService;
-            _hubClient = hubClient;
-        }
+        //protected FuelDispenserServiceBase(Controller controller,
+        //    ISharedSerialPortService sharedSerialPortService,
+        //    IHubClient hubClient)
+        //{
+        //    Controller = controller;
+        //    Columns = Controller.Columns.ToList();
+        //    _sharedSerialPortService = sharedSerialPortService;
+        //    _hubClient = hubClient;
+        //}
 
         public async Task RunAsync(CancellationToken token)
         {
@@ -64,7 +62,7 @@ namespace KIT.GasStation.FuelDispenser
                         // Ожидаем штатное завершение по токену отмены
                         break;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         // Логируем ошибку, но продолжаем цикл
                         // Реализуйте ILogger в базовом классе или передайте его через конструктор
@@ -96,5 +94,6 @@ namespace KIT.GasStation.FuelDispenser
         protected abstract Task OnTickAsync();
 
         public virtual ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public Task StartFuelingAsync(string groupName, decimal value, bool bySum) => Task.CompletedTask;
     }
 }

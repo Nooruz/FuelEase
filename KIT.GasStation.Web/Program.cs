@@ -1,6 +1,6 @@
 ﻿using KIT.App.Infrastructure.HostBuilders;
-using KIT.GasStation.Web.Hubs;
 using KIT.GasStation.Web.Services;
+using KIT.GasStation.Worker.Hubs;
 using Microsoft.AspNetCore.Diagnostics;
 using Serilog;
 
