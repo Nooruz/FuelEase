@@ -87,6 +87,8 @@ namespace KIT.GasStation.State.Navigators
 
             var viewModel = await _viewModelFactory.CreateViewModelAsync(viewType);
 
+            var hashCode = viewModel.GetHashCode();
+
             if (viewModel is IAsyncInitializable asyncInitializableViewModel)
             {
                 await asyncInitializableViewModel.StartAsync();

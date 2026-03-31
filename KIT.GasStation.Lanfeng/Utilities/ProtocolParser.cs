@@ -1,5 +1,4 @@
 ﻿using KIT.GasStation.Domain.Models;
-using KIT.GasStation.FuelDispenser.Services;
 using System.Buffers;
 
 namespace KIT.GasStation.Lanfeng.Utilities

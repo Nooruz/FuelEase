@@ -1,8 +1,10 @@
 using KIT.App.Infrastructure.Factories;
 using KIT.App.Infrastructure.Services.Hubs;
+using KIT.GasStation.FuelDispenser;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
+using Microsoft.AspNetCore.SignalR.Client;
 using Serilog;
 using System.Collections.Concurrent;
 using System.IO.Ports;
@@ -16,7 +18,6 @@ namespace KIT.GasStation.Web
         private readonly IFuelDispenserFactory _fuelDispenserFactory;
         private readonly IFuelDispenserRegistry _registry;
         private readonly IHubCommandRouter _router;
-        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPortManager _portManager;
         private readonly IHubClient _hubClient;
         private PortLease? _lease;
@@ -24,7 +25,6 @@ namespace KIT.GasStation.Web
         public Worker(ILogger<Worker> logger,
             IHardwareConfigurationService hardwareConfigurationService,
             IFuelDispenserFactory fuelDispenserFactory,
-            IServiceScopeFactory scopeFactory,
             IPortManager portManager,
             IFuelDispenserRegistry registry,
             IHubCommandRouter router,
@@ -33,7 +33,6 @@ namespace KIT.GasStation.Web
             _logger = logger;
             _hardwareConfigurationService = hardwareConfigurationService;
             _fuelDispenserFactory = fuelDispenserFactory;
-            _scopeFactory = scopeFactory;
             _portManager = portManager;
             _registry = registry;
             _router = router;
@@ -49,12 +48,17 @@ namespace KIT.GasStation.Web
             // Источник токена для отмены всех текущих задач при перезагрузке конфигурации
             var currentCycleCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 
+            await _hubClient.EnsureStartedAsync(stoppingToken);
+            _router.RegisterHandlers();
+
+            var controllers = await _hardwareConfigurationService.GetControllersAsync();
+
+            var dispensers = new List<(Controller ctrl, IFuelDispenserService dispenser)>();
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    var controllers = await _hardwareConfigurationService.GetControllersAsync();
-
                     // 1. Отменяем ВСЕ предыдущие задачи циклов для перезапуска с новой конфигурацией
                     currentCycleCts.Cancel();
                     currentCycleCts.Dispose();
@@ -88,7 +92,19 @@ namespace KIT.GasStation.Web
 
                             var taskKey = $"{ctrl.Id}_{addr}";
 
-                            var task = RunControllerLoopAsync(controller, currentCycleCts.Token);
+                            var dispenser = _fuelDispenserFactory.Create(controller.Type);
+                            dispensers.Add((controller, dispenser));
+
+                            dispenser.Controller = controller;
+
+                            _registry.Register(dispenser);
+
+                            var task = RunControllerLoopAsync(dispenser, currentCycleCts.Token);
+
+                            foreach (var column in controller.Columns)
+                            {
+                                await _hubClient.Connection.InvokeAsync("JoinController", column.GroupName, true, stoppingToken);
+                            }
 
                             // Сохраняем задачу для последующего отслеживания
                             activeTasks[taskKey] = task;
@@ -212,37 +228,26 @@ namespace KIT.GasStation.Web
         //    }
         //}
 
-        private async Task RunControllerLoopAsync(Controller ctrl,
+        private async Task RunControllerLoopAsync(IFuelDispenserService dispenser,
             CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
-                using var scope = _scopeFactory.CreateAsyncScope();
-                var sp = scope.ServiceProvider;
-                var dispenser = _fuelDispenserFactory.Create(ctrl.Type);
 
                 try
                 {
-                    _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", ctrl.Id);
+                    _logger.LogInformation("Старт/перезапуск цикла для ТРК {Id}", dispenser.Controller.Id);
 
-                    _registry.Register(dispenser, ctrl);
-
-                    await _hubClient.EnsureStartedAsync(token);
-
-                    _router.RegisterHandlers();
-
-                    var hash = dispenser.GetHashCode();
-
-                    await dispenser.RunAsync(token, ctrl);
+                    await dispenser.RunAsync(token);
                 }
                 catch (OperationCanceledException)
                 {
-                    _logger.LogInformation("Отмена цикла ТРК {Id}", ctrl.Id);
+                    _logger.LogInformation("Отмена цикла ТРК {Id}", dispenser.Controller.Id);
                     break;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Сбой в цикле ТРК {Id}", ctrl.Id);
+                    _logger.LogError(ex, "Сбой в цикле ТРК {Id}", dispenser.Controller.Id);
                     // Ждем перед перезапуском
                     await Task.Delay(TimeSpan.FromSeconds(5), token);
                 }
@@ -329,10 +334,10 @@ namespace KIT.GasStation.Web
 
                 var taskKey = $"{ctrl.Id}_{addr}";
 
-                var task = RunControllerLoopAsync(controller, token);
+                //var task = RunControllerLoopAsync(controller, token);
 
                 // Сохраняем задачу для последующего отслеживания
-                activeTasks[taskKey] = task;
+                //activeTasks[taskKey] = task;
             }
         }
 

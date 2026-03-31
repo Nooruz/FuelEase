@@ -132,7 +132,6 @@
                             x:Name="Current"
                             AllowClose="False"
                             AllowMaximize="True"
-                            Background="AliceBlue"
                             Content="{Binding CurrentViewModel}">
                             <dxmvvm:Interaction.Behaviors>
                                 <dxmvvm:EventToCommand

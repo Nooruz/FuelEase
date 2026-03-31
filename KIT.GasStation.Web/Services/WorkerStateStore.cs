@@ -1,7 +1,8 @@
 ﻿using KIT.GasStation.FuelDispenser.Models;
+using KIT.GasStation.Web.Services;
 using System.Collections.Concurrent;
 
-namespace KIT.GasStation.Web.Services
+namespace KIT.GasStation.Worker.Services
 {
     public sealed class WorkerStateStore : IWorkerStateStore
     {
@@ -48,7 +49,7 @@ namespace KIT.GasStation.Web.Services
                     {
                         IsOnline = isOnline,
                         Reason = sanitizedReason,
-                        ChangedAt = DateTimeOffset.UtcNow
+                        ChangedAt = DateTime.Now
                     };
 
                     if (_states.TryUpdate(groupName, updated, current))
@@ -65,7 +66,7 @@ namespace KIT.GasStation.Web.Services
                     GroupName = groupName,
                     IsOnline = isOnline,
                     Reason = sanitizedReason,
-                    ChangedAt = DateTimeOffset.UtcNow
+                    ChangedAt = DateTime.Now
                 };
 
                 if (_states.TryAdd(groupName, created))

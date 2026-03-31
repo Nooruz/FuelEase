@@ -49,6 +49,7 @@ namespace KIT.App.Infrastructure.HostBuilders
                 });
 
                 services.AddSingleton<IHubClient, HubClient>();
+                services.AddSingleton<IReportCommandCompleted, ReportCommandCompleted>();
                 services.AddSingleton<IFuelDispenserRegistry, FuelDispenserRegistry>();
                 services.AddSingleton<IHubCommandRouter, HubCommandRouter>();
                 services.AddSingleton<IFuelDispenserFactory, FuelDispenserFactory>();

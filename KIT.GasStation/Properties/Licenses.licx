@@ -2,3 +2,4 @@ DevExpress.Xpf.Ribbon.RibbonControl, DevExpress.Xpf.Ribbon.v23.2, Version=23.2.3
 DevExpress.Xpf.Gauges.DigitalGaugeControl, DevExpress.Xpf.Gauges.v23.2, Version=23.2.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a
 DevExpress.Xpf.Grid.GridControl, DevExpress.Xpf.Grid.v21.2, Version=21.2.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a
 DevExpress.Xpf.LayoutControl.DataLayoutControl, DevExpress.Xpf.LayoutControl.v21.2, Version=21.2.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a
+DevExpress.Xpf.Docking.DockLayoutManager, DevExpress.Xpf.Docking.v21.2, Version=21.2.3.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a

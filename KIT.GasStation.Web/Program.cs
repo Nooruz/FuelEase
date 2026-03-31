@@ -1,6 +1,7 @@
 ﻿using KIT.App.Infrastructure.HostBuilders;
 using KIT.GasStation.Web.Services;
 using KIT.GasStation.Worker.Hubs;
+using KIT.GasStation.Worker.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Serilog;
 
@@ -96,7 +97,7 @@ var builder = WebApplication.CreateBuilder(args);
     app.UseCors(); // если включал CORS выше
     app.MapHealthChecks("/health");
 
-    app.MapHub<DeviceResponseHub>("/deviceresponse");
+    app.MapHub<DeviceHubClient>("/deviceresponse");
 
     app.UseExceptionHandler(errorApp =>
     {

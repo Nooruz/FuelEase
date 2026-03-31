@@ -25,7 +25,6 @@
     <ProjectReference Include="..\KIT.GasStation.EKassa\KIT.GasStation.EKassa.csproj" />
     <ProjectReference Include="..\KIT.GasStation.EntityFramework\KIT.GasStation.EntityFramework.csproj" />
     <ProjectReference Include="..\KIT.GasStation.FuelDispenserEmulator\KIT.GasStation.Emulator.csproj" />
-    <ProjectReference Include="..\KIT.GasStation.FuelDispenser\KIT.GasStation.FuelDispenser.csproj" />
     <ProjectReference Include="..\Kit.gasStation.Gilbarco\KIT.GasStation.Gilbarco.csproj" />
     <ProjectReference Include="..\KIT.GasStation.HardwareConfiguration\KIT.GasStation.HardwareConfigurations.csproj" />
     <ProjectReference Include="..\KIT.GasStation.Lanfeng\KIT.GasStation.Lanfeng.csproj" />

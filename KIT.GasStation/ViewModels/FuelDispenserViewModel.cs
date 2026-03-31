@@ -28,7 +28,7 @@ using System.Windows.Media;
 
 namespace KIT.GasStation.ViewModels
 {
-    public class FuelDispenserViewModel : BaseViewModel
+    public class FuelDispenserViewModel : FuelDispenserBaseViewModel
     {
         #region Private Members
 
@@ -231,19 +231,23 @@ namespace KIT.GasStation.ViewModels
 
                 _logger.LogDebug("Вызов ResumeFueling для пистолета {NozzleGroup}", SelectedNozzle?.Group ?? "null");
 
+                var resumeFuelingRequest = new ResumeFuelingRequest
+                {
+                    GroupName = SelectedNozzle?.Group ?? "null",
+                    Value = SelectedNozzle.CurrentFuelSale?.Sum - SelectedNozzle.CurrentFuelSale?.ReceivedSum ?? 0m
+                };
 
-                var resumeSum = SelectedNozzle.CurrentFuelSale?.Sum - SelectedNozzle.CurrentFuelSale?.ReceivedSum ?? 0m;
-                await _hub.InvokeAsync("ResumeFuelingAsync", SelectedNozzle?.Group, resumeSum);
+                await _hub.InvokeAsync("ResumeFuelingAsync", resumeFuelingRequest);
 
                 _logger.LogInformation("Команда ResumeFueling отправлена для группы {Group}", SelectedNozzle?.Group);
             }
             catch (HubException ex)
             {
-                _logger.LogError(ex, "HubException при вызове ResumeFuelingAsync: {Message}", ex.Message);
+                _logger.LogError(ex, "HubException при вызове продолжить: {Message}", ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при вызове ResumeFuelingAsync для пистолета {NozzleGroup}", SelectedNozzle?.Group ?? "null");
+                _logger.LogError(ex, "Ошибка при вызове продолжить для пистолета {NozzleGroup}", SelectedNozzle?.Group ?? "null");
             }
         }
 
@@ -1124,21 +1128,24 @@ namespace KIT.GasStation.ViewModels
                 await _hub.InvokeAsync("JoinController", group, false);
             }
 
-            //var nozzle = Nozzles.FirstOrDefault();
+            var nozzle = Nozzles.FirstOrDefault();
 
-            //if (nozzle != null)
-            //{
-            //    await _hub.InvokeAsync("StartPolling", nozzle.Group);
+            if (nozzle != null)
+            {
+                await Task.Delay(2000);
 
-            //    await Task.Delay(2000);
+                await _hub.InvokeAsync("InitializeConfigurationAsync", nozzle.Group);
 
-            //    await _hub.InvokeAsync("InitializeConfigurationAsync", nozzle.Group);
+                var prices = Nozzles.Select(n => new PriceRequest
+                {
+                    GroupName = n.Group,
+                    Value = n.Tank.Fuel.Price
+                }).ToList();
 
-            //    var dict = Nozzles.ToDictionary(n => n.Group, n => n.Tank.Fuel.Price);
-            //    await _hub.InvokeAsync("SetPricesAsync", dict);
+                await _hub.InvokeAsync("SetPricesAsync", prices);
 
-            //    await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
-            //}
+                await _hub.InvokeAsync("GetCountersAsync", nozzle.Group);
+            }
 
             await RequestWorkerStateSnapshotAsync(groups);
         }
@@ -1249,15 +1256,16 @@ namespace KIT.GasStation.ViewModels
             }
             else
             {
-                await _hub.InvokeAsync("SetPriceAsync", nozzle.Group, nozzle.Price);
-                if (nozzle.CurrentFuelSale.IsForSum)
+                await _hub.InvokeAsync("SetPriceAsync", new PriceRequest { GroupName = nozzle.Group, Value = nozzle.Price });
+
+                var fuelingRequest = new FuelingRequest
                 {
-                    await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Sum, true);
-                }
-                else
-                {
-                    await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Quantity, false);
-                }
+                    GroupName = nozzle.Group,
+                    Value = fuelSale.Sum,
+                    FuelingStartMode = fuelSale.IsForSum ? FuelingStartMode.ByAmount : FuelingStartMode.ByVolume
+                };
+
+                await _hub.InvokeAsync("StartFuelingAsync", fuelingRequest);
             }
         }
 
@@ -1271,7 +1279,14 @@ namespace KIT.GasStation.ViewModels
 
             if (await ValidateFuelQuantity())
             {
-                await _hub.InvokeAsync("StartFuelingAsync", nozzle.Group, fuelSale.Sum - fuelSale.ReceivedSum, true);
+                var fuelingRequest = new FuelingRequest
+                {
+                    GroupName = nozzle.Group,
+                    Value = fuelSale.Sum - fuelSale.ReceivedSum,
+                    FuelingStartMode = FuelingStartMode.ByAmount
+                };
+
+                await _hub.InvokeAsync("StartFuelingAsync", fuelingRequest);
             }
         }
 

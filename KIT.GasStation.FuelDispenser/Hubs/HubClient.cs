@@ -2,6 +2,9 @@
 
 namespace KIT.GasStation.FuelDispenser.Hubs
 {
+    /// <summary>
+    /// Гарантирует, что HubConnection стартует безопасно и только тогда, когда нужно.
+    /// </summary>
     public sealed class HubClient : IHubClient
     {
         private readonly SemaphoreSlim _startLock = new(1, 1);

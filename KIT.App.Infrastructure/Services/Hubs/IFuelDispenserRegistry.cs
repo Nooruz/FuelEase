@@ -1,11 +1,16 @@
-﻿using KIT.GasStation.FuelDispenser.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
+﻿using KIT.GasStation.FuelDispenser;
 
 namespace KIT.App.Infrastructure.Services.Hubs
 {
+    /// <summary>
+    /// Потокобезопасный реестр активных ТРК.
+    /// Нужен Router'у, чтобы быстро найти нужный контроллер по groupName.
+    /// </summary>
     public interface IFuelDispenserRegistry
     {
         IFuelDispenserService? GetByGroup(string groupName);
-        void Register(IFuelDispenserService dispenser, Controller controller);
+        void Register(IFuelDispenserService dispenser);
+        bool Remove(IFuelDispenserService dispenser);
+        IReadOnlyCollection<string> GetAllGroups();
     }
 }

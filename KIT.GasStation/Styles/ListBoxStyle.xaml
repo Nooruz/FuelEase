@@ -37,7 +37,10 @@
                         CornerRadius="3"
                         SnapsToDevicePixels="True">
 
-                        <ScrollViewer Focusable="False">
+                        <ScrollViewer
+                            Focusable="False"
+                            HorizontalScrollBarVisibility="Hidden"
+                            VerticalScrollBarVisibility="Hidden">
                             <ItemsPresenter />
                         </ScrollViewer>
 
@@ -87,7 +90,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="BorderBrush" Value="{StaticResource TankMinimumForegroundColorBrush}" />
+                            <Setter Property="BorderBrush" Value="Blue" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -14,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using System;
 using System.Data.SqlClient;
@@ -137,7 +136,7 @@ namespace KIT.GasStation
             var host = Host.CreateDefaultBuilder(args);
 
             _splashScreenViewModel.Status = "Загрузка конфигурации...";
-            host.AddConfiguration();
+            host.AddLocalConfiguration();
 
             _splashScreenViewModel.Status = "Добавление контекста базы данных...";
             host.AddDbContext();

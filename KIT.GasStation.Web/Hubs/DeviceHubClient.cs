@@ -1,17 +1,16 @@
 ﻿using KIT.GasStation.FuelDispenser.Models;
-using KIT.GasStation.Web.Hubs;
 using KIT.GasStation.Web.Services;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
 namespace KIT.GasStation.Worker.Hubs
 {
-    public sealed class DeviceResponseHub : Hub<IDeviceResponseClient>
+    public sealed class DeviceHubClient : Hub<IDeviceHubClient>
     {
         #region Private Members
 
         private readonly IGroupRegistry _groups;
-        private readonly ILogger<DeviceResponseHub> _log;
+        private readonly ILogger<DeviceHubClient> _log;
         private readonly IWorkerStateStore _workerStateStore;
         private static readonly ConcurrentDictionary<string, byte> _workerConnections = new();
         private static readonly ConcurrentDictionary<Guid, TaskCompletionSource<CommandCompletion>> _pendingCommands = new();
@@ -22,9 +21,9 @@ namespace KIT.GasStation.Worker.Hubs
 
         #region Constructors
 
-        public DeviceResponseHub(IGroupRegistry groups,
+        public DeviceHubClient(IGroupRegistry groups,
             IWorkerStateStore workerStateStore,
-            ILogger<DeviceResponseHub> log)
+            ILogger<DeviceHubClient> log)
         {
             _groups = groups;
             _workerStateStore = workerStateStore;
@@ -94,36 +93,31 @@ namespace KIT.GasStation.Worker.Hubs
         public Task<IReadOnlyCollection<string>> GetAllGroups() =>
             Task.FromResult(_groups.GetAllGroups());
 
-        public async Task SetPricesAsync(Dictionary<string, decimal> prices)
+        public async Task SetPricesAsync(IReadOnlyCollection<PriceRequest> prices)
         {
             if (prices == null || prices.Count == 0)
                 return;
 
-            foreach (var (groupName, price) in prices)
-            {
-                var payload = new Dictionary<string, decimal>(1)
-                {
-                    [groupName] = price
-                };
-                await ExecuteCommandAsync(groupName, commandId =>
-                    GetWorkerClient(groupName).SetPricesAsync(commandId, payload));
-            }
+            var firstGroupName = prices.First().GroupName;
+
+            await ExecuteCommandAsync(firstGroupName, commandId =>
+                    GetWorkerClient(firstGroupName).SetPricesAsync(commandId, prices));
         }
 
-        public Task SetPriceAsync(string groupName, decimal price)
+        public Task SetPriceAsync(PriceRequest price)
         {
-            return ExecuteCommandAsync(groupName, commandId =>
-                GetWorkerClient(groupName).SetPriceAsync(commandId, groupName, price));
+            return ExecuteCommandAsync(price.GroupName, commandId =>
+                GetWorkerClient(price.GroupName).SetPriceAsync(commandId, price));
         }
 
-        public Task StartFuelingAsync(string groupName, decimal sum, bool bySum) =>
-            GetWorkerClient(groupName).StartFuelingAsync(groupName, sum, bySum);
+        public Task StartFuelingAsync(FuelingRequest fuelingRequest) =>
+            GetWorkerClient(fuelingRequest.GroupName).StartFuelingAsync(fuelingRequest);
 
         public Task StopFuelingAsync(string groupName) =>
             Clients.Group(groupName).StopFuelingAsync(groupName);
 
-        public Task ResumeFuelingAsync(string groupName, decimal sum) =>
-            Clients.Group(groupName).ResumeFuelingAsync(groupName, sum);
+        public Task ResumeFuelingAsync(ResumeFuelingRequest resumeFuelingRequest) =>
+            Clients.Group(resumeFuelingRequest.GroupName).ResumeFuelingAsync(resumeFuelingRequest);
 
         public Task GetStatusByAddressAsync(string groupName) =>
             Clients.Group(groupName).GetStatusByAddressAsync(groupName);
@@ -131,23 +125,23 @@ namespace KIT.GasStation.Worker.Hubs
         public Task ColumnLiftedChanged(string groupName, bool isLifted) =>
             Clients.Group(groupName).ColumnLiftedChanged(groupName, isLifted);
 
-        public Task OnCountersUpdated(string groupName, List<CounterData> counterDatas) =>
-            Clients.Group(groupName).OnCountersUpdated(groupName, counterDatas);
+        public Task OnCountersUpdated(string groupName, IReadOnlyCollection<CounterData> counterDatas) =>
+            Clients.Group(groupName).CountersUpdated(groupName, counterDatas);
 
         public Task OnCounterUpdated(CounterData counterData) =>
-            Clients.Group(counterData.GroupName).OnCounterUpdated(counterData);
+            Clients.Group(counterData.GroupName).CounterUpdated(counterData);
 
         public Task OnFuelingAsync(FuelingResponse response) =>
-            Clients.Group(response.GroupName).OnFuelingAsync(response);
+            Clients.Group(response.GroupName).FuelingAsync(response);
 
         public Task OnCompletedFuelingAsync(string groupName, decimal? quantity) =>
-            Clients.Group(groupName).OnCompletedFuelingAsync(groupName, quantity);
+            Clients.Group(groupName).CompletedFuelingAsync(groupName, quantity);
 
         public Task OnWaitingAsync(string groupName) =>
-            Clients.Group(groupName).OnWaitingAsync(groupName);
+            Clients.Group(groupName).WaitingAsync(groupName);
 
         public Task OnPumpStopAsync(FuelingResponse response) =>
-            Clients.Group(response.GroupName).OnPumpStopAsync(response);
+            Clients.Group(response.GroupName).PumpStopAsync(response);
 
         public Task CompleteFuelingAsync(string groupName) =>
             Clients.Group(groupName).CompleteFuelingAsync(groupName);
@@ -242,7 +236,7 @@ namespace KIT.GasStation.Worker.Hubs
 
         #endregion
 
-        private IDeviceResponseClient GetWorkerClient(string groupName)
+        private IDeviceHubClient GetWorkerClient(string groupName)
         {
             if (string.IsNullOrWhiteSpace(groupName))
                 throw new HubException("Не указана группа контроллера");

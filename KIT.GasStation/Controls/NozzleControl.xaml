@@ -8,6 +8,7 @@
     xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
     xmlns:helpers="clr-namespace:KIT.GasStation.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Height="300"
     FontSize="24"
     mc:Ignorable="d">
 
@@ -24,8 +25,8 @@
                 Value="{Binding CurrentFuelSale.ReceivedQuantity, FallbackValue=20}" />
 
             <Border
-                Width="50"
-                Padding="3"
+                Margin="5,0"
+                Padding="2,0"
                 VerticalAlignment="Center"
                 Background="{StaticResource WhiteColorBrush}"
                 BorderBrush="Silver"
@@ -48,7 +49,11 @@
                 <RowDefinition />
             </Grid.RowDefinitions>
 
-            <Border Padding="2,0" Background="Transparent">
+            <Border
+                Padding="2,0"
+                Background="Transparent"
+                BorderThickness="2"
+                CornerRadius="3">
 
                 <Grid>
 
@@ -62,7 +67,7 @@
                         Text="{Binding Tank.Fuel.Price, FallbackValue=168.59}"
                         TextAlignment="Center" />
 
-                    <Grid Grid.Row="1">
+                    <Grid Grid.Row="1" Margin="5">
 
                         <Border
                             Width="40"
@@ -98,7 +103,7 @@
 
             <Border
                 Grid.Row="1"
-                MinHeight="120"
+                Padding="2,0"
                 Background="{Binding Tank.Fuel.ColorBrush, Converter={StaticResource DrawingColorToBrushConverter}, FallbackValue=Red}"
                 CornerRadius="0 0 3 3">
 

@@ -1,5 +1,5 @@
 ﻿using KIT.GasStation.Emulator;
-using KIT.GasStation.FuelDispenser.Services;
+using KIT.GasStation.FuelDispenser;
 using KIT.GasStation.HardwareConfigurations.Models;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -61,7 +61,7 @@ namespace KIT.App.Infrastructure.Factories
                 //ControllerType.Gilbarco =>
                 //    _provider.GetRequiredService<GilbarcoFuelDispenser>(),
 
-                _ => throw new NotSupportedException($"ControllerType {type} not supported")
+                _ => throw new NotSupportedException($"Контроллер типа {type} не поддерживается.")
             };
         }
     }

@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using System.Xml.Serialization;
 
@@ -53,6 +54,7 @@ namespace KIT.GasStation.ViewModels
             }
         }
         public DockLayoutManager MainDockLayoutManager { get; set; }
+        public Canvas MainCanvas { get; set; }
         public ObservableCollection<FuelDispenserViewModel> FuelDispenserViewModels
         {
             get => _fuelDispenserViewModels;
@@ -95,20 +97,20 @@ namespace KIT.GasStation.ViewModels
         #region Public Voids
 
         [Command]
-        public void DocumentGroupLoaded(RoutedEventArgs args)
+        public void ItemsControlLoaded(RoutedEventArgs args)
         {
             try
             {
-                if (args.Source is DocumentGroup documentGroup)
+                if (args.Source is ItemsControl itemsControl)
                 {
                     // Проверяем наличие XML файла
                     if (!File.Exists(_documentPanelPositionPath))
                     {
-                        DefaultPositionDocumentPanel(documentGroup);
+                        DefaultPositionDocumentPanel(itemsControl);
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 //ignore
             }
@@ -145,6 +147,41 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        public bool CanMoveItem(
+            FuelDispenserViewModel current,
+            double newX,
+            double newY,
+            double currentWidth,
+            double currentHeight,
+            double canvasWidth,
+            double canvasHeight)
+        {
+            const double spacing = 10;
+
+            if (newX < 0 || newY < 0)
+                return false;
+
+            if (newX + currentWidth > canvasWidth || newY + currentHeight > canvasHeight)
+                return false;
+
+            Rect newRect = new(
+                newX - spacing,
+                newY - spacing,
+                currentWidth + spacing * 2,
+                currentHeight + spacing * 2);
+
+            foreach (var item in FuelDispenserViewModels)
+            {
+                if (item == current)
+                    continue;
+
+                // Тут нужен доступ к реальным размерам других элементов
+                // Ниже покажу нормальный способ
+            }
+
+            return true;
+        }
+
         #endregion
 
         #region Private Voids
@@ -174,41 +211,41 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        private void DefaultPositionDocumentPanel(DocumentGroup documentGroup)
+        private void DefaultPositionDocumentPanel(ItemsControl itemsControl)
         {
-            double maxWidth = documentGroup.ActualWidth;
-            double allItemsWidth = 0;
-            double allItemsHeight = 0;
+            //double maxWidth = documentGroup.ActualWidth;
+            //double allItemsWidth = 0;
+            //double allItemsHeight = 0;
 
-            foreach (var item in documentGroup.Items.OfType<DocumentPanel>())
-            {
-                // Если размеры не определены, пропускаем этот элемент
-                if (item.ActualWidth <= 0 || item.ActualHeight <= 0)
-                    continue;
+            //foreach (var item in documentGroup.Items.OfType<DocumentPanel>())
+            //{
+            //    // Если размеры не определены, пропускаем этот элемент
+            //    if (item.ActualWidth <= 0 || item.ActualHeight <= 0)
+            //        continue;
 
-                if (allItemsWidth + item.ActualWidth >= maxWidth)
-                {
-                    allItemsWidth = 0;
-                    allItemsHeight += item.ActualHeight + 5;
-                }
+            //    if (allItemsWidth + item.ActualWidth >= maxWidth)
+            //    {
+            //        allItemsWidth = 0;
+            //        allItemsHeight += item.ActualHeight + 5;
+            //    }
 
-                item.MDILocation = new Point(allItemsWidth, allItemsHeight);
-                allItemsWidth += item.ActualWidth + 5;
+            //    item.MDILocation = new Point(allItemsWidth, allItemsHeight);
+            //    allItemsWidth += item.ActualWidth + 5;
 
-                if (!string.IsNullOrWhiteSpace(item.ActualTabCaption))
-                {
-                    _positions[item.ActualTabCaption] = new DocumentPanelPosition
-                    {
-                        DocumentPanelName = item.ActualTabCaption,
-                        X = item.MDILocation.X,
-                        Y = item.MDILocation.Y,
-                        Width = item.ActualWidth,
-                        Height = item.ActualHeight
-                    };
-                }
-            }
+            //    if (!string.IsNullOrWhiteSpace(item.ActualTabCaption))
+            //    {
+            //        _positions[item.ActualTabCaption] = new DocumentPanelPosition
+            //        {
+            //            DocumentPanelName = item.ActualTabCaption,
+            //            X = item.MDILocation.X,
+            //            Y = item.MDILocation.Y,
+            //            Width = item.ActualWidth,
+            //            Height = item.ActualHeight
+            //        };
+            //    }
+            //}
 
-            SavePositions();
+            //SavePositions();
         }
 
         private void DocumentPanel_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -321,13 +358,17 @@ namespace KIT.GasStation.ViewModels
 
         private async Task GetData()
         {
-            foreach (var nozzle in Nozzles.GroupBy(n => new { n.Side }))
+            var createdViewModels = new List<FuelDispenserViewModel>();
+
+            foreach (var nozzle in Nozzles.GroupBy(n => n.Side).OrderBy(g => g.Key))
             {
                 var viewModel = (FuelDispenserViewModel)await _navigator.GetViewModelAsync(ViewType.FuelDispenser);
-                viewModel.Side = nozzle.Key.Side;
+                viewModel.Side = nozzle.Key;
                 viewModel.Nozzles = new(nozzle.OrderBy(n => n.Tube).ToList());
-                FuelDispenserViewModels.Add(viewModel);
+                createdViewModels.Add(viewModel);
             }
+
+            FuelDispenserViewModels = new ObservableCollection<FuelDispenserViewModel>(createdViewModels);
         }
 
         private async void NozzleService_OnCreated(Nozzle createdNozzle)
