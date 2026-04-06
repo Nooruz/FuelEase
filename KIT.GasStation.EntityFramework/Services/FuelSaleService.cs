@@ -64,13 +64,44 @@ namespace KIT.GasStation.EntityFramework.Services
         {
             try
             {
-                fuelSale.Tank = null;
-                var result = await _nonQueryFuelSaleDataService.Create(fuelSale);
-                if (result != null)
+                await using var context = _contextFactory.CreateDbContext();
+                await using var transaction = await context.Database.BeginTransactionAsync();
+
+                try
                 {
-                    OnCreated?.Invoke(await GetFuelSaleWithPaymentType(result.Id));
+                    var periodKey = $"SHIFT-{fuelSale.ShiftId}";
+
+                    // Атомарно получаем следующий номер через DocumentCounters с блокировкой строки
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"MERGE INTO DocumentCounters WITH (HOLDLOCK) AS target
+                          USING (SELECT @p0 AS DocumentType, @p1 AS PeriodKey) AS source
+                          ON target.DocumentType = source.DocumentType AND target.PeriodKey = source.PeriodKey
+                          WHEN MATCHED THEN UPDATE SET CurrentValue = target.CurrentValue + 1
+                          WHEN NOT MATCHED THEN INSERT (DocumentType, PeriodKey, CurrentValue) 
+                                               VALUES (source.DocumentType, source.PeriodKey, 1);",
+                        "FuelSale", periodKey);
+
+                    // Считываем текущее значение счётчика (уже обновлённое)
+                    var counterValue = await context.DocumentCounters
+                        .Where(c => c.DocumentType == "FuelSale" && c.PeriodKey == periodKey)
+                        .Select(c => c.CurrentValue)
+                        .FirstAsync();
+
+                    fuelSale.Number = counterValue;
+                    fuelSale.Tank = null;
+
+                    await context.FuelSales.AddAsync(fuelSale);
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    OnCreated?.Invoke(await GetFuelSaleWithPaymentType(fuelSale.Id));
+                    return fuelSale;
                 }
-                return result;
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception)
             {
@@ -349,7 +380,7 @@ namespace KIT.GasStation.EntityFramework.Services
                         // здесь действительно вызываем UpdateAsync
                         await UpdateAsync(sale.Id, sale);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         // логируем ex, или помещаем обратно в канал
                     }

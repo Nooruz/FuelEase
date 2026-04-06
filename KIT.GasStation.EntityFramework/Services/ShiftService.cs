@@ -22,12 +22,45 @@ namespace KIT.GasStation.EntityFramework.Services
 
         public async Task<Shift> CreateAsync(Shift entity)
         {
-            var result = await _nonQueryDataService.Create(entity);
-            if (result != null)
+            await using var context = _contextFactory.CreateDbContext();
+            await using var transaction = await context.Database.BeginTransactionAsync();
+
+            try
             {
-                OnCreated?.Invoke(await GetAsync(result.Id));
+                var year = entity.OpeningDate.Year;
+                var periodKey = year.ToString();
+
+                // Атомарно получаем следующий номер через DocumentCounters с блокировкой строки
+                await context.Database.ExecuteSqlRawAsync(
+                    @"MERGE INTO DocumentCounters WITH (HOLDLOCK) AS target
+                      USING (SELECT @p0 AS DocumentType, @p1 AS PeriodKey) AS source
+                      ON target.DocumentType = source.DocumentType AND target.PeriodKey = source.PeriodKey
+                      WHEN MATCHED THEN UPDATE SET CurrentValue = target.CurrentValue + 1
+                      WHEN NOT MATCHED THEN INSERT (DocumentType, PeriodKey, CurrentValue) 
+                                           VALUES (source.DocumentType, source.PeriodKey, 1);",
+                    "Shift", periodKey);
+
+                // Считываем текущее значение счётчика (уже обновлённое)
+                var counterValue = await context.DocumentCounters
+                    .Where(c => c.DocumentType == "Shift" && c.PeriodKey == periodKey)
+                    .Select(c => c.CurrentValue)
+                    .FirstAsync();
+
+                entity.Number = counterValue;
+                entity.Year = year;
+
+                await context.Shifts.AddAsync(entity);
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                OnCreated?.Invoke(await GetAsync(entity.Id));
+                return entity;
             }
-            return result;
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<bool> DeleteAsync(int id)

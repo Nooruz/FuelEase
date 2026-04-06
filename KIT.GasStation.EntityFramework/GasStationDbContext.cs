@@ -29,6 +29,7 @@ namespace KIT.GasStation.EntityFramework
         public DbSet<FiscalData> FiscalDatas { get; set; }
         public DbSet<ShiftCounter> ShiftCounters { get; set; }
         public DbSet<TankShiftCounter> TankShiftCounters { get; set; }
+        public DbSet<DocumentCounter> DocumentCounters { get; set; }
 
         #endregion
 
@@ -109,6 +110,24 @@ namespace KIT.GasStation.EntityFramework
                 // Но если задаёшь:
                 entity.HasIndex(x => x.FuelSaleId).IsUnique(false);
             });
+
+            // DocumentCounters — составной первичный ключ
+            modelBuilder.Entity<DocumentCounter>()
+                .HasKey(dc => new { dc.DocumentType, dc.PeriodKey });
+
+            // Уникальный индекс: FuelSale (ShiftId, Number) — нумерация за смену
+            modelBuilder.Entity<FuelSale>(entity =>
+            {
+                entity.HasIndex(x => new { x.ShiftId, x.Number })
+                    .IsUnique()
+                    .HasDatabaseName("IX_FuelSales_ShiftId_Number");
+            });
+
+            // Уникальный индекс: Shift (Year, Number) — нумерация за год
+            modelBuilder.Entity<Shift>()
+                .HasIndex(s => new { s.Year, s.Number })
+                .IsUnique()
+                .HasDatabaseName("IX_Shifts_Year_Number");
 
             base.OnModelCreating(modelBuilder);
         }

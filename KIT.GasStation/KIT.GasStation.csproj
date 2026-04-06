@@ -78,6 +78,10 @@
     <PackageReference Include="DevExpress.Wpf.LayoutControl.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.Printing.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.PropertyGrid.ru" Version="21.2.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.20">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.0" />
   </ItemGroup>

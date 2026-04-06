@@ -1,11 +1,12 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core">
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core">
 
-    <Style TargetType="{x:Type dx:ThemedWindow}" x:Key="WindowedDocumentUIServiceStyle">
+    <Style x:Key="WindowedDocumentUIServiceStyle" TargetType="{x:Type dx:ThemedWindow}">
 
-        <Setter Property="WindowState" Value="Maximized"/>
+        <Setter Property="WindowState" Value="Maximized" />
 
     </Style>
-    
+
 </ResourceDictionary>

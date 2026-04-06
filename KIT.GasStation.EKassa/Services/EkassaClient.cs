@@ -1,6 +1,9 @@
 ﻿using KIT.GasStation.EKassa.Models;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 
 namespace KIT.GasStation.EKassa.Services
 {
@@ -68,21 +71,25 @@ namespace KIT.GasStation.EKassa.Services
         private async Task<(bool IsOk, TData? Data, EkassaHttpException? Error, HttpStatusCode StatusCode)> SendPostAsync<TData>(
             string path, object body, CancellationToken ct)
         {
+            var json = JsonSerializer.Serialize(body, body.GetType(), EkassaJson.Options);
+
             using var msg = new HttpRequestMessage(HttpMethod.Post, path)
             {
-                Content = JsonContent.Create(body, options: EkassaJson.Options)
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
             };
+
+            msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             using var resp = await _http.SendAsync(msg, ct).ConfigureAwait(false);
 
             var payload = await resp.Content.ReadFromJsonAsync<EkassaResponse<TData>>(EkassaJson.Options, ct)
                           .ConfigureAwait(false);
 
-            if (resp.IsSuccessStatusCode && payload.Data is not null)
+            if (resp.IsSuccessStatusCode && payload is not null && payload.Data is not null)
                 return (true, payload.Data, null, resp.StatusCode);
 
             var ex = EkassaHttpException.From(resp, payload);
             return (false, default, ex, resp.StatusCode);
         }
     }
-}
+}

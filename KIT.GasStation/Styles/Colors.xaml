@@ -1,56 +1,67 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Color x:Key="NozzleStatusNoneColor">#323232</Color>
-    <SolidColorBrush x:Key="NozzleStatusNoneColorBrush" Color="{StaticResource NozzleStatusNoneColor}"/>
+    <SolidColorBrush x:Key="NozzleStatusNoneColorBrush" Color="{StaticResource NozzleStatusNoneColor}" />
 
     <Color x:Key="WhiteColor">#fff</Color>
-    <SolidColorBrush x:Key="WhiteColorBrush" Color="{StaticResource WhiteColor}"/>
+    <SolidColorBrush x:Key="WhiteColorBrush" Color="{StaticResource WhiteColor}" />
 
     <Color x:Key="NozzleSelectedColor">#8CE797</Color>
-    <SolidColorBrush x:Key="NozzleSelectedColorBrush" Color="{StaticResource NozzleSelectedColor}"/>
+    <SolidColorBrush x:Key="NozzleSelectedColorBrush" Color="{StaticResource NozzleSelectedColor}" />
 
     <Color x:Key="NozzleStatusPumpWorkingColor">#3ABEFF</Color>
-    <SolidColorBrush x:Key="NozzleStatusPumpWorkingColorBrush" Color="{StaticResource NozzleStatusPumpWorkingColor}"/>
+    <SolidColorBrush x:Key="NozzleStatusPumpWorkingColorBrush" Color="{StaticResource NozzleStatusPumpWorkingColor}" />
 
     <Color x:Key="NozzleStatusWaitingStopColor">#FE9F92</Color>
-    <SolidColorBrush x:Key="NozzleStatusWaitingStopColorBrush" Color="{StaticResource NozzleStatusWaitingStopColor}"/>
+    <SolidColorBrush x:Key="NozzleStatusWaitingStopColorBrush" Color="{StaticResource NozzleStatusWaitingStopColor}" />
 
     <Color x:Key="NozzleStatusPumpStopColor">#7D1538</Color>
-    <SolidColorBrush x:Key="NozzleStatusPumpStopColorBrush" Color="{StaticResource NozzleStatusPumpStopColor}"/>
+    <SolidColorBrush x:Key="NozzleStatusPumpStopColorBrush" Color="{StaticResource NozzleStatusPumpStopColor}" />
 
     <Color x:Key="NozzleStatusNozzleWaitingRemovedColor">#B7990D</Color>
-    <SolidColorBrush x:Key="NozzleStatusNozzleWaitingRemovedColorBrush" Color="{StaticResource NozzleStatusNozzleWaitingRemovedColor}"/>
+    <SolidColorBrush x:Key="NozzleStatusNozzleWaitingRemovedColorBrush" Color="{StaticResource NozzleStatusNozzleWaitingRemovedColor}" />
 
     <!--<Color x:Key="NozzleStatusStart">#B7990D</Color>
     <SolidColorBrush x:Key="NozzleStatusNozzleWaitingRemovedColorBrush" Color="{StaticResource NozzleStatusNozzleWaitingRemovedColor}"/>-->
 
     <Color x:Key="NozzleControlModeProgramColor">#7D53DE</Color>
-    <SolidColorBrush x:Key="NozzleControlModeProgramColorBrush" Color="{StaticResource NozzleControlModeProgramColor}"/>
+    <SolidColorBrush x:Key="NozzleControlModeProgramColorBrush" Color="{StaticResource NozzleControlModeProgramColor}" />
 
     <Color x:Key="NozzleBlockColor">#ced4da</Color>
-    <SolidColorBrush x:Key="NozzleBlockColorBrush" Color="{StaticResource NozzleBlockColor}"/>
+    <SolidColorBrush x:Key="NozzleBlockColorBrush" Color="{StaticResource NozzleBlockColor}" />
 
     <Color x:Key="TankForegroundColor">#525CEB</Color>
-    <SolidColorBrush x:Key="TankForegroundColorBrush" Color="{StaticResource TankForegroundColor}"/>
+    <SolidColorBrush x:Key="TankForegroundColorBrush" Color="{StaticResource TankForegroundColor}" />
 
     <Color x:Key="TankMinimumForegroundColor">#BF3131</Color>
-    <SolidColorBrush x:Key="TankMinimumForegroundColorBrush" Color="{StaticResource TankMinimumForegroundColor}"/>
+    <SolidColorBrush x:Key="TankMinimumForegroundColorBrush" Color="{StaticResource TankMinimumForegroundColor}" />
 
     <Color x:Key="Fuel92Color">#F6B511</Color>
-    <SolidColorBrush x:Key="Fuel92ColorBrush" Color="{StaticResource Fuel92Color}"/>
+    <SolidColorBrush x:Key="Fuel92ColorBrush" Color="{StaticResource Fuel92Color}" />
 
     <Color x:Key="Fuel95Color">#ED2D38</Color>
-    <SolidColorBrush x:Key="Fuel95ColorBrush" Color="{StaticResource Fuel95Color}"/>
+    <SolidColorBrush x:Key="Fuel95ColorBrush" Color="{StaticResource Fuel95Color}" />
 
     <Color x:Key="Fuel98Color">#4FA800</Color>
-    <SolidColorBrush x:Key="Fuel98ColorBrush" Color="{StaticResource Fuel98Color}"/>
+    <SolidColorBrush x:Key="Fuel98ColorBrush" Color="{StaticResource Fuel98Color}" />
 
     <Color x:Key="FuelDieselColor">#737373</Color>
-    <SolidColorBrush x:Key="FuelDieselColorBrush" Color="{StaticResource FuelDieselColor}"/>
+    <SolidColorBrush x:Key="FuelDieselColorBrush" Color="{StaticResource FuelDieselColor}" />
 
     <Color x:Key="InternetConnectedColor">Green</Color>
     <Color x:Key="InternetDisconnectedColor">Red</Color>
     <Color x:Key="InternetCheckingColor">Orange</Color>
+
+    <!--  Акцентный цвет выделения контроллера  -->
+    <Color x:Key="ControllerSelectedColor">#0078D4</Color>
+    <SolidColorBrush x:Key="ControllerSelectedColorBrush" Color="{StaticResource ControllerSelectedColor}" />
+
+    <!--  Нейтральная рамка контроллера  -->
+    <Color x:Key="ControllerBorderColor">#D0D0D0</Color>
+    <SolidColorBrush x:Key="ControllerBorderColorBrush" Color="{StaticResource ControllerBorderColor}" />
+
+    <!--  Фон контроллера  -->
+    <Color x:Key="ControllerBackgroundColor">#FFFFFF</Color>
+    <SolidColorBrush x:Key="ControllerBackgroundColorBrush" Color="{StaticResource ControllerBackgroundColor}" />
 
 </ResourceDictionary>

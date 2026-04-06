@@ -1,6 +1,7 @@
 ﻿using KIT.GasStation.Emulator;
 using KIT.GasStation.FuelDispenser;
 using KIT.GasStation.HardwareConfigurations.Models;
+using KIT.GasStation.Lanfeng;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KIT.App.Infrastructure.Factories
@@ -55,8 +56,8 @@ namespace KIT.App.Infrastructure.Factories
                 ControllerType.Emulator =>
                     _provider.GetRequiredService<EmulatorFuelDispenser>(),
 
-                //ControllerType.Lanfeng =>
-                //    _provider.GetRequiredService<LanfengFuelDispenser>(),
+                ControllerType.Lanfeng =>
+                    _provider.GetRequiredService<LanfengFuelDispenser>(),
 
                 //ControllerType.Gilbarco =>
                 //    _provider.GetRequiredService<GilbarcoFuelDispenser>(),

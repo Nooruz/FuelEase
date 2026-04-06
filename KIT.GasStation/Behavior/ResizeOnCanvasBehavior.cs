@@ -56,7 +56,7 @@ namespace KIT.GasStation.Behavior
             if (sender is not Thumb thumb)
                 return;
 
-            var presenter = FindAncestor<ContentPresenter>(thumb);
+            var presenter = (FrameworkElement)FindAncestor<ListBoxItem>(thumb) ?? FindAncestor<ContentPresenter>(thumb);
             var itemsControl = FindAncestor<ItemsControl>(thumb);
             var canvas = FindAncestor<Canvas>(thumb);
 
@@ -136,11 +136,11 @@ namespace KIT.GasStation.Behavior
             vm.Width = newWidth;
         }
 
-        private static bool IntersectsAny(ItemsControl itemsControl, ContentPresenter currentPresenter, Rect rect)
+        private static bool IntersectsAny(ItemsControl itemsControl, FrameworkElement currentPresenter, Rect rect)
         {
             foreach (var item in itemsControl.Items)
             {
-                var other = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as ContentPresenter;
+                var other = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement;
                 if (other == null || other == currentPresenter)
                     continue;
 

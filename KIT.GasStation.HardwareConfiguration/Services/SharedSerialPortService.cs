@@ -1,5 +1,6 @@
 ﻿using Serilog;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.IO.Ports;
 using System.Text.RegularExpressions;
 
@@ -269,12 +270,12 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         #region Private Helpers
 
         private byte[] WriteReadOnce_TwotpFrame(
-    byte[] tx,
-    int writeToReadDelayMs,
-    int readTimeoutMs,
-    bool discardInputBeforeTx,
-    string portLabel,
-    CancellationToken ct)
+            byte[] tx,
+            int writeToReadDelayMs,
+            int readTimeoutMs,
+            bool discardInputBeforeTx,
+            string portLabel,
+            CancellationToken ct)
         {
             // короткий ReadTimeout, чтобы "пульсировать" и проверять общий таймер
             _port.ReadTimeout = 120;
@@ -401,6 +402,9 @@ namespace KIT.GasStation.HardwareConfigurations.Services
 
         private void OpenPortOnce(PortKey key, SerialPortOptions options)
         {
+            // Создаём файловый логгер теперь, когда имя порта известно
+            CreatePortLogger(key.PortName);
+
             SerialPort? createdPort = null;
             try
             {
@@ -511,29 +515,85 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             }
         }
 
+        /// <summary>
+        /// Устанавливает bootstrap-логгер до того как известно имя порта.
+        /// Использует глобальный Serilog.Log.Logger приложения.
+        /// </summary>
         private void CreateLogger()
         {
-            // создаём общую папку для логов ТРК
+            _logger = Log.Logger;
+        }
+
+        /// <summary>
+        /// Создаёт файловый логгер, уникальный для данного порта.
+        /// Файл: logs/ports/{portName}_{date}.log, rolling по дням.
+        /// Перед созданием архивирует (GZip) логи предыдущих дней.
+        /// </summary>
+        private void CreatePortLogger(string portName)
+        {
             var logRoot = Path.Combine(AppContext.BaseDirectory, "logs", "ports");
             Directory.CreateDirectory(logRoot);
 
-            // безопасное имя файла (уникальное для экземпляра)
-            string fileName = Sanitize($"Port_{new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day)}");
-            string path = Path.Combine(logRoot, fileName + ".log");
+            ArchivePreviousDayLogs(logRoot, portName);
 
-            // отдельный Serilog для файла инстанса
+            string safeName = Sanitize(portName);
+            // Serilog добавит дату автоматически через rollingInterval
+            string pathTemplate = Path.Combine(logRoot, $"{safeName}-.log");
+
             _logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
+                .MinimumLevel.Error()
                 .WriteTo.File(
-                    path: path,
+                    path: pathTemplate,
                     rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 14,
+                    retainedFileCountLimit: 7,
                     shared: true,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
                 )
                 .CreateLogger();
+        }
 
-            _logger.Information("Инициализация SharedSerialPort");
+        /// <summary>
+        /// Архивирует (GZip) файлы логов данного порта за прошлые дни.
+        /// Исходный .log удаляется после успешного сжатия.
+        /// </summary>
+        private static void ArchivePreviousDayLogs(string logRoot, string portName)
+        {
+            try
+            {
+                string safeName = Sanitize(portName);
+                string today = DateTime.Today.ToString("yyyyMMdd");
+
+                foreach (var logFile in Directory.GetFiles(logRoot, $"{safeName}-*.log"))
+                {
+                    // Пропускаем файл текущего дня
+                    if (Path.GetFileName(logFile).Contains(today))
+                        continue;
+
+                    string gzPath = logFile + ".gz";
+                    if (File.Exists(gzPath))
+                    {
+                        // Архив уже есть — просто удаляем исходник если он завис
+                        TryDelete(logFile);
+                        continue;
+                    }
+
+                    using (var input = File.OpenRead(logFile))
+                    using (var output = File.Create(gzPath))
+                    using (var gz = new GZipStream(output, CompressionLevel.Optimal))
+                        input.CopyTo(gz);
+
+                    TryDelete(logFile);
+                }
+            }
+            catch
+            {
+                // Архивирование не критично — не прерываем запуск
+            }
+        }
+
+        private static void TryDelete(string path)
+        {
+            try { File.Delete(path); } catch { /* best effort */ }
         }
 
         // sanitization для имени файла
@@ -549,78 +609,55 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             int writeToReadDelayMs, int readTimeoutMs, int attempt, int maxRetries,
             string portLabel, CancellationToken ct)
         {
-            // Устанавливаем таймауты
-            _port.ReadTimeout = readTimeoutMs;
-            _port.WriteTimeout = 1000; // 1 секунда на запись
+            // Pulse-таймаут: каждый Read() ждёт не более 120ms, общий таймер — readTimeoutMs.
+            // Это не блокирует поток надолго и даёт CancellationToken возможность прерваться.
+            _port.ReadTimeout = 60;
+            _port.WriteTimeout = 1000;
 
 #if DEBUG
-            _logger.Debug("Serial {Port}: write {TxLength} bytes (attempt {Attempt}/{MaxRetries}).", portLabel, tx.Length, attempt, maxRetries);
+            _logger.Debug("Serial {Port}: TX {TxLen} bytes (attempt {Attempt}/{MaxRetries}): {Hex}",
+                portLabel, tx.Length, attempt, maxRetries, BitConverter.ToString(tx));
 #endif
 
-            // Записываем данные (синхронно)
             _port.Write(tx, 0, tx.Length);
-            _port.BaseStream.Flush();
 
             if (writeToReadDelayMs > 0)
-            {
                 Thread.Sleep(writeToReadDelayMs);
-            }
 
-            // Читаем ответ (синхронно)
             var buf = new byte[expectedRxLength];
-            var total = 0;
+            int total = 0;
+            var sw = Stopwatch.StartNew();
 
-#if DEBUG
-            _logger.Debug("Serial {Port}: reading {ExpectedLength} bytes with timeout {ReadTimeoutMs}ms", portLabel, expectedRxLength, readTimeoutMs);
-#endif
-
-            var stopwatch = Stopwatch.StartNew();
-
-            while (total < expectedRxLength)
+            while (total < expectedRxLength && sw.ElapsedMilliseconds <= readTimeoutMs)
             {
                 ct.ThrowIfCancellationRequested();
 
                 try
                 {
-                    var bytesToRead = expectedRxLength - total;
-                    var read = _port.Read(buf, total, bytesToRead);
-
+                    int read = _port.Read(buf, total, expectedRxLength - total);
                     if (read > 0)
-                    {
                         total += read;
-
-#if DEBUG
-                        _logger.Debug("Serial {Port}: read {ReadBytes}/{ExpectedLength} bytes", portLabel, total, expectedRxLength);
-#endif
-
-                    }
                 }
                 catch (TimeoutException)
                 {
-                    var elapsed = stopwatch.ElapsedMilliseconds;
-                    _logger.Warning("Serial {Port}: read timeout after {ElapsedMs}ms (got {Total}/{Expected} bytes)", portLabel, elapsed, total, expectedRxLength);
-                }
-
-                // Если мы получили хоть какие-то данные, но не все, продолжаем пытаться
-                // Но проверяем общий таймаут
-                if (stopwatch.ElapsedMilliseconds > readTimeoutMs)
-                {
-                    return buf[..total];
+                    // Pulse-таймаут истёк — данные ещё не пришли, проверяем общий таймер
                 }
             }
 
-            // Очищаем буфер, если есть лишние данные
-            if (_port.BytesToRead > 0)
+            if (total < expectedRxLength)
             {
-                var extraBytes = _port.BytesToRead;
-                _port.DiscardInBuffer();
-#if DEBUG
-                _logger.Warning("Serial {Port}: discarded {ExtraBytes} extra bytes from buffer", portLabel, extraBytes);
-#endif
+                string rxHex = total > 0 ? BitConverter.ToString(buf, 0, total) : "(пусто)";
+                _logger.Error("Serial {Port}: timeout after {ElapsedMs}ms, got {Total}/{Expected} bytes (attempt {Attempt}/{MaxRetries}). TX: {TxHex} | RX: {RxHex}",
+                    portLabel, sw.ElapsedMilliseconds, total, expectedRxLength, attempt, maxRetries,
+                    BitConverter.ToString(tx), rxHex);
             }
 
+            if (_port.BytesToRead > 0)
+                _port.DiscardInBuffer();
+
 #if DEBUG
-            _logger.Debug("Serial {Port}: successfully read {Total} bytes in {ElapsedMs}ms", portLabel, total, stopwatch.ElapsedMilliseconds);
+            _logger.Debug("Serial {Port}: RX {Total} bytes in {ElapsedMs}ms: {Hex}",
+                portLabel, total, sw.ElapsedMilliseconds, BitConverter.ToString(buf));
 #endif
 
             return buf;

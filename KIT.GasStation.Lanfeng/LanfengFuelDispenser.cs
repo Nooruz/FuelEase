@@ -1,1138 +1,907 @@
-﻿//using KIT.GasStation.Domain.Models;
-//using KIT.GasStation.FuelDispenser.Models;
-//using KIT.GasStation.FuelDispenser.Services;
-//using KIT.GasStation.HardwareConfigurations.Models;
-//using KIT.GasStation.HardwareConfigurations.Services;
-//using KIT.GasStation.Lanfeng.Utilities;
-//using Microsoft.AspNetCore.SignalR.Client;
-//using Serilog;
-//using System.Diagnostics;
-//using System.Text.RegularExpressions;
-
-//namespace KIT.GasStation.Lanfeng
-//{
-//    /// <summary>
-//    /// Сервис для работы с колонкой Lanfeng через COM-порт.
-//    /// Прослушивает статусы и обрабатывает команды.
-//    /// </summary>
-//    public sealed class LanfengFuelDispenser : FuelDispenserServiceBase
-//    {
-//        #region Private Members
-
-//        private readonly AsyncManualResetEvent _pauseGate = new(initialState: true);
-//        private HubConnection _hub;
-//        private volatile bool _pollingEnabled;
-//        private Task _pollingTask;
-//        private PortLease? _lease;
-//        private readonly object _pollLock = new();
-//        private const int _frameLen = 14;
-//        private LanfengControllerType _controllerType;
-//        private volatile bool _hardwareAvailable = true;
-//        private string? _lastAvailabilityReason;
-//        private bool _hubHandlersRegistered;
-//        private int _hubRestartLoop;
-//        private PortKey _portKey;
-//        private CancellationToken _token;
-
-//        #endregion
-
-//        #region Constructors
-
-//        //public LanfengFuelDispenser(Controller controller,
-//        //    int address,
-//        //    IHubClient hubClient,
-//        //    ISharedSerialPortService sharedSerialPortService)
-//        //    : base(controller, address, sharedSerialPortService, hubClient)
-//        //{
-//        //    _hubClient = hubClient;
-//        //    _sharedSerialPortService = sharedSerialPortService;
-
-//        //    if (Columns != null)
-//        //    {
-//        //        _controllerType = Columns.Count > 1 ? LanfengControllerType.Multi : LanfengControllerType.Single;
-//        //    }
-
-//        //    CreateLogger();
-//        //}
-
-//        #endregion
-
-//        #region Protected Voids
-
-//        protected override async Task OnOpenAsync(CancellationToken token)
-//        {
-//            try
-//            {
-//                _token = token;
-
-//                _hub = _hubClient.Connection;
-//                RegisterHubConnectionHandlers();
-
-//                _logger.Information("Начало инициализации ТРК {Id}. Состояние HubConnection: {State}", Controller.Id, _hub?.State.ToString() ?? "null");
-
-//                _logger.Debug("EnsureStartedAsync вызван. Текущее состояние: {State}", _hub.State);
-
-//                _hub.On<StartPollingCommand>("StartPolling", async command =>
-//                {
-//                    await ExecuteHubCommandAsync(command.CommandId, command.GroupName,
-//                        () => StartPollingAsync());
-//                });
-
-//                _hub.On<StopPollingCommand>("StopPolling", async command =>
-//                {
-//                    await ExecuteHubCommandAsync(command.CommandId, command.GroupName, StopPollingAsync);
-//                });
-
-//                _hub.On<Guid, Dictionary<string, decimal>>("SetPricesAsync", async (commandId, prices) =>
-//                {
-//                    var groupName = prices.Keys.FirstOrDefault() ?? string.Empty;
-//                    await ExecuteHubCommandAsync(commandId, groupName, () => SetPricesAsync(prices));
-//                });
-
-//                _hub.On<Guid, string, decimal>("SetPriceAsync", async (commandId, groupName, price) =>
-//                {
-//                    await ExecuteHubCommandAsync(commandId, groupName,
-//                        () => SetPriceAsync(groupName, price));
-//                });
-
-//                _hub.On<Guid, string>("InitializeConfigurationAsync", async (commandId, groupName) =>
-//                {
-//                    await ExecuteHubCommandAsync(commandId, groupName,
-//                        () => InitializeConfigurationAsync(groupName));
-//                });
-
-//                _hub.On<string, decimal, bool>("StartFuelingAsync", async (groupName, sum, bySum) =>
-//                {
-//                    await StartFuelingAsync(groupName, sum, bySum);
-//                });
-
-//                _hub.On<string>("CompleteFuelingAsync", async (groupName) =>
-//                {
-//                    await CompleteFuelingAsync(groupName);
-//                });
-
-//                _hub.On<string, bool>("ChangeControlModeAsync", async (groupName, isProgramMode) =>
-//                {
-//                    await ChangeControlModeAsync(groupName, isProgramMode);
-//                });
-
-//                _hub.On<string>("StopFuelingAsync", async (groupName) =>
-//                {
-//                    await StopFuelingAsync(groupName);
-//                });
-
-//                _hub.On<string>("ResumeFuelingAsync", async (groupName) =>
-//                {
-//                    await ResumeFuelingAsync(groupName);
-//                });
-
-//                _hub.On<string>("GetStatusByAddressAsync", async (groupName) =>
-//                {
-//                    await GetStatusByAddressAsync(groupName);
-//                });
-
-//                _hub.On<Guid, string>("GetCounterAsync", async (commandId, groupName) =>
-//                {
-//                    await ExecuteHubCommandAsync(commandId, groupName, () => GetCounterAsync(groupName));
-//                });
-
-//                _hub.On<Guid, string>("GetCountersAsync", async (commandId, groupName) =>
-//                {
-//                    await ExecuteHubCommandAsync(commandId, groupName, () => GetCountersAsync());
-//                });
-
-//                // 1. СНАЧАЛА запускаем SignalR (синхронно)
-//                await _hubClient.EnsureStartedAsync(token);
-
-//                // 3. Присоединяемся к группам
-//                await JoinWorkerGroupsAsync();
-//                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, "Ошибка в OnOpenAsync: {Message}", e.Message);
-//                throw;
-//            }
-//        }
-
-//        /// <summary>
-//        /// Цикл опроса статуса ТРК.
-//        /// Выполняется пока не придёт сигнал отмены.
-//        /// </summary>
-//        protected override async Task OnTickAsync()
-//        {
-//            _logger.Information("ТРК Lanfeng запущена, используется порт {Port}", Controller.ComPort);
-
-//            // Даем время на выполнение инициализационных команд
-//            await Task.Delay(3000, _token);
-
-//            while (!_token.IsCancellationRequested && _pollingEnabled)
-//            {
-//                try
-//                {
-//                    // Ждем, если опрос приостановлен
-//                    _pollingResumedEvent.Wait(_token);
-
-//                    await ExecuteCommandSafeAsync(() =>
-//                        ExecuteCommandAsync(Command.Status, Address, 0, null));
-//                }
-//                catch (OperationCanceledException ex) when (ex.CancellationToken == _token)
-//                {
-//                    _logger.Information("Опрос ТРК Lanfeng отменён: {Message}", ex.Message);
-//                    break;
-//                }
-//                catch (Exception e)
-//                {
-//                    _logger.Error(e, e.Message, e.StackTrace);
-//                    await Task.Delay(1000, _token);
-//                }
-//                if (!_pollingEnabled) break;
-//            }
-//        }
-
-//        protected override async Task OnCloseAsync()
-//        {
-//            // Отписываемся от событий хаба
-//            if (_hubHandlersRegistered && _hub != null)
-//            {
-//                _hub.Reconnecting -= OnHubReconnecting;
-//                _hub.Reconnected -= OnHubReconnected;
-//                _hub.Closed -= OnHubClosed;
-//                _hubHandlersRegistered = false;
-//            }
-
-//            // Останавливаем опрос
-//            if (_pollingEnabled)
-//            {
-//                await StopPollingAsync();
-//            }
-
-//            // Освобождаем порт
-//            if (_lease != null)
-//            {
-//                await _lease.DisposeAsync();
-//                _lease = null;
-//            }
-
-//            await base.OnCloseAsync();
-//        }
-
-//        public override async ValueTask DisposeAsync()
-//        {
-//            (_logger as IDisposable)?.Dispose();
-//            await base.DisposeAsync();
-//        }
-
-//        #endregion
-
-//        #region Private Voids
-
-//        private async Task PublishStatusAsync(LanfengResonse resonse)
-//        {
-//            var column = GetColumnByAddress(resonse.StatusAddress);
-
-//            if (column == null) return;
-
-//            var parsed = new StatusResponse
-//            {
-//                Status = resonse.Status,
-//                GroupName = column.GroupName
-//            };
-
-//            await _hub.InvokeAsync("PublishStatus", parsed, cancellationToken: _token);
-//        }
-
-//        private async Task PublishPumpWorkingAsync(LanfengResonse resonse)
-//        {
-//            var column = GetColumnByAddress(resonse.StatusAddress);
-
-//            column ??= GetColumnByAddress(resonse.Address);
-
-//            if (column == null) return;
-
-//            var fuelingResponse = new FuelingResponse
-//            {
-//                GroupName = column.GroupName,
-//                Quantity = resonse.Quantity,
-//                Sum = resonse.Sum,
-//            };
-
-//            await _hub.InvokeAsync("OnFuelingAsync", fuelingResponse);
-//        }
-
-//        private async Task PublishWaitingStopAsync(LanfengResonse resonse)
-//        {
-//            var column = GetColumnByAddress(resonse.StatusAddress);
-
-//            if (column == null) return;
-
-//            await _hub.InvokeAsync("OnWaitingAsync", column.GroupName);
-//        }
-
-//        private async Task PublishPumpStopAsync(LanfengResonse resonse)
-//        {
-//            var column = GetColumnByAddress(resonse.StatusAddress);
-
-//            if (column is null) return;
-
-//            var fuelingResponse = new FuelingResponse
-//            {
-//                GroupName = column.GroupName,
-//                Quantity = resonse.Quantity,
-//                Sum = resonse.Sum,
-//            };
-
-//            await _hub.InvokeAsync("OnPumpStopAsync", fuelingResponse, _token);
-
-//            await _hub.InvokeAsync("OnCompletedFuelingAsync", column.GroupName, fuelingResponse.Quantity, cancellationToken: _token);
-//        }
-
-//        private async Task PublishCounterLiterAsync(LanfengResonse resonse)
-//        {
-//            var column = GetColumnByAddress(resonse.Address);
-
-//            if (column == null) return;
-
-//            var counter = new CounterData
-//            {
-//                GroupName = column.GroupName,
-//                Counter = resonse.CounterQuantity
-//            };
-
-//            await _hub.InvokeAsync("OnCounterUpdated", counter, cancellationToken: _token);
-//        }
-
-//        private async Task PublishCompleteFuelingAsync(LanfengResonse resonse)
-//        {
-//            var column = GetColumnByAddress(resonse.Address);
-
-//            if (column == null) return;
-
-//            await _hub.InvokeAsync("OnCompletedFuelingAsync", column.GroupName, resonse.Quantity, cancellationToken: _token);
-//        }
-
-//        private async Task ExecuteCommandAsync(
-//            Command cmd,
-//            int controllerAddress,
-//            int nozzleMask,
-//            decimal? value = null,
-//            int expectedLength = _frameLen,
-//            int writeToReadDelayMs = 100,
-//            int readTimeoutMs = 3000,
-//            int maxRetries = 2)
-//        {
-//            if (_sharedSerialPortService is null)
-//                throw new InvalidOperationException("Последовательный порт еще не получен.");
-
-//            await _pauseGate.WaitAsync(_token);     // уважаем паузу
-
-//            try
-//            {
-//                var frame = ProtocolParser.BuildRequest(
-//                    cmd,
-//                    controllerAddress,
-//                    columnAddress: nozzleMask,
-//                    value: value,
-//                    controllerType: _controllerType);
-
-//                var response = new LanfengResonse();
-
-//                byte[] rx;
-//                var attempt = 0;
-
-//                while (true)
-//                {
-//                    _token.ThrowIfCancellationRequested();
-//                    attempt++;
-
-//                    try
-//                    {
-//                        _logger.Information("[Tx] {Tx} экземпляр: {sd}", BitConverter.ToString(frame), GetHashCode());
-
-//                        rx = await _sharedSerialPortService.WriteReadAsync(
-//                            frame,
-//                            expectedRxLength: expectedLength,
-//                            writeToReadDelayMs: writeToReadDelayMs,
-//                            readTimeoutMs: readTimeoutMs,
-//                            maxRetries: maxRetries,
-//                            ct: _token);
-//                        await BroadcastWorkerAvailabilityAsync(true);
-
-//                        response = ProtocolParser.ParseResponse(rx);
-
-//                        if (response.IsValid)
-//                        {
-//                            _logger.Information("[Rx] {Rx}", BitConverter.ToString(response.Data));
-//                            await BroadcastWorkerAvailabilityAsync(true);
-//                            break; // всё ок, выходим из цикла
-//                        }
-
-//#if DEBUG
-//                        _logger.Warning("Невалидный ответ от ТРК. Попытка {Attempt}. Повтор...", attempt);
-//#endif
-//                    }
-//                    catch (Exception ex) when (IsCriticalSerialException(ex))
-//                    {
-//                        _logger.Error(ex, "Ошибка обмена с COM-портом, колонка будет отмечена как недоступная");
-//                        await BroadcastWorkerAvailabilityAsync(false, ex.Message);
-//                        throw;
-//                    }
-//                }
-
-//                Column? column = null;
-
-//                if (response.Command is Command.CounterLiter)
-//                {
-//                    if (_controllerType == LanfengControllerType.Single)
-//                    {
-//                        column = Columns.FirstOrDefault();
-//                    }
-//                    else
-//                    {
-//                        column = GetColumnByAddress(response.Address);
-//                    }
-//                }
-//                else
-//                {
-//                    if (_controllerType == LanfengControllerType.Single)
-//                    {
-//                        column = Columns.FirstOrDefault();
-//                    }
-//                    else
-//                    {
-//                        column = GetColumnByAddress(response.StatusAddress);
-//                    }
-//                }
-
-//                switch (response.Status)
-//                {
-//                    case NozzleStatus.PumpWorking:
-//                        await PublishPumpWorkingAsync(response);
-//                        break;
-//                    case NozzleStatus.WaitingStop:
-//                        await PublishWaitingStopAsync(response);
-//                        await StopFuelingAsync(response);
-//                        break;
-//                    case NozzleStatus.PumpStop:
-//                        await PublishPumpStopAsync(response);
-//                        break;
-//                    case NozzleStatus.WaitingRemoved:
-//                        break;
-//                    case NozzleStatus.Blocking:
-//                        break;
-//                    default:
-//                        break;
-//                }
-
-//                switch (response.Command)
-//                {
-//                    case Command.Status:
-//                        await PublishStatusAsync(response);
-//                        break;
-//                    case Command.StartFuelingSum:
-//                        break;
-//                    case Command.StartFuelingQuantity:
-//                        break;
-//                    case Command.StopFueling:
-//                        break;
-//                    case Command.CompleteFueling:
-//                        await PublishCompleteFuelingAsync(response);
-//                        break;
-//                    case Command.ContinueFueling:
-//                        break;
-//                    case Command.ChangePrice:
-//                        break;
-//                    case Command.CounterLiter:
-//                        await PublishCounterLiterAsync(response);
-//                        break;
-//                    case Command.CounterSum:
-//                        break;
-//                    case Command.FirmwareVersion:
-//                        break;
-//                    case Command.ProgramControlMode:
-//                        break;
-//                    case Command.KeyboardControlMode:
-//                        break;
-//                    default:
-//                        break;
-//                }
-
-//                await HandleColumnLiftedAsync(response);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, "Ошибка ExecuteCommandAsync: {Message}", e.Message);
-//                throw;
-//            }
-//        }
-
-//        private async Task ChangeControlModeAsync(string groupName, bool isProgramMode)
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                var column = GetColumnByGroupName(groupName);
-//                if (column is null)
-//                {
-//                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
-//                    return;
-//                }
-
-//                var cmd = isProgramMode ? Command.ProgramControlMode : Command.KeyboardControlMode;
-//                await ExecuteCommandAsync(cmd, Address, column.LanfengAddress);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private async Task SetPricesAsync(Dictionary<string, decimal> prices)
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                foreach (var (group, price) in prices)
-//                {
-//                    var column = GetColumnByGroupName(group);
-
-//                    if (column is null)
-//                    {
-//                        _logger.Warning("Колонка {GroupName} не найдена", group);
-//                        return;
-//                    }
-
-//                    await ExecuteCommandAsync(Command.ChangePrice, Address, column.LanfengAddress, price);
-//                }
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private async Task SetPriceAsync(string groupName, decimal price)
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                var column = GetColumnByGroupName(groupName);
-
-//                if (column is null)
-//                {
-//                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
-//                    return;
-//                }
-
-//                await ExecuteCommandAsync(Command.ChangePrice, Address, column.LanfengAddress, price);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private async Task GetCounterAsync(string groupName)
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                var column = Columns.FirstOrDefault(c => c.GroupName == groupName);
-
-//                if (column == null) return;
-
-//                await ExecuteCommandAsync(Command.CounterLiter, Address, column.LanfengAddress);
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private async Task GetCountersAsync()
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                foreach (var item in Columns)
-//                {
-//                    await ExecuteCommandAsync(Command.CounterLiter, Address, item.LanfengAddress);
-//                }
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private async Task InitializeConfigurationAsync(string groupName)
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                await ExecuteCommandAsync(Command.Status, Address, 0);
-//                await ExecuteCommandAsync(Command.FirmwareVersion, Address, 0);
-
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private async Task StartFuelingAsync(string groupName, decimal sum, bool bySum)
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                var column = GetColumnByGroupName(groupName);
-
-//                if (column is null)
-//                {
-//                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
-//                    return;
-//                }
-
-//                var cmd = bySum ? Command.StartFuelingSum : Command.StartFuelingQuantity;
-//                await ExecuteCommandAsync(cmd, Address, column.LanfengAddress, sum);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private async Task StopFuelingAsync(string groupName)
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                var column = GetColumnByGroupName(groupName);
-
-//                if (column is null)
-//                {
-//                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
-//                    return;
-//                }
-
-//                await ExecuteCommandAsync(Command.StopFueling, Address, column.LanfengAddress);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private async Task StopFuelingAsync(LanfengResonse resonse)
-//        {
-//            try
-//            {
-//                var column = GetColumnByAddress(resonse.StatusAddress);
-
-//                if (column is null) return;
-
-//                var frame = ProtocolParser.BuildRequest(
-//                    Command.CompleteFueling,
-//                    Address,
-//                    columnAddress: column.LanfengAddress,
-//                    controllerType: _controllerType);
-
-//                _logger.Information("[Tx] {Tx} экземпляр: {sd}", BitConverter.ToString(frame), GetHashCode());
-
-//                var rx = await _sharedSerialPortService.WriteReadAsync(
-//                            frame,
-//                            expectedRxLength: _frameLen,
-//                            writeToReadDelayMs: 100,
-//                            readTimeoutMs: 3000,
-//                            maxRetries: 2,
-//                            ct: _token);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//        }
-
-//        private async Task ResumeFuelingAsync(string groupName)
-//        {
-//            try
-//            {
-//                var column = GetColumnByGroupName(groupName);
-
-//                if (column is null)
-//                {
-//                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
-//                    return;
-//                }
-//                await ExecuteCommandAsync(Command.ContinueFueling, Address, column.LanfengAddress);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//        }
-
-//        private async Task GetStatusByAddressAsync(string groupName)
-//        {
-//            try
-//            {
-//                await PausePollingAsync();
-
-//                var column = GetColumnByGroupName(groupName);
-
-//                if (column is null)
-//                {
-//                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
-//                    return;
-//                }
-//                await ExecuteCommandAsync(Command.Status, Address, column.LanfengAddress);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        /// <summary>
-//        /// Метод остановки цикла опроса.
-//        /// </summary>
-//        private async Task StopPollingAsync()
-//        {
-//            Task? toAwait = null;
-//            lock (_pollLock)
-//            {
-//                if (!_pollingEnabled) return;     // уже остановлено
-//                _pollingEnabled = false;
-//                toAwait = _pollingTask;
-//            }
-
-//            // даём циклу корреткно выйти
-//            if (toAwait is not null)
-//            {
-//                try { await toAwait; } catch { /* игнор логика выхода */ }
-//            }
-
-//            // освобождаем lease и физически закрываем COM, если больше никто не держит
-//            if (_lease is not null)
-//            {
-//                await _lease.DisposeAsync();
-//                _lease = null;
-//            }
-//            _sharedSerialPortService = null!;
-//        }
-
-//        /// <summary>
-//        /// Метод запуска цикла опроса.
-//        /// </summary>
-//        private async Task StartPollingAsync()
-//        {
-//            if (_pollingTask == null || _pollingTask.IsCompleted)
-//            {
-//                lock (_pollLock)
-//                {
-//                    if (_pollingEnabled) return;      // уже запущено
-//                }
-
-//                try
-//                {
-//                    // 2) Только после успешного Acquire включаем флаг
-//                    lock (_pollLock)
-//                    {
-//                        _pollingEnabled = true;
-//                    }
-
-//                    // 3) Стартуем цикл опроса (lease остаётся жить в поле)
-//                    _pollingTask = OnTickAsync();
-//                    await BroadcastWorkerAvailabilityAsync(true, "Polling started");
-//                }
-//                catch (Exception ex)
-//                {
-//                    _logger.Error(ex, "Не удалось стартовать polling");
-//                    lock (_pollLock) { _pollingEnabled = false; }
-
-//                    // если успели получить лизу — аккуратно отпустим и обнулим
-//                    if (_lease is not null)
-//                    {
-//                        await _lease.DisposeAsync();
-//                        _lease = null;
-//                    }
-//                    _sharedSerialPortService = null!;
-//                    await BroadcastWorkerAvailabilityAsync(false);
-//                }
-//            }
-//        }
-
-//        private async Task HandleColumnLiftedAsync(LanfengResonse response)
-//        {
-//            if (response.Data is null) return;
-
-//            // Протокол: в младшем полубайте (low nibble) порядковый номер пистолета (1..n).
-//            int liftedOrdinal = response.Data[12] & 0x0F;
-
-//            if (liftedOrdinal == 0)
-//            {
-//                var liftedColumn = Columns.FirstOrDefault(c => c.IsLifted);
-//                if (liftedColumn is not null)
-//                {
-//                    liftedColumn.IsLifted = false;
-//                    await _hub.InvokeAsync("ColumnLiftedChanged", liftedColumn.GroupName, false);
-//                }
-//            }
-//            else
-//            {
-//                var column = Columns.FirstOrDefault(c => c.LanfengAddress == liftedOrdinal);
-//                if (column is not null)
-//                {
-//                    column.IsLifted = true;
-//                    await _hub.InvokeAsync("ColumnLiftedChanged", column.GroupName, true);
-//                }
-//            }
-//        }
-
-//        private async Task CompleteFuelingAsync(string groupName)
-//        {
-//            try
-//            {
-//                await ResumePollingAsync();
-
-//                await Task.Delay(300);
-
-//                var column = GetColumnByGroupName(groupName);
-
-//                if (column is null)
-//                {
-//                    _logger.Warning("Колонка {GroupName} не найдена", groupName);
-//                    return;
-//                }
-
-//                await ExecuteCommandAsync(Command.CompleteFueling, Address, column.LanfengAddress);
-//            }
-//            catch (Exception e)
-//            {
-//                _logger.Error(e, e.Message);
-//            }
-//            finally
-//            {
-//                await ResumePollingAsync();
-//            }
-//        }
-
-//        private Column? GetColumnByGroupName(string groupName)
-//        {
-//            return Columns.FirstOrDefault(c => c.GroupName == groupName);
-//        }
-
-//        private Column? GetColumnByAddress(int? address)
-//        {
-//            return Columns.FirstOrDefault(c => c.LanfengAddress == address);
-//        }
-
-//        #endregion
-
-//        #region Hub
-
-//        private async Task ExecuteHubCommandAsync(Guid commandId, string groupName, Func<Task> action)
-//        {
-//            Exception? error = null;
-//            try
-//            {
-//                await action();
-//            }
-//            catch (Exception ex)
-//            {
-//                error = ex;
-//                _logger.Error(ex, "Ошибка выполнения команды {CommandId} для {Group}", commandId, groupName);
-//            }
-
-//            await ReportCommandCompletedAsync(commandId, groupName, error);
-//        }
-
-//        private async Task ReportCommandCompletedAsync(Guid commandId, string groupName, Exception? error)
-//        {
-//            if (_hub is null || _hub.State != HubConnectionState.Connected)
-//                return;
-
-//            var completion = new CommandCompletion
-//            {
-//                CommandId = commandId,
-//                GroupName = groupName,
-//                IsSuccess = error is null,
-//                ErrorMessage = error?.Message
-//            };
-
-//            try
-//            {
-//                await _hub.InvokeAsync("ReportCommandCompleted", completion);
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.Error(ex, "Не удалось отправить подтверждение команды {CommandId}", commandId);
-//            }
-//        }
-
-//        private void RegisterHubConnectionHandlers()
-//        {
-//            if (_hubHandlersRegistered || _hub is null)
-//                return;
-
-//            _hub.Reconnecting += OnHubReconnecting;
-//            _hub.Reconnected += OnHubReconnected;
-//            _hub.Closed += OnHubClosed;
-//            _hubHandlersRegistered = true;
-//        }
-
-//        private Task OnHubReconnecting(Exception? error)
-//        {
-//            _logger.Warning("Потеряно соединение с сервером: {Message}", error?.Message ?? "unknown");
-//            return Task.CompletedTask;
-//        }
-
-//        private async Task OnHubReconnected(string? connectionId)
-//        {
-//            _logger.Information("Переподключен с сервером. ConnectionId={ConnectionId}", connectionId);
-//            try
-//            {
-//                await JoinWorkerGroupsAsync();
-//                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.Error(ex, "Не удалось повторно присоединиться к группам после переподключения");
-//            }
-//        }
-
-//        private Task OnHubClosed(Exception? error)
-//        {
-//            _logger.Error(error, "Соединение с SignalR было закрыто");
-//            return RestartHubConnectionLoopAsync();
-//        }
-
-//        private Task RestartHubConnectionLoopAsync()
-//        {
-//            if (_hub is null)
-//                return Task.CompletedTask;
-
-//            if (Interlocked.CompareExchange(ref _hubRestartLoop, 1, 0) != 0)
-//                return Task.CompletedTask;
-
-//            return Task.Run(async () =>
-//            {
-//                try
-//                {
-//                    while (_hub.State != HubConnectionState.Connected)
-//                    {
-//                        try
-//                        {
-//                            await _hubClient.EnsureStartedAsync();
-//                            await JoinWorkerGroupsAsync();
-//                            await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
-//                            break;
-//                        }
-//                        catch (Exception ex)
-//                        {
-//                            _logger.Error(ex, "Не удалось переподключиться к SignalR, повтор через 5 секунд");
-//                            await Task.Delay(TimeSpan.FromSeconds(5));
-//                        }
-//                    }
-//                }
-//                finally
-//                {
-//                    Interlocked.Exchange(ref _hubRestartLoop, 0);
-//                }
-//            });
-//        }
-
-//        private async Task JoinWorkerGroupsAsync()
-//        {
-//            if (_hub is null || Controller?.Columns is null)
-//                return;
-
-//            // Ждем, пока соединение станет активным
-//            var timeout = TimeSpan.FromSeconds(10);
-//            var stopwatch = Stopwatch.StartNew();
-
-//            while (_hub.State != HubConnectionState.Connected && stopwatch.Elapsed < timeout)
-//            {
-//                await Task.Delay(100);
-//            }
-
-//            if (_hub.State != HubConnectionState.Connected)
-//                throw new InvalidOperationException("Не удалось подключиться к SignalR за отведенное время");
-
-//            foreach (var item in Controller.Columns)
-//            {
-//                if (string.IsNullOrWhiteSpace(item.GroupName))
-//                {
-//                    item.GroupName = $"{Controller.Name}/{item.Name}";
-//                }
-
-//                await _hub.InvokeAsync("JoinController", item.GroupName, true);
-//            }
-//        }
-
-//        private async Task BroadcastWorkerAvailabilityAsync(bool isAvailable, string? reason = null, bool force = false)
-//        {
-//            var sanitizedReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
-
-//            if (!force &&
-//                _hardwareAvailable == isAvailable &&
-//                string.Equals(_lastAvailabilityReason ?? string.Empty, sanitizedReason ?? string.Empty, StringComparison.Ordinal))
-//            {
-//                return;
-//            }
-
-//            _hardwareAvailable = isAvailable;
-//            _lastAvailabilityReason = sanitizedReason;
-
-//            if (_hub is null || _hub.State != HubConnectionState.Connected)
-//                return;
-
-//            if (Controller?.Columns is null)
-//                return;
-
-//            var groups = Controller.Columns
-//                .Where(c => !string.IsNullOrWhiteSpace(c.GroupName))
-//                .Select(c => c.GroupName!);
-
-//            var tasks = groups.Select(group => SendAvailabilityAsync(group, isAvailable, sanitizedReason));
-//            await Task.WhenAll(tasks);
-//        }
-
-//        private async Task SendAvailabilityAsync(string groupName, bool isAvailable, string? reason)
-//        {
-//            try
-//            {
-//                var report = new WorkerAvailabilityReport
-//                {
-//                    GroupName = groupName,
-//                    IsAvailable = isAvailable,
-//                    Reason = reason
-//                };
-//                await _hub.InvokeAsync("ReportWorkerAvailability", report);
-//            }
-//            catch (Exception ex)
-//            {
-//                _logger.Error(ex, "Не удалось отправить состояние worker для {Group}", groupName);
-//            }
-//        }
-
-//        private static bool IsCriticalSerialException(Exception ex) =>
-//            ex is TimeoutException || ex is IOException || ex is InvalidOperationException || ex is UnauthorizedAccessException;
-
-//        #endregion
-
-//        #region Пауза и продолжения опроса
-
-//        private readonly ManualResetEventSlim _pollingResumedEvent = new(true);
-//        private readonly SemaphoreSlim _commandGate = new(1, 1);
-
-//        private async Task PausePollingAsync()
-//        {
-//            _pollingResumedEvent.Reset();
-
-//            // ⛔ ждём, пока текущая команда ДОРАБОТАЕТ
-//            await _commandGate.WaitAsync();
-//            _commandGate.Release();
-//        }
-
-//        private async Task ResumePollingAsync()
-//        {
-//            _pollingResumedEvent.Set();
-//            await Task.CompletedTask;
-//        }
-
-//        private async Task ExecuteCommandSafeAsync(
-//            Func<Task> command)
-//        {
-//            await _commandGate.WaitAsync(_token);
-//            try
-//            {
-//                await command(); // <-- вот тут команда гарантированно ДОРАБАТЫВАЕТ
-//            }
-//            finally
-//            {
-//                _commandGate.Release();
-//            }
-//        }
-
-//        #endregion
-
-//        #region Logs
-
-//        private void CreateLogger()
-//        {
-//            // создаём общую папку для логов ТРК
-//            var logRoot = Path.Combine(AppContext.BaseDirectory, "logs", "trk");
-//            Directory.CreateDirectory(logRoot);
-
-//            // безопасное имя файла (уникальное для экземпляра)
-//            string safeController = Sanitize(Controller.Name);
-//            string safePort = Sanitize(Controller.ComPort);
-//            string controllerId = Controller.Id == Guid.Empty ? "noid" : Controller.Id.ToString("N");
-//            string fileName = $"TRK_{Controller.Type}_{safeController}_{safePort}_{controllerId}_{Address}.log";
-//            string path = Path.Combine(logRoot, fileName);
-
-//            // отдельный Serilog для файла инстанса
-//            _logger = new LoggerConfiguration()
-//                .MinimumLevel.Debug()
-//                .Enrich.WithProperty("Controller", Controller.Name)
-//                .Enrich.WithProperty("Address", Address)
-//                .Enrich.WithProperty("ComPort", Controller.ComPort)
-//                .WriteTo.File(
-//                    path: path,
-//                    rollingInterval: RollingInterval.Day,
-//                    retainedFileCountLimit: 14,
-//                    shared: true,
-//                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
-//                )
-//                .CreateLogger();
-
-//            _logger.Information("Инициализация Lanfeng для {Controller}/{Address} на порту {Port}",
-//            Controller.Name, Address, Controller.ComPort);
-//        }
-
-//        // sanitization для имени файла
-//        private static string Sanitize(string s)
-//        {
-//            if (string.IsNullOrWhiteSpace(s)) return "UNNAMED";
-//            s = s.Trim();
-//            s = Regex.Replace(s, @"[^\w\-\.\(\) ]+", "_"); // заменяем недопустимые символы
-//            return s.Length > 80 ? s[..80] : s;
-//        }
-
-//        #endregion
-//    }
-//}
-
+using KIT.GasStation.Domain.Models;
+using KIT.GasStation.FuelDispenser;
+using KIT.GasStation.FuelDispenser.Hubs;
+using KIT.GasStation.FuelDispenser.Models;
+using KIT.GasStation.HardwareConfigurations.Models;
+using KIT.GasStation.HardwareConfigurations.Services;
+using KIT.GasStation.Lanfeng.Utilities;
+using Microsoft.AspNetCore.SignalR.Client;
+using System.Diagnostics;
+using System.IO.Ports;
+
+namespace KIT.GasStation.Lanfeng
+{
+    /// <summary>
+    /// Сервис управления ТРК Lanfeng через COM-порт по протоколу RS-485 (9600, N, 8, 1).
+    /// </summary>
+    public sealed class LanfengFuelDispenser : IFuelDispenserService
+    {
+        #region Private Members
+
+        private readonly IHubClient _hubClient;
+        private readonly IPortManager _portManager;
+        private LanfengDeviceLogger? _deviceLogger;
+
+        private HubConnection _hub;
+        private ISharedSerialPortService _sharedSerialPortService;
+        private PortLease? _lease;
+
+        private volatile bool _pollingEnabled;
+        private Task _pollingTask;
+        private readonly object _pollLock = new();
+
+        private LanfengControllerType _controllerType;
+        private volatile bool _hardwareAvailable = true;
+        private string? _lastAvailabilityReason;
+        private bool _hubHandlersRegistered;
+        private int _hubRestartLoop;
+        private CancellationToken _token;
+
+        private readonly ManualResetEventSlim _pollingResumedEvent = new(true);
+        private readonly SemaphoreSlim _commandGate = new(1, 1);
+
+        private const int FrameLen = 14;
+
+        #endregion
+
+        #region Public Properties
+
+        public Controller Controller { get; set; }
+
+        /// <summary>Адрес ТРК в RS-485 (берётся из первой колонки).</summary>
+        private int ControllerAddress => Controller.Columns.FirstOrDefault()?.Address ?? 0;
+
+        #endregion
+
+        #region Constructors
+
+        public LanfengFuelDispenser(
+            IHubClient hubClient,
+            IPortManager portManager)
+        {
+            _hubClient = hubClient;
+            _portManager = portManager;
+        }
+
+        #endregion
+
+        #region IFuelDispenserService
+
+        public async Task RunAsync(CancellationToken token)
+        {
+            var opened = false;
+            try
+            {
+                await OnOpenAsync(token);
+                opened = true;
+
+                // Ожидаем отмены; опрос идёт в фоновом _pollingTask
+                await Task.Delay(Timeout.Infinite, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                _deviceLogger?.Info("ТРК Lanfeng: токен отмены получен, завершаем работу");
+            }
+            finally
+            {
+                if (opened)
+                    await OnCloseAsync();
+            }
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            _pollingResumedEvent.Dispose();
+            _commandGate.Dispose();
+            return ValueTask.CompletedTask;
+        }
+
+        #endregion
+
+        #region IDeviceCommandClient
+
+        public async Task SetPricesAsync(Guid commandId, IReadOnlyCollection<PriceRequest> prices)
+        {
+            try
+            {
+                await PausePollingAsync();
+                foreach (var request in prices)
+                {
+                    var column = GetColumnByGroupName(request.GroupName);
+                    if (column is null)
+                    {
+                        _deviceLogger?.Warning("Колонка {GroupName} не найдена", request.GroupName);
+                        continue;
+                    }
+                    await ExecuteCommandAsync(Command.ChangePrice, column.LanfengAddress, request.Value);
+                }
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task SetPriceAsync(Guid commandId, PriceRequest priceRequest)
+        {
+            try
+            {
+                await PausePollingAsync();
+                var column = GetColumnByGroupName(priceRequest.GroupName);
+                if (column is null)
+                {
+                    _deviceLogger?.Warning("Колонка {GroupName} не найдена", priceRequest.GroupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.ChangePrice, column.LanfengAddress, priceRequest.Value);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task StartFuelingAsync(FuelingRequest fuelingRequest)
+        {
+            try
+            {
+                await PausePollingAsync();
+                var column = GetColumnByGroupName(fuelingRequest.GroupName);
+                if (column is null)
+                {
+                    _deviceLogger?.Warning("Колонка {GroupName} не найдена", fuelingRequest.GroupName);
+                    return;
+                }
+                var cmd = fuelingRequest.FuelingStartMode == FuelingStartMode.ByAmount
+                    ? Command.StartFuelingSum
+                    : Command.StartFuelingQuantity;
+                await ExecuteCommandAsync(cmd, column.LanfengAddress, fuelingRequest.Value);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task StopFuelingAsync(string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+                var column = GetColumnByGroupName(groupName);
+                if (column is null)
+                {
+                    _deviceLogger?.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.StopFueling, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task ResumeFuelingAsync(ResumeFuelingRequest resumeFuelingRequest)
+        {
+            try
+            {
+                await PausePollingAsync();
+                var column = GetColumnByGroupName(resumeFuelingRequest.GroupName);
+                if (column is null)
+                {
+                    _deviceLogger?.Warning("Колонка {GroupName} не найдена", resumeFuelingRequest.GroupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.ContinueFueling, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task GetStatusByAddressAsync(string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+                var column = GetColumnByGroupName(groupName);
+                if (column is null)
+                {
+                    _deviceLogger?.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.Status, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task CompleteFuelingAsync(string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+                await Task.Delay(300, _token);
+                var column = GetColumnByGroupName(groupName);
+                if (column is null)
+                {
+                    _deviceLogger?.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.CompleteFueling, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task GetCounterAsync(Guid commandId, string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+                var column = GetColumnByGroupName(groupName);
+                if (column is null) return;
+                await ExecuteCommandAsync(Command.CounterLiter, column.LanfengAddress);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task GetCountersAsync(Guid commandId, string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+                foreach (var column in Controller.Columns)
+                    await ExecuteCommandAsync(Command.CounterLiter, column.LanfengAddress);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task ChangeControlModeAsync(Guid commandId, string groupName, bool isProgramMode)
+        {
+            try
+            {
+                await PausePollingAsync();
+                var column = GetColumnByGroupName(groupName);
+                if (column is null)
+                {
+                    _deviceLogger?.Warning("Колонка {GroupName} не найдена", groupName);
+                    return;
+                }
+                var cmd = isProgramMode ? Command.ProgramControlMode : Command.KeyboardControlMode;
+                await ExecuteCommandAsync(cmd, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task InitializeConfigurationAsync(Guid commandId, string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+
+                // Переключаем каждую колонку в программный режим управления.
+                await ExecuteCommandAsync(Command.ProgramControlMode, 0);
+
+                // Запрашиваем статус и версию прошивки
+                await ExecuteCommandAsync(Command.Status, 0);
+                await ExecuteCommandAsync(Command.FirmwareVersion, 0);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        #endregion
+
+        #region Lifecycle
+
+        private async Task OnOpenAsync(CancellationToken token)
+        {
+            try
+            {
+                _token = token;
+                _deviceLogger = new LanfengDeviceLogger(Controller.ComPort, ControllerAddress);
+                _hub = _hubClient.Connection;
+                RegisterHubConnectionHandlers();
+
+                _deviceLogger?.Info("Инициализация ТРК Lanfeng {Id} на порту {Port}",
+                    Controller.Id, Controller.ComPort);
+
+                // Открываем COM-порт: 9600, N, 8, 1
+                var key = new PortKey(
+                    portName: Controller.ComPort,
+                    baudRate: Controller.BaudRate,
+                    parity: Parity.None,
+                    dataBits: 8,
+                    stopBits: StopBits.One);
+
+                var options = new SerialPortOptions(
+                    RtsEnable: false,
+                    DtrEnable: false,
+                    ReadTimeoutMs: 3000,
+                    WriteTimeoutMs: 3000,
+                    ReadBufferSize: 1024,
+                    WriteBufferSize: 1024);
+
+                _lease = await _portManager.AcquireAsync(key, options, token);
+                _sharedSerialPortService = _lease.Port;
+
+                _controllerType = Controller.Columns.Count > 1
+                    ? LanfengControllerType.Multi
+                    : LanfengControllerType.Single;
+
+                // Подключаемся к SignalR и присоединяемся к группам
+                await _hubClient.EnsureStartedAsync(token);
+                await JoinWorkerGroupsAsync();
+                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+
+                // Запускаем цикл опроса
+                await StartPollingAsync();
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, "Ошибка в OnOpenAsync: {Message}", e.Message);
+                throw;
+            }
+        }
+
+        private async Task OnCloseAsync()
+        {
+            if (_hubHandlersRegistered && _hub != null)
+            {
+                _hub.Reconnecting -= OnHubReconnecting;
+                _hub.Reconnected -= OnHubReconnected;
+                _hub.Closed -= OnHubClosed;
+                _hubHandlersRegistered = false;
+            }
+
+            await StopPollingAsync();
+
+            _deviceLogger?.Dispose();
+            _deviceLogger = null;
+        }
+
+        #endregion
+
+        #region Polling
+
+        private async Task StartPollingAsync()
+        {
+            lock (_pollLock)
+            {
+                if (_pollingEnabled) return;
+                _pollingEnabled = true;
+            }
+
+            _pollingTask = PollingLoopAsync();
+            await BroadcastWorkerAvailabilityAsync(true, "Polling started");
+        }
+
+        private async Task StopPollingAsync()
+        {
+            Task? toAwait = null;
+            lock (_pollLock)
+            {
+                if (!_pollingEnabled) return;
+                _pollingEnabled = false;
+                toAwait = _pollingTask;
+            }
+
+            // Разблокируем цикл, если он завис на паузе
+            _pollingResumedEvent.Set();
+
+            if (toAwait != null)
+            {
+                try { await toAwait; } catch { /* штатное завершение */ }
+            }
+
+            if (_lease != null)
+            {
+                await _lease.DisposeAsync();
+                _lease = null;
+            }
+            _sharedSerialPortService = null!;
+        }
+
+        private async Task PollingLoopAsync()
+        {
+            _deviceLogger?.Info("ТРК Lanfeng: опрос запущен, порт {Port}", Controller.ComPort);
+
+            // Небольшая пауза перед первым запросом
+            await Task.Delay(3000, _token).ConfigureAwait(false);
+
+            while (!_token.IsCancellationRequested && _pollingEnabled)
+            {
+                try
+                {
+                    _pollingResumedEvent.Wait(_token);
+
+                    await ExecuteCommandSafeAsync(() =>
+                        ExecuteCommandAsync(Command.Status, 0));
+                }
+                catch (OperationCanceledException ex) when (ex.CancellationToken == _token)
+                {
+                    _deviceLogger?.Info("Опрос ТРК Lanfeng отменён");
+                    break;
+                }
+                catch (Exception e)
+                {
+                    _deviceLogger?.Error(e, "Ошибка в цикле опроса: {Message}", e.Message);
+                    await Task.Delay(1000, _token).ConfigureAwait(false);
+                }
+
+                if (!_pollingEnabled) break;
+            }
+
+            _deviceLogger?.Info("ТРК Lanfeng: опрос завершён");
+        }
+
+        #endregion
+
+        #region Protocol
+
+        private async Task ExecuteCommandAsync(
+            Command cmd,
+            int nozzleMask,
+            decimal? value = null,
+            int writeToReadDelayMs = 200,
+            int readTimeoutMs = 3000,
+            int maxRetries = 2)
+        {
+            if (_sharedSerialPortService is null)
+                throw new InvalidOperationException("COM-порт не инициализирован.");
+
+            var frame = ProtocolParser.BuildRequest(
+                cmd,
+                ControllerAddress,
+                columnAddress: nozzleMask,
+                value: value,
+                controllerType: _controllerType);
+
+            _deviceLogger?.LogTx(frame);
+
+            byte[] rx;
+            try
+            {
+                rx = await _sharedSerialPortService.WriteReadAsync(
+                    frame,
+                    expectedRxLength: FrameLen,
+                    writeToReadDelayMs: writeToReadDelayMs,
+                    readTimeoutMs: readTimeoutMs,
+                    maxRetries: maxRetries,
+                    ct: _token);
+
+                await BroadcastWorkerAvailabilityAsync(true);
+            }
+            catch (Exception ex) when (IsCriticalSerialException(ex))
+            {
+                _deviceLogger?.Error(ex, "Ошибка обмена с COM-портом, ТРК отмечена как недоступная");
+                await BroadcastWorkerAvailabilityAsync(false, ex.Message);
+                throw;
+            }
+
+            var response = ProtocolParser.ParseResponse(rx);
+
+            if (!response.IsValid)
+            {
+                _deviceLogger?.Warning("Невалидный ответ от ТРК Lanfeng (команда {Cmd})", cmd);
+                return;
+            }
+
+            _deviceLogger?.LogRx(rx);
+
+            await HandleResponseAsync(response);
+        }
+
+        private async Task HandleResponseAsync(LanfengResonse response)
+        {
+            // Обрабатываем статус пистолета
+            switch (response.Status)
+            {
+                case NozzleStatus.PumpWorking:
+                    await PublishPumpWorkingAsync(response);
+                    break;
+                case NozzleStatus.WaitingStop:
+                    await PublishWaitingStopAsync(response);
+                    await SendAutoCompleteFrameAsync(response);
+                    break;
+                case NozzleStatus.PumpStop:
+                    await PublishPumpStopAsync(response);
+                    break;
+            }
+
+            // Обрабатываем тип команды в ответе
+            switch (response.Command)
+            {
+                case Command.Status:
+                    await PublishStatusAsync(response);
+                    await HandleColumnLiftedAsync(response);
+                    break;
+                case Command.CompleteFueling:
+                    await PublishCompleteFuelingAsync(response);
+                    break;
+                case Command.CounterLiter:
+                    await PublishCounterLiterAsync(response);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Автоматически отправляет CompleteFueling при WaitingStop (пистолет повешен).
+        /// </summary>
+        private async Task SendAutoCompleteFrameAsync(LanfengResonse response)
+        {
+            try
+            {
+                var column = ResolveColumn(response.StatusAddress);
+                if (column is null) return;
+
+                var frame = ProtocolParser.BuildRequest(
+                    Command.CompleteFueling,
+                    ControllerAddress,
+                    columnAddress: column.LanfengAddress,
+                    controllerType: _controllerType);
+
+                _deviceLogger?.LogTx(frame);
+
+                await _sharedSerialPortService.WriteReadAsync(
+                    frame,
+                    expectedRxLength: FrameLen,
+                    writeToReadDelayMs: 100,
+                    readTimeoutMs: 3000,
+                    maxRetries: 2,
+                    ct: _token);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, "Ошибка SendAutoCompleteFrameAsync: {Message}", e.Message);
+            }
+        }
+
+        #endregion
+
+        #region Publish
+
+        private async Task PublishStatusAsync(LanfengResonse response)
+        {
+            var column = ResolveColumn(response.StatusAddress);
+            if (column is null) return;
+
+            await _hub.InvokeAsync("PublishStatus",
+                new StatusResponse { GroupName = column.GroupName, Status = response.Status },
+                cancellationToken: _token);
+        }
+
+        private async Task PublishPumpWorkingAsync(LanfengResonse response)
+        {
+            var column = ResolveColumn(response.StatusAddress) ?? ResolveColumn(response.Address);
+            if (column is null) return;
+
+            await _hub.InvokeAsync("FuelingAsync",
+                new FuelingResponse { GroupName = column.GroupName, Quantity = response.Quantity, Sum = response.Sum },
+                cancellationToken: _token);
+        }
+
+        private async Task PublishWaitingStopAsync(LanfengResonse response)
+        {
+            var column = ResolveColumn(response.StatusAddress);
+            if (column is null) return;
+
+            await _hub.InvokeAsync("WaitingAsync", column.GroupName, cancellationToken: _token);
+        }
+
+        private async Task PublishPumpStopAsync(LanfengResonse response)
+        {
+            var column = ResolveColumn(response.StatusAddress);
+            if (column is null) return;
+
+            var fuelingResponse = new FuelingResponse
+            {
+                GroupName = column.GroupName,
+                Quantity = response.Quantity,
+                Sum = response.Sum
+            };
+
+            await _hub.InvokeAsync("PumpStopAsync", fuelingResponse, cancellationToken: _token);
+            await CompleteFuelingAsync(column);
+        }
+
+
+
+        private async Task PublishCounterLiterAsync(LanfengResonse response)
+        {
+            var column = ResolveColumn(response.Address);
+            if (column is null) return;
+
+            await _hub.InvokeAsync("CounterUpdated",
+                new CounterData { GroupName = column.GroupName, Counter = response.CounterQuantity },
+                cancellationToken: _token);
+        }
+
+        private async Task PublishCompleteFuelingAsync(LanfengResonse response)
+        {
+            var column = ResolveColumn(response.Address);
+            if (column is null) return;
+
+            await _hub.InvokeAsync("CompletedFuelingAsync", column.GroupName, response.Quantity, cancellationToken: _token);
+        }
+
+        /// <summary>
+        /// Обрабатывает байт 13 (индекс 12) ответа на команду Status:
+        ///   0x00 — ни один пистолет не поднят;
+        ///   0x01 — поднят первый пистолет, 0x02 — второй и т.д. (порядковый номер).
+        /// Для однорукавного контроллера любое ненулевое значение означает подъём единственного пистолета.
+        /// Для многорукавного — значение соответствует порядковому номеру пистолета (Nozzle).
+        /// </summary>
+        private async Task HandleColumnLiftedAsync(LanfengResonse response)
+        {
+            if (response.Data is null || response.Data.Length < 13) return;
+
+            int liftedNozzleNo = response.Data[12] & 0x0F; // 0 = не поднят, 1 = 1-й пистолет, 2 = 2-й, ...
+
+            if (liftedNozzleNo == 0)
+            {
+                var liftedColumn = Controller.Columns.FirstOrDefault(c => c.IsLifted);
+                if (liftedColumn is not null)
+                {
+                    liftedColumn.IsLifted = false;
+                    await _hub.InvokeAsync("ColumnLiftedChanged", liftedColumn.GroupName, false, cancellationToken: _token);
+                }
+            }
+            else
+            {
+                var column = Controller.Columns.FirstOrDefault(c => c.LanfengAddress == liftedNozzleNo);
+                if (column is not null)
+                {
+                    column.IsLifted = true;
+                    await _hub.InvokeAsync("ColumnLiftedChanged", column.GroupName, true, cancellationToken: _token);
+                }
+            }
+        }
+
+        #endregion
+
+        #region Hub
+
+        private void RegisterHubConnectionHandlers()
+        {
+            if (_hubHandlersRegistered || _hub is null) return;
+
+            _hub.Reconnecting += OnHubReconnecting;
+            _hub.Reconnected += OnHubReconnected;
+            _hub.Closed += OnHubClosed;
+            _hubHandlersRegistered = true;
+        }
+
+        private Task OnHubReconnecting(Exception? error)
+        {
+            _deviceLogger?.Warning("Потеряно соединение с SignalR: {Message}", error?.Message ?? "unknown");
+            return Task.CompletedTask;
+        }
+
+        private async Task OnHubReconnected(string? connectionId)
+        {
+            _deviceLogger?.Info("SignalR переподключен. ConnectionId={ConnectionId}", connectionId);
+            try
+            {
+                await JoinWorkerGroupsAsync();
+                await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+            }
+            catch (Exception ex)
+            {
+                _deviceLogger?.Error(ex, "Ошибка повторного присоединения к группам после переподключения");
+            }
+        }
+
+        private Task OnHubClosed(Exception? error)
+        {
+            _deviceLogger?.Error(error, "Соединение с SignalR закрыто");
+            return RestartHubConnectionLoopAsync();
+        }
+
+        private Task RestartHubConnectionLoopAsync()
+        {
+            if (_hub is null) return Task.CompletedTask;
+            if (Interlocked.CompareExchange(ref _hubRestartLoop, 1, 0) != 0) return Task.CompletedTask;
+
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    while (_hub.State != HubConnectionState.Connected)
+                    {
+                        try
+                        {
+                            await _hubClient.EnsureStartedAsync();
+                            await JoinWorkerGroupsAsync();
+                            await BroadcastWorkerAvailabilityAsync(_hardwareAvailable, _lastAvailabilityReason, force: true);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            _deviceLogger?.Error(ex, "Не удалось переподключиться к SignalR, повтор через 5 сек");
+                            await Task.Delay(TimeSpan.FromSeconds(5));
+                        }
+                    }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _hubRestartLoop, 0);
+                }
+            });
+        }
+
+        private async Task JoinWorkerGroupsAsync()
+        {
+            if (_hub is null || Controller?.Columns is null) return;
+
+            var timeout = TimeSpan.FromSeconds(10);
+            var sw = Stopwatch.StartNew();
+
+            while (_hub.State != HubConnectionState.Connected && sw.Elapsed < timeout)
+                await Task.Delay(100);
+
+            if (_hub.State != HubConnectionState.Connected)
+                throw new InvalidOperationException("Не удалось подключиться к SignalR за отведённое время");
+
+            foreach (var column in Controller.Columns)
+                await _hub.InvokeAsync("JoinController", column.GroupName, true);
+        }
+
+        private async Task BroadcastWorkerAvailabilityAsync(bool isAvailable, string? reason = null, bool force = false)
+        {
+            var sanitizedReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+
+            if (!force &&
+                _hardwareAvailable == isAvailable &&
+                string.Equals(_lastAvailabilityReason ?? string.Empty, sanitizedReason ?? string.Empty, StringComparison.Ordinal))
+                return;
+
+            _hardwareAvailable = isAvailable;
+            _lastAvailabilityReason = sanitizedReason;
+
+            if (_hub is null || _hub.State != HubConnectionState.Connected) return;
+            if (Controller?.Columns is null) return;
+
+            var tasks = Controller.Columns
+                .Where(c => !string.IsNullOrWhiteSpace(c.GroupName))
+                .Select(c => SendAvailabilityAsync(c.GroupName, isAvailable, sanitizedReason));
+
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task SendAvailabilityAsync(string groupName, bool isAvailable, string? reason)
+        {
+            try
+            {
+                await _hub.InvokeAsync("ReportWorkerAvailability",
+                    new WorkerAvailabilityReport { GroupName = groupName, IsAvailable = isAvailable, Reason = reason });
+            }
+            catch (Exception ex)
+            {
+                _deviceLogger?.Error(ex, "Не удалось отправить состояние worker для {Group}", groupName);
+            }
+        }
+
+        #endregion
+
+        #region Polling Control
+
+        private async Task PausePollingAsync()
+        {
+            _pollingResumedEvent.Reset();
+            // Ждём, пока текущая команда завершится
+            await _commandGate.WaitAsync(_token);
+            _commandGate.Release();
+        }
+
+        private Task ResumePollingAsync()
+        {
+            _pollingResumedEvent.Set();
+            return Task.CompletedTask;
+        }
+
+        private async Task ExecuteCommandSafeAsync(Func<Task> command)
+        {
+            await _commandGate.WaitAsync(_token);
+            try
+            {
+                await command();
+            }
+            finally
+            {
+                _commandGate.Release();
+            }
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private async Task CompleteFuelingAsync(Column column)
+        {
+            try
+            {
+                await Task.Delay(300, _token);
+                if (column is null)
+                {
+                    _deviceLogger?.Warning("Колонка {GroupName} не найдена", column.GroupName);
+                    return;
+                }
+                await ExecuteCommandAsync(Command.CompleteFueling, column.LanfengAddress);
+            }
+            catch (Exception e)
+            {
+                _deviceLogger?.Error(e, e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Находит колонку по LanfengAddress. Для одиночного контроллера всегда возвращает первую.
+        /// </summary>
+        private Column? ResolveColumn(int? address)
+        {
+            if (_controllerType == LanfengControllerType.Single)
+                return Controller.Columns.FirstOrDefault();
+
+            return Controller.Columns.FirstOrDefault(c => c.LanfengAddress == address);
+        }
+
+        private Column? GetColumnByGroupName(string groupName) =>
+            Controller.Columns.FirstOrDefault(c => c.GroupName == groupName);
+
+        private static bool IsCriticalSerialException(Exception ex) =>
+            ex is TimeoutException or IOException or InvalidOperationException or UnauthorizedAccessException;
+
+        #endregion
+    }
+}

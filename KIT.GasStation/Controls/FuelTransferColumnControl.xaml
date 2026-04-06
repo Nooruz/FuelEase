@@ -89,13 +89,15 @@
         <Border
             Grid.Row="0"
             Margin="0,0,0,3"
-            Padding="2"
-            BorderBrush="Silver"
-            BorderThickness="2"
-            CornerRadius="3">
+            Padding="4,2"
+            Background="#F5F7FA"
+            BorderBrush="#D0D0D0"
+            BorderThickness="1"
+            CornerRadius="4">
             <TextBlock
                 FontSize="20"
-                FontWeight="Bold"
+                FontWeight="SemiBold"
+                Foreground="#333333"
                 Text="{Binding Caption, FallbackValue=- 5 -}"
                 TextAlignment="Center" />
             <!--<StackPanel Orientation="Horizontal">
@@ -114,9 +116,10 @@
 
             <Border
                 Padding="5"
-                BorderBrush="#B0B0B0"
-                BorderThickness="2"
-                CornerRadius="3">
+                Background="#FAFBFC"
+                BorderBrush="#D0D0D0"
+                BorderThickness="1"
+                CornerRadius="4">
 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -144,7 +147,6 @@
                             Text="{Binding SelectedNozzle.CurrentFuelSale.Quantity, StringFormat=F2, FallbackValue=0.00}" />
                     </Viewbox>
 
-
                     <Viewbox Grid.Row="2">
                         <dxga:DigitalGaugeControl
                             Margin="0,2,0,0"
@@ -162,9 +164,10 @@
             <Border
                 Grid.Column="2"
                 Padding="5"
-                BorderBrush="#B0B0B0"
-                BorderThickness="2"
-                CornerRadius="3">
+                Background="#FAFBFC"
+                BorderBrush="#D0D0D0"
+                BorderThickness="1"
+                CornerRadius="4">
 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -191,7 +194,6 @@
                             Text="{Binding SelectedNozzle.CurrentFuelSale.ReceivedQuantity, StringFormat=F2, FallbackValue=0.00, UpdateSourceTrigger=PropertyChanged}" />
                     </Viewbox>
 
-
                     <Viewbox Grid.Row="2">
                         <dxga:DigitalGaugeControl
                             Margin="0,2,0,0"
@@ -216,14 +218,16 @@
             </Grid.ColumnDefinitions>
 
             <Border
-                BorderBrush="Silver"
-                BorderThickness="2"
-                CornerRadius="3">
+                Background="#F5F7FA"
+                BorderBrush="#D0D0D0"
+                BorderThickness="1"
+                CornerRadius="4">
 
                 <TextBlock
                     VerticalAlignment="Center"
                     FontSize="20"
-                    FontWeight="Bold"
+                    FontWeight="SemiBold"
+                    Foreground="#333333"
                     Text="{Binding SelectedNozzle.Status, Converter={StaticResource EnumToStringConvertert}, FallbackValue=Ожидание}"
                     TextAlignment="Center" />
 
@@ -233,14 +237,16 @@
                 Grid.Column="1"
                 Width="{Binding RelativeSource={RelativeSource Mode=Self}, Path=ActualHeight}"
                 Margin="5,0,0,0"
-                BorderBrush="Silver"
-                BorderThickness="2"
-                CornerRadius="3">
+                Background="#F5F7FA"
+                BorderBrush="#D0D0D0"
+                BorderThickness="1"
+                CornerRadius="4">
 
                 <TextBlock
                     VerticalAlignment="Center"
                     FontSize="20"
-                    FontWeight="Bold"
+                    FontWeight="SemiBold"
+                    Foreground="#333333"
                     Text="{Binding SelectedNozzle.Tube, FallbackValue=1}"
                     TextAlignment="Center" />
 
@@ -252,8 +258,6 @@
             x:Name="listBox"
             Grid.Row="3"
             Background="Transparent"
-            BorderBrush="Silver"
-            BorderThickness="2"
             IsEnabled="{Binding CanSelectedNozzle}"
             ItemContainerStyle="{StaticResource MenuListBoxItem}"
             ItemsSource="{Binding Nozzles}"
@@ -261,10 +265,10 @@
             SelectionMode="Single"
             Style="{StaticResource NozzleListBox}">
 
-            <!--<d:ListBoxItem Content="Item 1" />
+            <d:ListBoxItem Content="Item 1" />
             <d:ListBoxItem Content="Item 2" />
             <d:ListBoxItem Content="Item 3" />
-            <d:ListBoxItem Content="Item 3" />-->
+            <d:ListBoxItem Content="Item 3" />
 
             <dxmvvm:Interaction.Behaviors>
                 <dxmvvm:EventToCommand Command="{Binding NozzleMouseDoubleClickCommand}" EventName="MouseDoubleClick" />

@@ -22,6 +22,14 @@ namespace KIT.GasStation.Services
 
         public InternetStatus Status { get; private set; } = InternetStatus.Checking;
         public event Action<InternetStatus>? StatusChanged;
+        public string InternetStatusMessage =>
+            Status switch
+            {
+                InternetStatus.Checking => "Проверка...",
+                InternetStatus.Connected => "Интернет есть",
+                InternetStatus.Disconnected => "Нет интернета",
+                _ => string.Empty
+            };
 
         public InternetMonitor(TimeSpan? interval = null)
         {

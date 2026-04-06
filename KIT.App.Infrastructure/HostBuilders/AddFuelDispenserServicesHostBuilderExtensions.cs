@@ -1,4 +1,5 @@
 ﻿using KIT.GasStation.Emulator;
+using KIT.GasStation.Lanfeng;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -11,6 +12,7 @@ namespace KIT.App.Infrastructure.HostBuilders
             return host.ConfigureServices((context, services) =>
             {
                 services.AddTransient<EmulatorFuelDispenser>();
+                services.AddTransient<LanfengFuelDispenser>();
             });
         }
     }

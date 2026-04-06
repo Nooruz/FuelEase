@@ -11,7 +11,7 @@
 
     <Style x:Key="NozzleListBox" TargetType="{x:Type ListBox}">
 
-
+        <Setter Property="Padding" Value="0" />
 
         <Setter Property="ItemsPanel">
             <Setter.Value>
@@ -33,7 +33,6 @@
                     <Border
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="3"
                         SnapsToDevicePixels="True">
 
@@ -78,7 +77,6 @@
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                     <Border
                         Name="Border"
-                        Margin="0,2"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="2"
@@ -90,7 +88,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="BorderBrush" Value="Blue" />
+                            <Setter Property="BorderBrush" Value="{StaticResource ControllerSelectedColorBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

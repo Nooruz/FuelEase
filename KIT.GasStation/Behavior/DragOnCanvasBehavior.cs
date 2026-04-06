@@ -81,11 +81,16 @@ namespace KIT.GasStation.Behavior
                     return;
             }
 
-            var presenter = FindAncestor<ContentPresenter>(element);
+            var listBoxItem = FindAncestor<ListBoxItem>(element);
+            var presenter = (FrameworkElement)listBoxItem ?? FindAncestor<ContentPresenter>(element);
             var canvas = FindAncestor<Canvas>(element);
 
             if (presenter == null || canvas == null)
                 return;
+
+            // Выделяем элемент при начале перетаскивания
+            if (listBoxItem != null)
+                listBoxItem.IsSelected = true;
 
             double left = Canvas.GetLeft(presenter);
             double top = Canvas.GetTop(presenter);
@@ -217,7 +222,7 @@ namespace KIT.GasStation.Behavior
 
         private static SnapCandidate? FindBestSnap(
             ItemsControl itemsControl,
-            ContentPresenter movingPresenter,
+            FrameworkElement movingPresenter,
             Rect desiredRect,
             double canvasWidth,
             double canvasHeight)
@@ -226,7 +231,7 @@ namespace KIT.GasStation.Behavior
 
             foreach (var item in itemsControl.Items)
             {
-                var otherPresenter = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as ContentPresenter;
+                var otherPresenter = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement;
                 if (otherPresenter == null || otherPresenter == movingPresenter)
                     continue;
 
@@ -410,12 +415,12 @@ namespace KIT.GasStation.Behavior
 
         private static bool IntersectsAny(
             ItemsControl itemsControl,
-            ContentPresenter movingPresenter,
+            FrameworkElement movingPresenter,
             Rect movingRect)
         {
             foreach (var item in itemsControl.Items)
             {
-                var otherPresenter = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as ContentPresenter;
+                var otherPresenter = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement;
                 if (otherPresenter == null || otherPresenter == movingPresenter)
                     continue;
 
@@ -430,7 +435,7 @@ namespace KIT.GasStation.Behavior
             return false;
         }
 
-        private static Rect? GetPresenterRect(ContentPresenter presenter)
+        private static Rect? GetPresenterRect(FrameworkElement presenter)
         {
             double x = Canvas.GetLeft(presenter);
             double y = Canvas.GetTop(presenter);
@@ -502,7 +507,7 @@ namespace KIT.GasStation.Behavior
             public Point StartMousePosition { get; set; }
             public double StartLeft { get; set; }
             public double StartTop { get; set; }
-            public ContentPresenter? Presenter { get; set; }
+            public FrameworkElement? Presenter { get; set; }
             public Canvas? Canvas { get; set; }
         }
 

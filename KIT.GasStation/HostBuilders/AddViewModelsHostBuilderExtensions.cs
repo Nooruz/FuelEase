@@ -84,7 +84,7 @@ namespace KIT.GasStation.HostBuilders
                 services.AddSingleton<CreateViewModel<DiscountViewModel>>(servicesProvider => () => CreateDiscountViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<FuelDispenserViewModel>>(servicesProvider => () => CreateFuelDispenserViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<WorkplaceSettingsViewModel>>(servicesProvider => () => CreateWorkplaceSettingsViewModel(servicesProvider));
-                
+
                 services.AddSingleton<CreateViewModel<ControllerListViewModel>>(servicesProvider => () => CreateControllerListViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<MainViewModel>>(servicesProvider => () => CreateMainViewModel(servicesProvider));
                 services.AddSingleton<CreateViewModel<FuelSaleViewModel>>(servicesProvider => () => CreateFuelSaleViewModel(servicesProvider));
@@ -286,7 +286,8 @@ namespace KIT.GasStation.HostBuilders
                 services.GetRequiredService<IDisñountStore>(),
                 services.GetRequiredService<ICashRegisterStore>(),
                 services.GetRequiredService<IHotKeysService>(),
-                services.GetRequiredService<IFiscalDataService>());
+                services.GetRequiredService<IFiscalDataService>(),
+                services.GetRequiredService<ICustomSplashScreenService>());
         }
 
         private static LoginViewModel CreateLoginViewModel(IServiceProvider services)

@@ -1,21 +1,24 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:converters="clr-namespace:KIT.GasStation.Converters">
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:KIT.GasStation.Converters">
 
-    <converters:ProgressToScaleYConverter x:Key="ProgressToScaleYConverter"/>
+    <converters:ProgressToScaleYConverter x:Key="ProgressToScaleYConverter" />
 
-    <Style TargetType="{x:Type ProgressBar}" x:Key="ReservoirProgressBar">
+    <Style x:Key="ReservoirProgressBar" TargetType="{x:Type ProgressBar}">
 
-        <!-- Зададим умолчания, чтобы не забыть -->
-        <Setter Property="BorderBrush" Value="Black"/>
-        <Setter Property="BorderThickness" Value="2"/>
-        <Setter Property="Background" Value="White"/> <!-- «Пустая» часть -->
-        <Setter Property="Foreground" Value="Red"/> <!-- «Заливка» (прогресс) -->
+        <!--  Зададим умолчания, чтобы не забыть  -->
+        <Setter Property="BorderBrush" Value="Black" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="Background" Value="White" /> 
+        <!--  «Пустая» часть  -->
+        <Setter Property="Foreground" Value="Red" /> 
+        <!--  «Заливка» (прогресс)  -->
 
-        <!-- Поворот на -90°, если нужно «вертикальное» отображение -->
+        <!--  Поворот на -90°, если нужно «вертикальное» отображение  -->
         <Setter Property="LayoutTransform">
             <Setter.Value>
-                <RotateTransform Angle="-90" CenterX="0.5" CenterY="0.5"/>
+                <RotateTransform Angle="-90" CenterX="0.5" CenterY="0.5" />
             </Setter.Value>
         </Setter>
 
@@ -23,59 +26,61 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ProgressBar}">
 
-                    <!-- Общий контейнер -->
+                    <!--  Общий контейнер  -->
                     <Grid x:Name="TemplateRoot" SnapsToDevicePixels="true">
 
-                        <!-- 
+                        <!--
                         1) "Основная" рамка, рисует чёрную обводку и «фон» (Background)
-                           Фон — это то, что видно «под заливкой», когда прогресс < 100%. 
-                           BorderThickness=2 => чёрная обводка в 2 пикселя. 
-                    -->
-                        <Border x:Name="Container"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="100"
-                                Background="{TemplateBinding Background}"/>
+                           Фон — это то, что видно «под заливкой», когда прогресс < 100%.
+                           BorderThickness=2 => чёрная обводка в 2 пикселя.
+                        -->
+                        <Border
+                            x:Name="Container"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="100" />
 
-                        <!-- 
-                        2) Внутренний Grid с OpacityMask, чтобы заливка «вырезалась» 
-                           по форме рамки Container (CornerRadius и т.д.). 
-                    -->
+                        <!--
+                            2) Внутренний Grid с OpacityMask, чтобы заливка «вырезалась»
+                            по форме рамки Container (CornerRadius и т.д.).
+                        -->
                         <Grid>
                             <Grid.OpacityMask>
-                                <VisualBrush Visual="{Binding ElementName=Container}"/>
+                                <VisualBrush Visual="{Binding ElementName=Container}" />
                             </Grid.OpacityMask>
 
-                            <!-- Трек (полоса), можно оставить Fill="Transparent" 
-                             или убрать совсем, если не нужен -->
+                            <!--
+                                Трек (полоса), можно оставить Fill="Transparent"
+                                или убрать совсем, если не нужен
+                            -->
                             <Rectangle x:Name="PART_Track" Fill="Transparent" />
 
-                            <!-- 
-                            3) «Индикатор» прогресса. 
-                               ClipToBounds="True" + HorizontalAlignment="Left" 
-                               используется для «обрезания» по ширине (или высоте) 
-                               по мере изменения Value. 
-                        -->
-                            <Grid x:Name="PART_Indicator" 
-                                  ClipToBounds="True" 
-                                  HorizontalAlignment="Left">
-
-                                <Rectangle x:Name="Indicator" 
-                                      Fill="{TemplateBinding Foreground}" />
-
-                                <!-- 
-                                Если используете анимацию «полосок», 
-                                оставьте Rectangle "Animation" 
-                                и соответствующую логику анимации.
+                            <!--
+                                3) «Индикатор» прогресса.
+                                ClipToBounds="True" + HorizontalAlignment="Left"
+                                используется для «обрезания» по ширине (или высоте)
+                                по мере изменения Value.
                             -->
-                                <Rectangle x:Name="Animation" 
-                                       Fill="{TemplateBinding Foreground}">
+                            <Grid
+                                x:Name="PART_Indicator"
+                                HorizontalAlignment="Left"
+                                ClipToBounds="True">
+
+                                <Rectangle x:Name="Indicator" Fill="{TemplateBinding Foreground}" />
+
+                                <!--
+                                    Если используете анимацию «полосок»,
+                                    оставьте Rectangle "Animation"
+                                    и соответствующую логику анимации.
+                                -->
+                                <Rectangle x:Name="Animation" Fill="{TemplateBinding Foreground}">
                                     <Rectangle.RenderTransform>
                                         <TransformGroup>
-                                            <ScaleTransform/>
-                                            <SkewTransform/>
-                                            <RotateTransform/>
-                                            <TranslateTransform/>
+                                            <ScaleTransform />
+                                            <SkewTransform />
+                                            <RotateTransform />
+                                            <TranslateTransform />
                                         </TransformGroup>
                                     </Rectangle.RenderTransform>
                                 </Rectangle>
@@ -88,39 +93,40 @@
         </Setter>
     </Style>
 
-    <Style x:Key="RoundedProgressBarVerticalBottomUpCornered"
-           TargetType="{x:Type ProgressBar}">
-        <Setter Property="Foreground" Value="#FFAD16"/>
-        <Setter Property="Background" Value="White"/>
-        <Setter Property="BorderBrush" Value="Silver"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Border.CornerRadius" Value="5"/>
-        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    <Style x:Key="RoundedProgressBarVerticalBottomUpCornered" TargetType="{x:Type ProgressBar}">
+        <Setter Property="Foreground" Value="#FFAD16" />
+        <Setter Property="Background" Value="White" />
+        <Setter Property="BorderBrush" Value="Silver" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Border.CornerRadius" Value="5" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ProgressBar" >
+                <ControlTemplate TargetType="ProgressBar">
                     <Grid x:Name="Root">
-                        <Border Name="PART_Track" 
-                                CornerRadius="{TemplateBinding Border.CornerRadius}" 
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" />
-                        <Border Name="PART_Indicator" 
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                BorderBrush="Transparent"
-                                Background="{TemplateBinding Foreground}" 
-                                HorizontalAlignment="Left">
+                        <Border
+                            Name="PART_Track"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding Border.CornerRadius}" />
+                        <Border
+                            Name="PART_Indicator"
+                            HorizontalAlignment="Left"
+                            Background="{TemplateBinding Foreground}"
+                            BorderBrush="Transparent"
+                            BorderThickness="{TemplateBinding BorderThickness}">
                             <Border.CornerRadius>
                                 <MultiBinding Converter="{StaticResource ProgressToScaleYConverter}">
-                                    <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Value"/>
-                                    <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Minimum"/>
-                                    <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Maximum"/>
+                                    <Binding Path="Value" RelativeSource="{RelativeSource TemplatedParent}" />
+                                    <Binding Path="Minimum" RelativeSource="{RelativeSource TemplatedParent}" />
+                                    <Binding Path="Maximum" RelativeSource="{RelativeSource TemplatedParent}" />
                                 </MultiBinding>
                             </Border.CornerRadius>
                         </Border>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <!-- Getting vertical style working using technique described here: http://stackoverflow.com/a/6849237/7532 -->
+                        <!--  Getting vertical style working using technique described here: http://stackoverflow.com/a/6849237/7532  -->
                         <Trigger Property="Orientation" Value="Horizontal">
                             <Setter TargetName="Root" Property="LayoutTransform">
                                 <Setter.Value>
@@ -128,10 +134,8 @@
                                 </Setter.Value>
                             </Setter>
 
-                            <Setter TargetName="Root" Property="Width"
-                                Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Height}"/>        
-                            <Setter TargetName="Root" Property="Height"
-                                    Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Width}"/>
+                            <Setter TargetName="Root" Property="Width" Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Height}" />
+                            <Setter TargetName="Root" Property="Height" Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Width}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
 
@@ -140,29 +144,30 @@
         </Setter>
     </Style>
 
-    <Style x:Key="RoundedProgressBarVerticalBottomUp"
-       TargetType="{x:Type ProgressBar}">
-        <Setter Property="Foreground" Value="#FFAD16"/>
-        <Setter Property="Background" Value="White"/>
-        <Setter Property="BorderBrush" Value="Silver"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    <Style x:Key="RoundedProgressBarVerticalBottomUp" TargetType="{x:Type ProgressBar}">
+        <Setter Property="Foreground" Value="#FFAD16" />
+        <Setter Property="Background" Value="White" />
+        <Setter Property="BorderBrush" Value="Silver" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="ProgressBar" >
+                <ControlTemplate TargetType="ProgressBar">
                     <Grid x:Name="Root">
-                        <Border Name="PART_Track" 
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" />
-                        <Border Name="PART_Indicator" 
-                            BorderThickness="{TemplateBinding BorderThickness}"
+                        <Border
+                            Name="PART_Track"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" />
+                        <Border
+                            Name="PART_Indicator"
+                            HorizontalAlignment="Left"
+                            Background="{TemplateBinding Foreground}"
                             BorderBrush="Transparent"
-                            Background="{TemplateBinding Foreground}" 
-                            HorizontalAlignment="Left"/>
+                            BorderThickness="{TemplateBinding BorderThickness}" />
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <!-- Getting vertical style working using technique described here: http://stackoverflow.com/a/6849237/7532 -->
+                        <!--  Getting vertical style working using technique described here: http://stackoverflow.com/a/6849237/7532  -->
                         <Trigger Property="Orientation" Value="Horizontal">
                             <Setter TargetName="Root" Property="LayoutTransform">
                                 <Setter.Value>
@@ -170,10 +175,8 @@
                                 </Setter.Value>
                             </Setter>
 
-                            <Setter TargetName="Root" Property="Width"
-                            Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Height}"/>
-                            <Setter TargetName="Root" Property="Height"
-                                Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Width}"/>
+                            <Setter TargetName="Root" Property="Width" Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Height}" />
+                            <Setter TargetName="Root" Property="Height" Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Width}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
 

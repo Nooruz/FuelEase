@@ -1,33 +1,32 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:baseView="clr-namespace:KIT.GasStation.Views.Base"
-                    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
-                    xmlns:local="clr-namespace:KIT.GasStation.Views.Base">
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:baseView="clr-namespace:KIT.GasStation.Views.Base"
+    xmlns:dxmvvm="http://schemas.devexpress.com/winfx/2008/xaml/mvvm"
+    xmlns:local="clr-namespace:KIT.GasStation.Views.Base">
 
 
 
-    <Style TargetType="{x:Type TreeViewItem}" x:Key="HardWareTreeViewItem">
+    <Style x:Key="HardWareTreeViewItem" TargetType="{x:Type TreeViewItem}">
         <Setter Property="ItemTemplate">
             <Setter.Value>
                 <DataTemplate>
-                    <TextBlock Text="{Binding Name}"/>
+                    <TextBlock Text="{Binding Name}" />
                 </DataTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
     <ContextMenu x:Key="FuelTransferColumnContextMenu">
-        <MenuItem Header="Добавить ТРК"
-                  Command="{Binding FuelTransferColumnCreateCommand}"/>
+        <MenuItem Command="{Binding FuelTransferColumnCreateCommand}" Header="Добавить ТРК" />
     </ContextMenu>
 
     <ContextMenu x:Key="CashRegisterContextMenu">
-        <MenuItem Header="Добавить ККМ"
-              Command="{Binding CashRegisterCreateCommand}"/>
+        <MenuItem Command="{Binding CashRegisterCreateCommand}" Header="Добавить ККМ" />
     </ContextMenu>
 
-    <Style TargetType="{x:Type TreeView}" x:Key="HardWareTreeView">
-        <Setter Property="ItemContainerStyle" Value="{StaticResource HardWareTreeViewItem}"/>
+    <Style x:Key="HardWareTreeView" TargetType="{x:Type TreeView}">
+        <Setter Property="ItemContainerStyle" Value="{StaticResource HardWareTreeViewItem}" />
     </Style>
 
 </ResourceDictionary>

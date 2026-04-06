@@ -29,6 +29,7 @@ namespace KIT.GasStation.State.CashRegisters
         private CashRegisterStatus _status;
         private DateTime? _openAt;
         private DateTime? _closeAt;
+        private ShiftSalesReport? _shiftSalesReport;
 
         #endregion
 
@@ -80,6 +81,16 @@ namespace KIT.GasStation.State.CashRegisters
             }
         }
 
+        public ShiftSalesReport? ShiftSalesReport
+        {
+            get => _shiftSalesReport;
+            private set
+            {
+                _shiftSalesReport = value;
+                OnPropertyChanged(nameof(ShiftSalesReport));
+            }
+        }
+
         #endregion
 
         #region Constructors
@@ -128,9 +139,24 @@ namespace KIT.GasStation.State.CashRegisters
             return state;
         }
 
+        public async Task<ShiftSalesReport> GetShiftSalesReportAsync()
+        {
+            var report = await _cashRegisterService.GetShiftSalesReportAsync();
+            ShiftSalesReport = report;
+            return report;
+        }
+
         public async Task<FiscalData?> SaleAsync(FiscalData fiscalData)
         {
-            return await _cashRegisterService.SaleAsync(fiscalData, _userStore.CurrentUser.FullName);
+            var result = await _cashRegisterService.SaleAsync(fiscalData, _userStore.CurrentUser.FullName);
+
+            // Обновляем отчёт по смене после каждой продажи
+            _ = Task.Run(async () =>
+            {
+                try { await GetShiftSalesReportAsync(); } catch { /* не критично */ }
+            });
+
+            return result;
         }
 
         public async Task<FiscalData?> ReturnAsync(FiscalData fiscalData)
@@ -210,6 +236,9 @@ namespace KIT.GasStation.State.CashRegisters
                 await _cashRegisterService.InitializationAsync(CashRegister.Id);
 
                 await GetShiftStateAsync();
+
+                // Получаем отчёт по продажам за смену при запуске
+                try { await GetShiftSalesReportAsync(); } catch { /* не критично */ }
             }
         }
 

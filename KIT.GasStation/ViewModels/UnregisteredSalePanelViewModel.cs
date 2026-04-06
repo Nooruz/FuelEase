@@ -1,6 +1,5 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
-using DevExpress.Pdf.Native.BouncyCastle.Asn1.BC;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.SplashScreen;
@@ -123,7 +122,7 @@ namespace KIT.GasStation.ViewModels
 
                     WindowService.Title = "Регистрация продаж";
 
-                    PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore, _fiscalDataService)
+                    PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore, _fiscalDataService, _splashScreenService)
                     {
                         CreateFuelSale = CreateFuelSale(selectedUnregisteredSale),
                         SelectedNozzle = selectedUnregisteredSale.Nozzle

@@ -4,6 +4,7 @@ using DevExpress.Xpf.Editors;
 using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
+using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Discounts;
 using KIT.GasStation.ViewModels.Base;
@@ -24,6 +25,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IFiscalDataService _fiscalDataService;
         private readonly IDisсountStore _disсountStore;
         private readonly ICashRegisterStore _cashRegisterStore;
+        private readonly ICustomSplashScreenService _splashScreenService;
         private FuelSale _createFuelSale;
         private Nozzle _selectedNozzle;
         private decimal _paySum;
@@ -109,12 +111,14 @@ namespace KIT.GasStation.ViewModels
         public PayViewModel(IFuelSaleService fuelSaleService,
             IDisсountStore disсountStore,
             ICashRegisterStore cashRegisterStore,
-            IFiscalDataService fiscalDataService)
+            IFiscalDataService fiscalDataService,
+            ICustomSplashScreenService splashScreenService)
         {
             _fuelSaleService = fuelSaleService;
             _disсountStore = disсountStore;
             _cashRegisterStore = cashRegisterStore;
             _fiscalDataService = fiscalDataService;
+            _splashScreenService = splashScreenService;
         }
 
         #endregion
@@ -129,6 +133,11 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
+                // Скрываем текущее окно, чтобы предотвратить взаимодействие пользователя во время обработки продажи
+                CurrentWindowService.Hide();
+
+                _splashScreenService.Show("Обработка продажи...");
+
                 // Устанавливаем дату создания продажи
                 CreateFuelSale.CreateDate = DateTime.Now;
 
@@ -174,6 +183,7 @@ namespace KIT.GasStation.ViewModels
             finally
             {
                 CurrentWindowService.Close();
+                _splashScreenService.Close();
             }
         }
 

@@ -53,6 +53,18 @@ namespace KIT.App.Infrastructure.Services.Hubs
                     await RouteStartFuelingAsync(fuelingRequest);
                 }));
 
+            _subscriptions.Add(hub.On<string>("StopFuelingAsync",
+                async (groupName) =>
+                {
+                    await RouteStopFuelingAsync(groupName);
+                }));
+
+            _subscriptions.Add(hub.On<string>("CompleteFuelingAsync",
+                async (groupName) =>
+                {
+                    await RouteCompleteFuelingAsync(groupName);
+                }));
+
             _subscriptions.Add(hub.On<Guid, string>("GetCounterAsync",
                 async (commandId, groupName) =>
                 {
@@ -76,6 +88,20 @@ namespace KIT.App.Infrastructure.Services.Hubs
                 async (commandId, prices) =>
                 {
                     await RouteSetPricesAsync(commandId, prices);
+                }
+            ));
+
+            _subscriptions.Add(hub.On<Guid, string>("InitializeConfigurationAsync",
+                async (commandId, groupName) =>
+                {
+                    await RouteInitializeConfigurationAsync(commandId, groupName);
+                }
+            ));
+
+            _subscriptions.Add(hub.On<ResumeFuelingRequest>("ResumeFuelingAsync",
+                async (resumeFuelingRequest) =>
+                {
+                    await RouteResumeFuelingAsync(resumeFuelingRequest);
                 }
             ));
 
@@ -104,6 +130,32 @@ namespace KIT.App.Infrastructure.Services.Hubs
 
             _logger.LogInformation("Маршрутизация StartFuelingAsync -> {Group}", fuelingRequest.GroupName);
             await dispenser.StartFuelingAsync(fuelingRequest);
+        }
+
+        private async Task RouteStopFuelingAsync(string groupName)
+        {
+            var dispenser = _registry.GetByGroup(groupName);
+            if (dispenser is null)
+            {
+                _logger.LogWarning("StopFuelingAsync: ТРК для группы {Group} не найдена", groupName);
+                return;
+            }
+
+            _logger.LogInformation("Маршрутизация StopFuelingAsync -> {Group}", groupName);
+            await dispenser.StopFuelingAsync(groupName);
+        }
+
+        private async Task RouteCompleteFuelingAsync(string groupName)
+        {
+            var dispenser = _registry.GetByGroup(groupName);
+            if (dispenser is null)
+            {
+                _logger.LogWarning("CompleteFuelingAsync: ТРК для группы {Group} не найдена", groupName);
+                return;
+            }
+
+            _logger.LogInformation("Маршрутизация CompleteFuelingAsync -> {Group}", groupName);
+            await dispenser.CompleteFuelingAsync(groupName);
         }
 
         private async Task RouteGetCounterAsync(Guid commandId, string groupName)
@@ -217,7 +269,7 @@ namespace KIT.App.Infrastructure.Services.Hubs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка GetCounterAsync для {Group}", priceRequest.GroupName);
+                _logger.LogError(ex, "Ошибка SetPriceAsync для {Group}", priceRequest.GroupName);
 
                 await _reportCommandCompleted.ReportCommandCompletedAsync(new CommandCompletion
                 {
@@ -259,7 +311,7 @@ namespace KIT.App.Infrastructure.Services.Hubs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка GetCounterAsync для {Group}", groupName);
+                _logger.LogError(ex, "Ошибка SetPricesAsync для {Group}", groupName);
 
                 await _reportCommandCompleted.ReportCommandCompletedAsync(new CommandCompletion
                 {
@@ -269,6 +321,60 @@ namespace KIT.App.Infrastructure.Services.Hubs
                     ErrorMessage = ex.Message
                 });
             }
+        }
+
+        private async Task RouteInitializeConfigurationAsync(Guid commandId, string groupName)
+        {
+            try
+            {
+                var dispenser = _registry.GetByGroup(groupName);
+                if (dispenser is null)
+                {
+                    await _reportCommandCompleted.ReportCommandCompletedAsync(new CommandCompletion
+                    {
+                        CommandId = commandId,
+                        GroupName = groupName,
+                        IsSuccess = false,
+                        ErrorMessage = $"ТРК для группы '{groupName}' не найдена"
+                    });
+
+                    return;
+                }
+
+                await dispenser.InitializeConfigurationAsync(commandId, groupName);
+
+                await _reportCommandCompleted.ReportCommandCompletedAsync(new CommandCompletion
+                {
+                    CommandId = commandId,
+                    GroupName = groupName,
+                    IsSuccess = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка InitializeConfigurationAsync для {Group}", groupName);
+
+                await _reportCommandCompleted.ReportCommandCompletedAsync(new CommandCompletion
+                {
+                    CommandId = commandId,
+                    GroupName = groupName,
+                    IsSuccess = false,
+                    ErrorMessage = ex.Message
+                });
+            }
+        }
+
+        private async Task RouteResumeFuelingAsync(ResumeFuelingRequest resumeFuelingRequest)
+        {
+            var dispenser = _registry.GetByGroup(resumeFuelingRequest.GroupName);
+            if (dispenser is null)
+            {
+                _logger.LogWarning("ResumeFuelingAsync: ТРК для группы {Group} не найдена", resumeFuelingRequest.GroupName);
+                return;
+            }
+
+            _logger.LogInformation("Маршрутизация ResumeFuelingAsync -> {Group}", resumeFuelingRequest.GroupName);
+            await dispenser.ResumeFuelingAsync(resumeFuelingRequest);
         }
 
         //private async Task RouteStopFuelingAsync(string groupName)

@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KIT.GasStation.Domain.Models
@@ -11,6 +10,8 @@ namespace KIT.GasStation.Domain.Models
     {
         #region Private Members
 
+        private int _number;
+        private int _year;
         private int _userId;
         private DateTime _openingDate;
         private DateTime? _closingDate;
@@ -18,6 +19,32 @@ namespace KIT.GasStation.Domain.Models
         #endregion
 
         #region Public Properties
+
+        /// <summary>
+        /// Порядковый номер смены за год (сбрасывается ежегодно, как в 1С).
+        /// </summary>
+        public int Number
+        {
+            get => _number;
+            set
+            {
+                _number = value;
+                OnPropertyChanged(nameof(Number));
+            }
+        }
+
+        /// <summary>
+        /// Год смены (для привязки порядкового номера к году).
+        /// </summary>
+        public int Year
+        {
+            get => _year;
+            set
+            {
+                _year = value;
+                OnPropertyChanged(nameof(Year));
+            }
+        }
 
         /// <summary>
         /// Id пользователя
@@ -97,7 +124,8 @@ namespace KIT.GasStation.Domain.Models
                 else
                 {
                     return ShiftState.Closed;
-                };
+                }
+                ;
             }
         }
 
@@ -113,6 +141,25 @@ namespace KIT.GasStation.Domain.Models
                         .Sum(f => f.ReceivedSum);
                 }
                 return 0;
+            }
+        }
+
+        [NotMapped]
+        public string NumberDisplay => $"{Number:D4}";
+
+        [NotMapped]
+        public string ShiftStateDisplay
+        {
+            get
+            {
+                return ShiftState switch
+                {
+                    ShiftState.None => "Смена: Откройте смену.",
+                    ShiftState.Open => $"Смена: №{NumberDisplay} от {OpeningDate:dd.MM.yyyy HH:mm} (24 часа не прошли)",
+                    ShiftState.Closed => $"Смена: №{NumberDisplay} от {OpeningDate:dd.MM.yyyy HH:mm} (смена закрыта {OpeningDate:dd.MM.yyyy HH:mm})",
+                    ShiftState.Exceeded24Hours => $"Смена: №{NumberDisplay} от {OpeningDate:dd.MM.yyyy HH:mm} (прошло более 24 часов)",
+                    _ => "Смена: Откройте смену.",
+                };
             }
         }
 

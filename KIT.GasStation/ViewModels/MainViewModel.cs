@@ -1,7 +1,5 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
-using DevExpress.Mvvm.POCO;
-using DevExpress.Utils.MVVM.Services;
 using DevExpress.Xpf.Docking;
 using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
@@ -210,7 +208,7 @@ namespace KIT.GasStation.ViewModels
             _splashScreenService = customSplashScreenService;
             _cashRegisterStore = cashRegisterStore;
             _notificationStore = notificationStore;
-            
+
             _notificationStore.OnShowing += NotificationStore_OnShowing;
             _userStore.OnLogin += UserStore_OnLogin;
 
@@ -330,7 +328,7 @@ namespace KIT.GasStation.ViewModels
         {
             if (args.Source is DocumentPanel documentPanel)
             {
-                
+
             }
         }
 
@@ -855,6 +853,7 @@ namespace KIT.GasStation.ViewModels
         private void InternetMonitor_StatusChanged(InternetStatus status)
         {
             InternetStatus = status;
+            OnPropertyChanged(nameof(InternetStatusMessage));
         }
 
         #endregion

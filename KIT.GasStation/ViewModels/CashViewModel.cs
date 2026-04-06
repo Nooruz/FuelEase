@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.Domain.Models;
+﻿using KIT.GasStation.CashRegisters.Models;
+using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.State.CashRegisters;
@@ -41,7 +42,10 @@ namespace KIT.GasStation.ViewModels
         public decimal Cashless => FuelSales
                     .Where(f => f.PaymentType == PaymentType.Cashless)
                     .Sum(f => f.ReceivedSum);
+        public decimal Amount => FuelSales
+                    .Sum(f => f.ReceivedSum);
         public Shift CurrentShift => _shiftStore.CurrentShift;
+        public ShiftSalesReport? ShiftSalesReport => _cashRegisterStore.ShiftSalesReport;
 
         #endregion
 
@@ -55,7 +59,7 @@ namespace KIT.GasStation.ViewModels
             _fuelSaleService = fuelSaleService;
             _cashRegisterStore = cashRegisterStore;
 
-            _shiftStore.OnClosed += shift =>  OnShiftUpdated(shift);
+            _shiftStore.OnClosed += shift => OnShiftUpdated(shift);
             _shiftStore.OnOpened += shift => OnShiftUpdated(shift);
             _shiftStore.OnLogin += shift => OnShiftUpdated(shift);
             _cashRegisterStore.PropertyChanged += CashRegisterStore_PropertyChanged;
@@ -88,6 +92,7 @@ namespace KIT.GasStation.ViewModels
                         break;
                 }
             }
+            OnPropertyChanged(nameof(ShiftSalesReport));
         }
 
         private void OnShiftUpdated(Shift shift)
@@ -157,23 +162,17 @@ namespace KIT.GasStation.ViewModels
             OnPropertyChanged(nameof(Cash));
             OnPropertyChanged(nameof(Cashless));
             OnPropertyChanged(nameof(CurrentShift));
+            OnPropertyChanged(nameof(Amount));
         }
 
         private string GetShiftStatus()
         {
             if (CurrentShift == null)
             {
-                return "Смена СУ: Откройте смену.";
+                return "Смена: Откройте смену.";
             }
 
-            return CurrentShift.ShiftState switch
-            {
-                ShiftState.None => "Смена СУ: Откройте смену.",
-                ShiftState.Open => $"Смена СУ: №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (24 часа не прошли)",
-                ShiftState.Closed => $"Смена СУ: №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (смена закрыта {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm})",
-                ShiftState.Exceeded24Hours => $"Смена СУ: №{CurrentShift.Id} от {CurrentShift.OpeningDate:dd.MM.yyyy HH:mm} (прошло более 24 часов)",
-                _ => "Смена СУ: Откройте смену.",
-            };
+            return CurrentShift.ShiftStateDisplay;
         }
 
         #endregion

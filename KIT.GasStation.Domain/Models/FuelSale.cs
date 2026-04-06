@@ -10,6 +10,7 @@ namespace KIT.GasStation.Domain.Models
     {
         #region Private Members
 
+        private int _number;
         private int _tankId;
         private int _shiftId;
         private int _nozzleId;
@@ -31,6 +32,19 @@ namespace KIT.GasStation.Domain.Models
         #endregion
 
         #region Public Properties
+
+        /// <summary>
+        /// Порядковый номер продажи за день (сбрасывается ежедневно, как в 1С).
+        /// </summary>
+        public int Number
+        {
+            get => _number;
+            set
+            {
+                _number = value;
+                OnPropertyChanged(nameof(Number));
+            }
+        }
 
         /// <summary>
         /// Id резервуара
@@ -265,7 +279,7 @@ namespace KIT.GasStation.Domain.Models
         /// Резервуар
         /// </summary>
         public Tank? Tank { get; set; }
-        
+
         /// <summary>
         /// Смена
         /// </summary>
@@ -311,6 +325,7 @@ namespace KIT.GasStation.Domain.Models
         {
             return new FuelSale
             {
+                Number = Number,
                 TankId = TankId,
                 NozzleId = NozzleId,
                 PaymentType = PaymentType,
@@ -411,15 +426,15 @@ namespace KIT.GasStation.Domain.Models
             return fiscalData;
         }
 
-        public FiscalData UpdateFiscalData(FiscalData fiscalData, Nozzle nozzle, OperationType type)
+        public FiscalData UpdateFiscalData(FiscalData fiscalData, Nozzle nozzle)
         {
             if (nozzle.Tank != null && nozzle.Tank.Fuel != null)
             {
-                fiscalData.OperationType = type;
-                fiscalData.PaymentType = PaymentType;
-                fiscalData.Price = Price;
-                fiscalData.Quantity = type is OperationType.Sale ? Quantity : ReceivedQuantity;
-                fiscalData.Total = type is OperationType.Sale ? Sum : ReceivedSum;
+                fiscalData.OperationType = fiscalData.OperationType;
+                fiscalData.PaymentType = fiscalData.PaymentType;
+                fiscalData.Price = fiscalData.Price;
+                fiscalData.Quantity = fiscalData.Quantity;
+                fiscalData.Total = fiscalData.Total;
                 fiscalData.FuelSaleId = Id;
                 fiscalData.UnitOfMeasurement = nozzle.Tank.Fuel.UnitOfMeasurement?.Name;
                 fiscalData.ValueAddedTax = nozzle.Tank.Fuel.ValueAddedTax;

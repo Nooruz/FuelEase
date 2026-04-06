@@ -4,6 +4,7 @@ using KIT.GasStation.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace KIT.GasStation.EntityFramework.Migrations
 {
     [DbContext(typeof(GasStationDbContext))]
-    partial class GasStationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260406051537_CreateDiscountService")]
+    partial class CreateDiscountService
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

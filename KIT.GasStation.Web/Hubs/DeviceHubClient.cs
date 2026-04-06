@@ -125,22 +125,22 @@ namespace KIT.GasStation.Worker.Hubs
         public Task ColumnLiftedChanged(string groupName, bool isLifted) =>
             Clients.Group(groupName).ColumnLiftedChanged(groupName, isLifted);
 
-        public Task OnCountersUpdated(string groupName, IReadOnlyCollection<CounterData> counterDatas) =>
+        public Task CountersUpdated(string groupName, IReadOnlyCollection<CounterData> counterDatas) =>
             Clients.Group(groupName).CountersUpdated(groupName, counterDatas);
 
-        public Task OnCounterUpdated(CounterData counterData) =>
+        public Task CounterUpdated(CounterData counterData) =>
             Clients.Group(counterData.GroupName).CounterUpdated(counterData);
 
-        public Task OnFuelingAsync(FuelingResponse response) =>
+        public Task FuelingAsync(FuelingResponse response) =>
             Clients.Group(response.GroupName).FuelingAsync(response);
 
-        public Task OnCompletedFuelingAsync(string groupName, decimal? quantity) =>
+        public Task CompletedFuelingAsync(string groupName, decimal? quantity) =>
             Clients.Group(groupName).CompletedFuelingAsync(groupName, quantity);
 
-        public Task OnWaitingAsync(string groupName) =>
+        public Task WaitingAsync(string groupName) =>
             Clients.Group(groupName).WaitingAsync(groupName);
 
-        public Task OnPumpStopAsync(FuelingResponse response) =>
+        public Task PumpStopAsync(FuelingResponse response) =>
             Clients.Group(response.GroupName).PumpStopAsync(response);
 
         public Task CompleteFuelingAsync(string groupName) =>

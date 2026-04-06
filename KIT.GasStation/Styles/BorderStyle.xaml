@@ -1,25 +1,28 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:converters="clr-namespace:KIT.GasStation.Converters">
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:KIT.GasStation.Converters">
 
 
-    <Style TargetType="Border" x:Key="NozzleBorder">
-        <Setter Property="BorderThickness" Value="2"/>
-        <Setter Property="CornerRadius" Value="40"/>
-        <Setter Property="Width" Value="40"/>
-        <Setter Property="Height" Value="40"/>
+    <Style x:Key="NozzleBorder" TargetType="Border">
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="CornerRadius" Value="40" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
 
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="White" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Lifted, UpdateSourceTrigger=PropertyChanged}" Value="True">
                 <DataTrigger.EnterActions>
                     <BeginStoryboard x:Name="StartAnimation">
                         <Storyboard AutoReverse="True">
-                            <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                      AutoReverse="True" Duration="0:0:0.2"
-                                      RepeatBehavior="Forever">
-                                <DiscreteColorKeyFrame KeyTime="0:0:0" Value="White"/>
-                                <DiscreteColorKeyFrame KeyTime="0:0:0.1" Value="Transparent"/>
+                            <ColorAnimationUsingKeyFrames
+                                AutoReverse="True"
+                                RepeatBehavior="Forever"
+                                Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                Duration="0:0:0.2">
+                                <DiscreteColorKeyFrame KeyTime="0:0:0" Value="White" />
+                                <DiscreteColorKeyFrame KeyTime="0:0:0.1" Value="Transparent" />
                             </ColorAnimationUsingKeyFrames>
                         </Storyboard>
                     </BeginStoryboard>
@@ -27,7 +30,7 @@
             </DataTrigger>
             <DataTrigger Binding="{Binding Lifted}" Value="False">
                 <DataTrigger.EnterActions>
-                    <StopStoryboard BeginStoryboardName="StartAnimation"/>
+                    <StopStoryboard BeginStoryboardName="StartAnimation" />
                 </DataTrigger.EnterActions>
             </DataTrigger>
         </Style.Triggers>

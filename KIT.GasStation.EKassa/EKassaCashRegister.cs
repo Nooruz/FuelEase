@@ -65,7 +65,7 @@ namespace KIT.GasStation.EKassa
 
             if (cashRegister == null)
             {
-                _logger.Error("Касса не найдена. [{Timestamp}]", DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss.fff"));
+                _logger.Error("ККМ не найдена. Id={CashRegisterId}", cashRegisterId);
                 throw new CashRegisterException("ККМ не найдена. Проверьте настройки ККМ.");
             }
 
@@ -104,7 +104,7 @@ namespace KIT.GasStation.EKassa
 
             int price = (int)(fiscalData.Price * 100);
             decimal quantity = Math.Round(fiscalData.Total / fiscalData.Price, 6);
-            string discount = string.Empty;
+            string? discount = null; // null = не отправлять, API не принимает пустую строку
 
             //if (fuelSale.DiscountSale != null)
             //{
@@ -113,13 +113,13 @@ namespace KIT.GasStation.EKassa
             //    discount = (((quantity * fuelSale.Price) - fuelSale.Sum) * 100).ToString();
             //}
 
-            var googs = new List<ReceiptGood>()
+            var goods = new List<ReceiptGood>()
             {
                 new()
                 {
                     CalcItemAttributeCode = 0,
                     Name = fiscalData.FuelName,
-                    Sgtin = fiscalData.Tnved,
+                    Sgtin = string.IsNullOrEmpty(fiscalData.Tnved) ? null : fiscalData.Tnved,
                     Price = price,
                     Quantity = quantity,
                     Unit = fiscalData.UnitOfMeasurement,
@@ -131,7 +131,7 @@ namespace KIT.GasStation.EKassa
             var request = new ReceiptV2Request()
             {
                 FiscalNumber = _cashRegister.RegistrationNumber,
-                Goods = googs,
+                Goods = goods,
                 Discount = discount,
                 Cash = fiscalData.PaymentType == PaymentType.Cash,
                 Operation = ReceiptOperation.INCOME,
@@ -139,22 +139,21 @@ namespace KIT.GasStation.EKassa
                 Txt80 = _settings.TapeType == TapeType.TXT80 ? true : null,
             };
 
-            var data = await _client.CreateReceiptV2Async(request);
+            var newfiscalData = await _client.CreateReceiptV2Async(request);
 
-            _logger.Information("Отправка данных в ККМ: {Data}", JsonSerializer.Serialize(request));
+            _logger.Information("Отправка данных в ККМ: {Data}", JsonSerializer.Serialize(request, EkassaJson.Options));
 
-            return new FiscalData
-            {
-                FiscalModule = GetFiscalModule(data),
-                FiscalDocument = GetFiscalDocument(data),
-                RegistrationNumber = data.FiscalNumber.ToString(),
-            };
+            fiscalData.FiscalModule = GetFiscalModule(newfiscalData);
+            fiscalData.FiscalDocument = GetFiscalDocument(newfiscalData);
+            fiscalData.RegistrationNumber = newfiscalData.FiscalNumber.ToString();
+
+            return fiscalData;
         }
 
         /// <inheritdoc/>
         public async Task XReportAsync(bool printReceipt = true)
         {
-            _logger.Information("Получения статуса Х-Отчет...");
+            _logger.Information("Получение X-отчёта...");
 
             var request = new ShiftStateRequest
             {
@@ -185,7 +184,7 @@ namespace KIT.GasStation.EKassa
                     {
                         CalcItemAttributeCode = 0,
                         Name = fiscalData.FuelName,
-                        Sgtin = fiscalData.Tnved,
+                        Sgtin = string.IsNullOrEmpty(fiscalData.Tnved) ? null : fiscalData.Tnved,
                         Price = (int)(fiscalData.Price * 100),
                         Quantity = Math.Round(fiscalData.Total / fiscalData.Price, 6),
                         Unit = fiscalData.UnitOfMeasurement,
@@ -215,7 +214,7 @@ namespace KIT.GasStation.EKassa
         {
             try
             {
-                _logger.Information("Получения статуса Х-Отчет...");
+                _logger.Information("Получение статуса смены ККМ...");
 
                 var request = new ShiftStateRequest
                 {
@@ -254,9 +253,72 @@ namespace KIT.GasStation.EKassa
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<ShiftSalesReport> GetShiftSalesReportAsync()
+        {
+            try
+            {
+                _logger.Information("Получение отчёта по продажам за смену...");
+
+                var request = new GetPosByFiscalNumberRequest
+                {
+                    FiscalNumber = _cashRegister.RegistrationNumber
+                };
+
+                var posInfo = await _client.GetPosByFiscalNumberAsync(request);
+
+                var report = new ShiftSalesReport
+                {
+                    SaleReceiptCount = GetExtraInt(posInfo, "shift_reciept_prihod"),
+                    CashSaleSum = GetExtraTiyinAsDecimal(posInfo, "shift_cash_prihod"),
+                    CashlessSaleSum = GetExtraTiyinAsDecimal(posInfo, "shift_bank_prihod"),
+
+                    ReturnReceiptCount = GetExtraInt(posInfo, "shift_reciept_prihod_vozvrat"),
+                    CashReturnSum = GetExtraTiyinAsDecimal(posInfo, "shift_cash_prihod_vozvrat"),
+                    CashlessReturnSum = GetExtraTiyinAsDecimal(posInfo, "shift_bank_prihod_vozvrat"),
+                };
+
+                _logger.Information(
+                    "Отчёт по смене: продажи нал={CashSale}, безнал={CashlessSale}, возвраты нал={CashReturn}, безнал={CashlessReturn}",
+                    report.CashSaleSum, report.CashlessSaleSum, report.CashReturnSum, report.CashlessReturnSum);
+
+                return report;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Ошибка при получении отчёта по продажам за смену.");
+                return new ShiftSalesReport();
+            }
+        }
+
         #endregion
 
         #region Private Voids
+
+        /// <summary>
+        /// Извлекает целочисленное значение из ExtensionData ответа PosInfoData.
+        /// </summary>
+        private static int GetExtraInt(PosInfoData data, string key)
+        {
+            if (data.Extra.TryGetValue(key, out var el) && el.TryGetInt32(out var val))
+                return val;
+            return 0;
+        }
+
+        /// <summary>
+        /// Извлекает сумму из ExtensionData (в тийинах) и конвертирует в сомы (decimal / 100).
+        /// </summary>
+        private static decimal GetExtraTiyinAsDecimal(PosInfoData data, string key)
+        {
+            if (data.Extra.TryGetValue(key, out var el))
+            {
+                if (el.TryGetInt64(out var val))
+                    return val / 100m;
+                if (el.TryGetDecimal(out var dVal))
+                    return dVal / 100m;
+            }
+            return 0m;
+        }
 
         /// <summary>
         /// Проверяет доступность интернета посредством ICMP-запроса.
@@ -278,7 +340,7 @@ namespace KIT.GasStation.EKassa
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, $"{_cashRegister.Address} недоступен (HTTPS).");
+                _logger.Error(ex, "Сервер {Address} недоступен (HTTPS).", _cashRegister.Address);
                 return false;
             }
         }
@@ -386,19 +448,19 @@ namespace KIT.GasStation.EKassa
                     }
 
                     // Логируем итоговые параметры
-                    _logger.Information($"Расположение элементов:");
-                    _logger.Information($"- Текст: начальная позиция {layout.TopMargin}, высота {textHeight}");
+                    _logger.Information("Расположение элементов:");
+                    _logger.Information("- Текст: начальная позиция {TopMargin}, высота {TextHeight}", layout.TopMargin, textHeight);
                     if (qrDrawn)
                     {
-                        _logger.Information($"- QR-код: x={qrX:F2}, y={qrY:F2}, размер={qrWidth:F2}x{qrWidth:F2}");
+                        _logger.Information("- QR-код: x={QrX:F2}, y={QrY:F2}, размер={QrWidth:F2}x{QrWidth:F2}", qrX, qrY, qrWidth);
                     }
                     else
                     {
                         _logger.Information("- QR-код: не печатается");
                     }
 
-                    _logger.Information($"- Общая высота чека: {yPos:F2} (1/100 дюйма)");
-                    _logger.Information($"- Это примерно: {yPos / 100 * 25.4:F1} мм");
+                    _logger.Information("- Общая высота чека: {Height:F2} (1/100 дюйма)", yPos);
+                    _logger.Information("- Это примерно: {HeightMm:F1} мм", yPos / 100 * 25.4);
 
                     textFont.Dispose();
 
@@ -439,15 +501,15 @@ namespace KIT.GasStation.EKassa
             float safetyFactor = 0.98f; // Уменьшили до 0.98
             float contentWidth = (printWidth - leftMargin - rightMargin) * safetyFactor;
 
-            _logger.Information($"Ширина бумаги: {printWidth} (1/100 дюйма)");
-            _logger.Information($"Доступная ширина контента: {contentWidth} (с учетом коэффициента безопасности {safetyFactor})");
-            _logger.Information($"Отступы: слева={leftMargin}, справа={rightMargin}, сверху={topMargin}, снизу={bottomMargin}");
+            _logger.Information("Ширина бумаги: {PrintWidth} (1/100 дюйма)", printWidth);
+            _logger.Information("Доступная ширина контента: {ContentWidth} (с учётом коэффициента безопасности {SafetyFactor})", contentWidth, safetyFactor);
+            _logger.Information("Отступы: слева={Left}, справа={Right}, сверху={Top}, снизу={Bottom}", leftMargin, rightMargin, topMargin, bottomMargin);
 
             // Размер QR-кода - занимает всю доступную ширину (но не более 300 точек)
             int maxQrSize = paperWidthMm <= 58 ? 200 : 250; // Уменьшили до 300
             int targetQrSize = Math.Min((int)(contentWidth / 100 * printerDpi), maxQrSize);
 
-            _logger.Information($"Размер QR-кода: {targetQrSize}x{targetQrSize} dots");
+            _logger.Information("Размер QR-кода: {QrSize}x{QrSize} dots", targetQrSize);
 
             // Отступ между текстом и QR-кодом (в мм, конвертируем в 1/100 дюйма)
             int textQrSpacingMm = 5;
@@ -476,12 +538,12 @@ namespace KIT.GasStation.EKassa
                 }
             }
 
-            _logger.Information($"Самая длинная строка: '{longestLine}'");
-            _logger.Information($"Ширина самой длинной строки: {maxLineWidth}, доступная ширина: {contentWidth}");
+            _logger.Information("Самая длинная строка: '{LongestLine}'", longestLine);
+            _logger.Information("Ширина самой длинной строки: {MaxWidth}, доступная ширина: {ContentWidth}", maxLineWidth, contentWidth);
 
             if (maxLineWidth > contentWidth)
             {
-                _logger.Warning($"Строка не помещается! Превышение: {maxLineWidth - contentWidth}");
+                _logger.Warning("Строка не помещается! Превышение на: {Overflow}", maxLineWidth - contentWidth);
             }
 
             foreach (string line in lines)
@@ -518,7 +580,7 @@ namespace KIT.GasStation.EKassa
                         }
                     }
 
-                    _logger.Information($"Обрезана строка до: '{trimmedLine}'");
+                    _logger.Information("Строка обрезана до: '{TrimmedLine}'", trimmedLine);
                 }
 
                 yield return trimmedLine;
@@ -698,5 +760,6 @@ namespace KIT.GasStation.EKassa
         }
 
         #endregion
+
     }
 }

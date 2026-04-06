@@ -10,33 +10,91 @@
 
     <dxlc:LayoutControl Orientation="Vertical">
 
-        <TextBlock
-            VerticalAlignment="Top"
-            Text="{Binding ShiftStatus}"
-            TextWrapping="Wrap" />
+        <dxlc:LayoutGroup
+            Padding="0"
+            Header="Система"
+            ItemSpace="2"
+            Orientation="Vertical"
+            View="GroupBox">
 
-        <TextBlock
-            VerticalAlignment="Top"
-            Text="{Binding CashRegisterShiftStatus}"
-            TextWrapping="Wrap" />
+            <TextBlock
+                VerticalAlignment="Top"
+                Text="{Binding ShiftStatus}"
+                TextWrapping="Wrap" />
 
-        <dxlc:LayoutItem Label="Наличные">
-            <dxe:TextEdit
-                EditValue="{Binding Cash, Mode=OneWay}"
-                IsReadOnly="True"
-                Mask="n"
-                MaskType="Numeric"
-                MaskUseAsDisplayFormat="True" />
-        </dxlc:LayoutItem>
+            <dxlc:LayoutItem Label="Наличные">
+                <dxe:TextEdit
+                    EditValue="{Binding Cash, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
 
-        <dxlc:LayoutItem Label="Безналичные">
-            <dxe:TextEdit
-                EditValue="{Binding Cashless, Mode=OneWay}"
-                IsReadOnly="True"
-                Mask="n"
-                MaskType="Numeric"
-                MaskUseAsDisplayFormat="True" />
-        </dxlc:LayoutItem>
+            <dxlc:LayoutItem Label="Безналичные">
+                <dxe:TextEdit
+                    EditValue="{Binding Cashless, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
+            <dxlc:LayoutItem Label="Итого">
+                <dxe:TextEdit
+                    EditValue="{Binding Amount, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
+        </dxlc:LayoutGroup>
+
+        <dxlc:LayoutGroup
+            Padding="0"
+            Header="ККМ"
+            ItemSpace="2"
+            Orientation="Vertical"
+            View="GroupBox">
+
+            <TextBlock
+                VerticalAlignment="Top"
+                Text="{Binding CashRegisterShiftStatus}"
+                TextWrapping="Wrap" />
+
+            <dxlc:LayoutItem Label="Наличные">
+                <dxe:TextEdit
+                    EditValue="{Binding ShiftSalesReport.CashSaleSum, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
+
+            <dxlc:LayoutItem Label="Безналичные">
+                <dxe:TextEdit
+                    EditValue="{Binding ShiftSalesReport.CashlessSaleSum, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
+            <dxlc:LayoutItem Label="Возврат">
+                <dxe:TextEdit
+                    EditValue="{Binding ShiftSalesReport.TotalReturnSum, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
+            <dxlc:LayoutItem Label="Итого">
+                <dxe:TextEdit
+                    EditValue="{Binding ShiftSalesReport.NetSum, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
+        </dxlc:LayoutGroup>
 
         <!--<dxlc:LayoutItem Label="Произвольные">
             <dxe:TextEdit IsReadOnly="True"

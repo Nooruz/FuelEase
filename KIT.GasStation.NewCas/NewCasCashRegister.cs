@@ -253,6 +253,39 @@ namespace KIT.GasStation.NewCas
             return shiftState;
         }
 
+        /// <inheritdoc/>
+        public async Task<ShiftSalesReport> GetShiftSalesReportAsync()
+        {
+            try
+            {
+                _logger?.Information("Получение отчёта по продажам за смену (NewCas)...");
+
+                var response = await SendRequest("/fiscal/shifts/getState", new { });
+
+                var state = JsonSerializer.Deserialize<GetSateNewCas>(
+                    await response.Content.ReadAsStringAsync())
+                    ?? throw new CashRegisterException("ККМ вернула неверный формат состояния смены.");
+
+                var report = new ShiftSalesReport
+                {
+                    SaleReceiptCount = state.SaleNumber,
+                    CashSaleSum = (decimal)state.CashSum / 100m,
+                    CashlessSaleSum = (decimal)state.CashlessSum / 100m,
+                };
+
+                _logger?.Information(
+                    "Отчёт по смене (NewCas): продажи нал={CashSale}, безнал={CashlessSale}, чеков={Count}",
+                    report.CashSaleSum, report.CashlessSaleSum, report.SaleReceiptCount);
+
+                return report;
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "Ошибка при получении отчёта по продажам за смену (NewCas).");
+                return new ShiftSalesReport();
+            }
+        }
+
         #region Private Helpers
 
         private async Task<HttpResponseMessage?> SendRequest(string endpoint, object data)

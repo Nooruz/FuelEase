@@ -48,6 +48,17 @@ namespace KIT.GasStation.State.CashRegisters
         Task<CashRegisterState> GetShiftStateAsync();
 
         /// <summary>
+        /// Отчёт по продажам за текущую смену ККМ (нал, безнал, возвраты).
+        /// Обновляется при запуске и после каждой продажи.
+        /// </summary>
+        ShiftSalesReport? ShiftSalesReport { get; }
+
+        /// <summary>
+        /// Получить отчёт по продажам за текущую смену.
+        /// </summary>
+        Task<ShiftSalesReport> GetShiftSalesReportAsync();
+
+        /// <summary>
         /// Продажа
         /// </summary>
         Task<FiscalData?> SaleAsync(FiscalData fiscalData);

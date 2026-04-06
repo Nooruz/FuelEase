@@ -1,4 +1,5 @@
 ﻿using KIT.GasStation.EKassa.Models;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -24,6 +25,7 @@ namespace KIT.GasStation.EKassa
             {
                 Content = JsonContent.Create(req, options: JsonOptions)
             };
+            msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             using var resp = await _http.SendAsync(msg, ct).ConfigureAwait(false);
             var payload = await resp.Content.ReadFromJsonAsync<EkassaResponse<AuthLoginData>>(JsonOptions, ct)

@@ -62,10 +62,16 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
 
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        Text="{Binding Tank.Fuel.Price, FallbackValue=168.59}"
-                        TextAlignment="Center" />
+                    <Border
+                        Background="White"
+                        BorderBrush="Silver"
+                        BorderThickness="1"
+                        CornerRadius="3">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Text="{Binding Tank.Fuel.Price, FallbackValue=168.59}"
+                            TextAlignment="Center" />
+                    </Border>
 
                     <Grid Grid.Row="1" Margin="5">
 

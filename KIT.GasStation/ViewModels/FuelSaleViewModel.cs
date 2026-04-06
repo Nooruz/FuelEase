@@ -7,6 +7,7 @@ using KIT.GasStation.Domain.Views;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.Services;
+using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Discounts;
 using KIT.GasStation.State.Nozzles;
@@ -38,6 +39,7 @@ namespace KIT.GasStation.ViewModels
         private readonly IDisсountStore _disсountStore;
         private readonly ICashRegisterStore _cashRegisterStore;
         private readonly IHotKeysService _hotKeysService;
+        private readonly ICustomSplashScreenService _splashScreenService;
         private int? _tube;
         private Nozzle? _selectedNozzle;
         private FuelSale _createFuelSale = new() { PaymentType = PaymentType.Cash };
@@ -139,7 +141,8 @@ namespace KIT.GasStation.ViewModels
             IDisсountStore disсountStore,
             ICashRegisterStore cashRegisterStore,
             IHotKeysService hotKeysService,
-            IFiscalDataService fiscalDataService)
+            IFiscalDataService fiscalDataService,
+            ICustomSplashScreenService splashScreenService)
         {
             _nozzleStore = nozzleStore;
             _tankFuelQuantityView = tankFuelQuantityView;
@@ -151,6 +154,7 @@ namespace KIT.GasStation.ViewModels
             _cashRegisterStore = cashRegisterStore;
             _hotKeysService = hotKeysService;
             _fiscalDataService = fiscalDataService;
+            _splashScreenService = splashScreenService;
 
             Title = "Панель заявок";
 
@@ -315,7 +319,7 @@ namespace KIT.GasStation.ViewModels
             CreateFuelSale.ReceivedCount = SelectedNozzle.LastCounter;
             CreateFuelSale.IsForSum = _isSumUpdating;
 
-            PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore, _fiscalDataService)
+            PayViewModel viewModel = new(_fuelSaleService, _disсountStore, _cashRegisterStore, _fiscalDataService, _splashScreenService)
             {
                 CreateFuelSale = CreateFuelSale,
                 SelectedNozzle = SelectedNozzle,
@@ -380,7 +384,7 @@ namespace KIT.GasStation.ViewModels
                 CleanForm();
             }
         }
-        
+
         private void FuelSaleService_OnUpdated(FuelSale fuelSale)
         {
             try
