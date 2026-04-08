@@ -1,8 +1,8 @@
 ﻿using KIT.GasStation.EKassa.Models;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 
 namespace KIT.GasStation.EKassa.Services
@@ -71,22 +71,74 @@ namespace KIT.GasStation.EKassa.Services
         private async Task<(bool IsOk, TData? Data, EkassaHttpException? Error, HttpStatusCode StatusCode)> SendPostAsync<TData>(
             string path, object body, CancellationToken ct)
         {
-            var json = JsonSerializer.Serialize(body, body.GetType(), EkassaJson.Options);
+            var content = JsonContent.Create(body, body.GetType(), options: EkassaJson.Options);
 
             using var msg = new HttpRequestMessage(HttpMethod.Post, path)
             {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
+                Content = content
             };
 
             msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+            // ===== ОТЛАДКА =====
+            var requestBody = await msg.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+
+            Debug.WriteLine("=== eKassa REQUEST ===");
+            Debug.WriteLine($"URI: {msg.RequestUri}");
+            Debug.WriteLine($"Accept: {string.Join(", ", msg.Headers.Accept)}");
+            Debug.WriteLine($"Authorization: {msg.Headers.Authorization}");
+            Debug.WriteLine($"Content-Type: {msg.Content.Headers.ContentType}");
+            Debug.WriteLine("BODY:");
+            Debug.WriteLine(requestBody);
+            Debug.WriteLine("======================");
+            // ===================
+
             using var resp = await _http.SendAsync(msg, ct).ConfigureAwait(false);
 
-            var payload = await resp.Content.ReadFromJsonAsync<EkassaResponse<TData>>(EkassaJson.Options, ct)
-                          .ConfigureAwait(false);
+            var rawResponse = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
 
-            if (resp.IsSuccessStatusCode && payload is not null && payload.Data is not null)
+            Debug.WriteLine("=== eKassa RESPONSE ===");
+            Debug.WriteLine($"HTTP: {(int)resp.StatusCode} {resp.StatusCode}");
+            Debug.WriteLine(rawResponse);
+            Debug.WriteLine("=======================");
+
+            EkassaResponse<TData>? payload = null;
+            try
+            {
+                payload = JsonSerializer.Deserialize<EkassaResponse<TData>>(rawResponse, EkassaJson.Options);
+            }
+            catch
+            {
+                // если eKassa вернула не JSON, оставим payload = null
+            }
+
+            if (resp.IsSuccessStatusCode
+                && payload is not null
+                && string.Equals(payload.Status, "Success", StringComparison.OrdinalIgnoreCase)
+                && payload.Data is not null)
                 return (true, payload.Data, null, resp.StatusCode);
+
+            if (resp.IsSuccessStatusCode && payload is not null
+                && string.Equals(payload.Status, "Error", StringComparison.OrdinalIgnoreCase))
+            {
+                string? bodyCode = null;
+                if (payload.Message.ValueKind == JsonValueKind.Object)
+                {
+                    try
+                    {
+                        var em = payload.Message.Deserialize<EkassaErrorMessage>(EkassaJson.Options);
+                        bodyCode = em?.Code;
+                    }
+                    catch { }
+                }
+
+                if (bodyCode != null && int.TryParse(bodyCode, out var bodyHttpCode))
+                {
+                    var fakeResp = new HttpResponseMessage((HttpStatusCode)bodyHttpCode);
+                    var ex2 = EkassaHttpException.From(fakeResp, payload);
+                    return (false, default, ex2, (HttpStatusCode)bodyHttpCode);
+                }
+            }
 
             var ex = EkassaHttpException.From(resp, payload);
             return (false, default, ex, resp.StatusCode);

@@ -4,12 +4,28 @@
     xmlns:dxga="http://schemas.devexpress.com/winfx/2008/xaml/gauges">
 
     <Style x:Key="BaseDigitalScreenStyle" TargetType="{x:Type dxga:DigitalGaugeControl}">
-
         <Setter Property="SymbolCount" Value="8" />
         <Setter Property="TextDirection" Value="RightToLeft" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="RenderOptions.EdgeMode" Value="Aliased" />
         <Setter Property="Model">
             <Setter.Value>
                 <dxga:DigitalCleanWhiteModel InnerPadding="0" />
+            </Setter.Value>
+        </Setter>
+
+        <Setter Property="SymbolView">
+            <Setter.Value>
+                <dxga:SevenSegmentsView>
+                    <dxga:SevenSegmentsView.Presentation>
+                        <dxga:DefaultSevenSegmentsPresentation FillActive="{StaticResource ControllerSelectedColorBrush}">
+                            <dxga:DefaultSevenSegmentsPresentation.FillInactive>
+                                <SolidColorBrush Opacity="0.05" Color="{StaticResource ControllerSelectedColor}" />
+                            </dxga:DefaultSevenSegmentsPresentation.FillInactive>
+                        </dxga:DefaultSevenSegmentsPresentation>
+                    </dxga:SevenSegmentsView.Presentation>
+                </dxga:SevenSegmentsView>
             </Setter.Value>
         </Setter>
 
@@ -24,9 +40,9 @@
             <Setter.Value>
                 <dxga:SevenSegmentsView>
                     <dxga:SevenSegmentsView.Presentation>
-                        <dxga:DefaultSevenSegmentsPresentation FillActive="#FF3131">
+                        <dxga:DefaultSevenSegmentsPresentation FillActive="#E53935">
                             <dxga:DefaultSevenSegmentsPresentation.FillInactive>
-                                <SolidColorBrush Opacity="0.1" Color="#FF3131" />
+                                <SolidColorBrush Opacity="0.05" Color="#E53935" />
                             </dxga:DefaultSevenSegmentsPresentation.FillInactive>
                         </dxga:DefaultSevenSegmentsPresentation>
                     </dxga:SevenSegmentsView.Presentation>

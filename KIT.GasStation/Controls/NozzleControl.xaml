@@ -8,7 +8,7 @@
     xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
     xmlns:helpers="clr-namespace:KIT.GasStation.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Height="300"
+    Height="230"
     FontSize="24"
     mc:Ignorable="d">
 
@@ -29,9 +29,8 @@
                 Padding="2,0"
                 VerticalAlignment="Center"
                 Background="{StaticResource WhiteColorBrush}"
-                BorderBrush="Silver"
-                BorderThickness="2"
-                CornerRadius="3">
+                BorderBrush="#AAA"
+                BorderThickness="1">
 
                 <TextBlock
                     FontSize="16"
@@ -49,11 +48,7 @@
                 <RowDefinition />
             </Grid.RowDefinitions>
 
-            <Border
-                Padding="2,0"
-                Background="Transparent"
-                BorderThickness="2"
-                CornerRadius="3">
+            <Border Padding="2,0" Background="Transparent">
 
                 <Grid>
 
@@ -63,10 +58,10 @@
                     </Grid.RowDefinitions>
 
                     <Border
+                        Margin="0,2,0,0"
                         Background="White"
-                        BorderBrush="Silver"
-                        BorderThickness="1"
-                        CornerRadius="3">
+                        BorderBrush="#AAA"
+                        BorderThickness="1">
                         <TextBlock
                             HorizontalAlignment="Center"
                             Text="{Binding Tank.Fuel.Price, FallbackValue=168.59}"
@@ -110,17 +105,15 @@
             <Border
                 Grid.Row="1"
                 Padding="2,0"
-                Background="{Binding Tank.Fuel.ColorBrush, Converter={StaticResource DrawingColorToBrushConverter}, FallbackValue=Red}"
-                CornerRadius="0 0 3 3">
+                Background="{Binding Tank.Fuel.ColorBrush, Converter={StaticResource DrawingColorToBrushConverter}, FallbackValue=Red}">
 
                 <Border
                     Padding="0,5"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Background="White"
-                    BorderBrush="Silver"
-                    BorderThickness="1"
-                    CornerRadius="3">
+                    BorderBrush="#AAA"
+                    BorderThickness="1">
 
                     <TextBlock
                         Foreground="Black"

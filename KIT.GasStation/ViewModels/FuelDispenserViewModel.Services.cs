@@ -38,13 +38,15 @@ namespace KIT.GasStation.ViewModels
                     Value = nozzle.Price
                 });
 
+                var startMode = fuelSale.IsForSum
+                        ? FuelingStartMode.ByAmount
+                        : FuelingStartMode.ByVolume;
+
                 var fuelingRequest = new FuelingRequest
                 {
                     GroupName = nozzle.Group,
-                    Value = fuelSale.Sum,
-                    FuelingStartMode = fuelSale.IsForSum
-                        ? FuelingStartMode.ByAmount
-                        : FuelingStartMode.ByVolume
+                    Value = startMode == FuelingStartMode.ByAmount ? fuelSale.Sum : fuelSale.Quantity,
+                    FuelingStartMode = startMode
                 };
 
                 await _hub.InvokeAsync("StartFuelingAsync", fuelingRequest);

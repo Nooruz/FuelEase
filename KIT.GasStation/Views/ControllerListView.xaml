@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Editors="clr-namespace:DevExpress.Xpf.Editors;assembly=DevExpress.Xpf.Core.v21.2"
     xmlns:behaviors="clr-namespace:KIT.GasStation.Behavior"
+    xmlns:converters="clr-namespace:KIT.GasStation.Converters"
     xmlns:customControls="clr-namespace:KIT.GasStation.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
@@ -68,9 +69,8 @@
                             x:Name="MainBorder"
                             Padding="6"
                             Background="{StaticResource ControllerBackgroundColorBrush}"
-                            BorderBrush="{StaticResource ControllerBorderColorBrush}"
-                            BorderThickness="1.5"
-                            CornerRadius="6">
+                            BorderBrush="#AAA"
+                            BorderThickness="1.5">
                             <Border.Effect>
                                 <DropShadowEffect
                                     x:Name="MainShadow"
@@ -80,7 +80,10 @@
                                     ShadowDepth="2"
                                     Color="#000000" />
                             </Border.Effect>
-                            <customControls:FuelTransferColumnControl />
+                            <customControls:FuelTransferColumnControl
+                                HorizontalAlignment="Stretch"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True" />
                         </Border>
 
                         <!--  Стороны (ресайз)  -->
@@ -124,4 +127,5 @@
 
         </ListBox>
 
-   
+    </DockPanel>
+</local:BaseView>

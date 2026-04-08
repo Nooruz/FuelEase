@@ -61,6 +61,7 @@ namespace KIT.GasStation.Hardware
                 .AddHardwareConfigurationsServices()
                 .AddCashRegisters()
                 .AddStores()
+                .AddHubs()
                 .AddViewModels();
         }
 

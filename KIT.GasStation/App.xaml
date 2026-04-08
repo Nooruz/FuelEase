@@ -30,6 +30,7 @@
             <converters:InternetStatusToColorBrushConverter x:Key="InternetStatusToColorBrushConverter" />
             <converters:BoolToVisibility x:Key="BoolToVisibility" />
             <converters:InverseBoolToVisibility x:Key="InverseBoolToVisibility" />
+            <converters:WidthToScaleConverter x:Key="WidthToScaleConverter" />
 
 
 

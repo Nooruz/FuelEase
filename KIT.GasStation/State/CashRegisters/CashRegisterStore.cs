@@ -117,6 +117,11 @@ namespace KIT.GasStation.State.CashRegisters
         public async Task OpenShiftAsync()
         {
             await _cashRegisterService.OpenShiftAsync(_userStore.CurrentUser.FullName);
+            // Обновляем отчёт по смене после каждой продажи
+            _ = Task.Run(async () =>
+            {
+                try { await GetShiftSalesReportAsync(); } catch { /* не критично */ }
+            });
             await GetShiftStateAsync();
         }
 
@@ -128,6 +133,11 @@ namespace KIT.GasStation.State.CashRegisters
 
         public async Task XReportAsync()
         {
+            // Обновляем отчёт по смене после каждой продажи
+            _ = Task.Run(async () =>
+            {
+                try { await GetShiftSalesReportAsync(); } catch { /* не критично */ }
+            });
             await _cashRegisterService.XReportAsync();
         }
 
@@ -136,6 +146,11 @@ namespace KIT.GasStation.State.CashRegisters
             var state = await _cashRegisterService.GetShiftStateAsync();
             Status = state.Status;
             OpenAt = state.OpenedAt;
+            // Обновляем отчёт по смене после каждой продажи
+            _ = Task.Run(async () =>
+            {
+                try { await GetShiftSalesReportAsync(); } catch { /* не критично */ }
+            });
             return state;
         }
 
@@ -244,7 +259,7 @@ namespace KIT.GasStation.State.CashRegisters
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            
+
         }
 
         #endregion

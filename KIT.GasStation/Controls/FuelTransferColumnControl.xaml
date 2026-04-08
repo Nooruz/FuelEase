@@ -15,6 +15,8 @@
     Margin="3"
     d:DesignWidth="350"
     Background="{StaticResource WhiteColorBrush}"
+    SnapsToDevicePixels="True"
+    UseLayoutRounding="True"
     mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -91,9 +93,8 @@
             Margin="0,0,0,3"
             Padding="4,2"
             Background="#F5F7FA"
-            BorderBrush="#D0D0D0"
-            BorderThickness="1"
-            CornerRadius="4">
+            BorderBrush="#AAA"
+            BorderThickness="1">
             <TextBlock
                 FontSize="20"
                 FontWeight="SemiBold"
@@ -117,9 +118,8 @@
             <Border
                 Padding="5"
                 Background="#FAFBFC"
-                BorderBrush="#D0D0D0"
-                BorderThickness="1"
-                CornerRadius="4">
+                BorderBrush="#AAA"
+                BorderThickness="1">
 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -128,34 +128,30 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <Viewbox>
-                        <dxga:DigitalGaugeControl
-                            Grid.Row="0"
-                            Margin="0,0,0,2"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Style="{StaticResource BaseDigitalScreenStyle}"
-                            Text="{Binding SelectedNozzle.CurrentFuelSale.Sum, StringFormat=F2, FallbackValue=0.00}" />
-                    </Viewbox>
+                    <dxga:DigitalGaugeControl
+                        Grid.Row="0"
+                        Margin="0,0,0,2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource BaseDigitalScreenStyle}"
+                        Text="{Binding SelectedNozzle.CurrentFuelSale.Sum, StringFormat=F2, FallbackValue=0.00}" />
 
-                    <Viewbox Grid.Row="1">
-                        <dxga:DigitalGaugeControl
-                            Margin="0,0,0,2"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Style="{StaticResource BaseDigitalScreenStyle}"
-                            Text="{Binding SelectedNozzle.CurrentFuelSale.Quantity, StringFormat=F2, FallbackValue=0.00}" />
-                    </Viewbox>
+                    <dxga:DigitalGaugeControl
+                        Grid.Row="1"
+                        Margin="0,0,0,2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource BaseDigitalScreenStyle}"
+                        Text="{Binding SelectedNozzle.CurrentFuelSale.Quantity, StringFormat=F2, FallbackValue=0.00}" />
 
-                    <Viewbox Grid.Row="2">
-                        <dxga:DigitalGaugeControl
-                            Margin="0,2,0,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Style="{StaticResource BaseDigitalScreenStyle}"
-                            SymbolCount="12"
-                            Text="{Binding SelectedNozzle.SalesSum, StringFormat=F2, FallbackValue=0.00}" />
-                    </Viewbox>
+                    <dxga:DigitalGaugeControl
+                        Grid.Row="2"
+                        Margin="0,2,0,0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource BaseDigitalScreenStyle}"
+                        SymbolCount="12"
+                        Text="{Binding SelectedNozzle.SalesSum, StringFormat=F2, FallbackValue=0.00}" />
 
                 </Grid>
 
@@ -165,9 +161,8 @@
                 Grid.Column="2"
                 Padding="5"
                 Background="#FAFBFC"
-                BorderBrush="#D0D0D0"
-                BorderThickness="1"
-                CornerRadius="4">
+                BorderBrush="#AAA"
+                BorderThickness="1">
 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -176,33 +171,30 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <Viewbox>
-                        <dxga:DigitalGaugeControl
-                            Margin="0,0,0,2"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Style="{StaticResource DefaultDigitalScreenStyle}"
-                            Text="{Binding SelectedNozzle.CurrentFuelSale.ReceivedSum, StringFormat=F2, FallbackValue=0.00, UpdateSourceTrigger=PropertyChanged}" />
-                    </Viewbox>
+                    <dxga:DigitalGaugeControl
+                        Grid.Row="0"
+                        Margin="0,0,0,2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource DefaultDigitalScreenStyle}"
+                        Text="{Binding SelectedNozzle.CurrentFuelSale.ReceivedSum, StringFormat=F2, FallbackValue=0.00, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <Viewbox Grid.Row="1">
-                        <dxga:DigitalGaugeControl
-                            Margin="0,0,0,2"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Style="{StaticResource DefaultDigitalScreenStyle}"
-                            Text="{Binding SelectedNozzle.CurrentFuelSale.ReceivedQuantity, StringFormat=F2, FallbackValue=0.00, UpdateSourceTrigger=PropertyChanged}" />
-                    </Viewbox>
+                    <dxga:DigitalGaugeControl
+                        Grid.Row="1"
+                        Margin="0,0,0,2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource DefaultDigitalScreenStyle}"
+                        Text="{Binding SelectedNozzle.CurrentFuelSale.ReceivedQuantity, StringFormat=F2, FallbackValue=0.00, UpdateSourceTrigger=PropertyChanged}" />
 
-                    <Viewbox Grid.Row="2">
-                        <dxga:DigitalGaugeControl
-                            Margin="0,2,0,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Style="{StaticResource DefaultDigitalScreenStyle}"
-                            SymbolCount="12"
-                            Text="{Binding SelectedNozzle.LastCounter, StringFormat=F2, FallbackValue=0.00}" />
-                    </Viewbox>
+                    <dxga:DigitalGaugeControl
+                        Grid.Row="2"
+                        Margin="0,2,0,0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource DefaultDigitalScreenStyle}"
+                        SymbolCount="12"
+                        Text="{Binding SelectedNozzle.LastCounter, StringFormat=F2, FallbackValue=0.00}" />
 
                 </Grid>
 
@@ -219,9 +211,8 @@
 
             <Border
                 Background="#F5F7FA"
-                BorderBrush="#D0D0D0"
-                BorderThickness="1"
-                CornerRadius="4">
+                BorderBrush="#AAA"
+                BorderThickness="1">
 
                 <TextBlock
                     VerticalAlignment="Center"

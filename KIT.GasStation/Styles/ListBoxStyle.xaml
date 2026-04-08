@@ -55,7 +55,7 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="ToolTipService.InitialShowDelay" Value="400" />
         <Setter Property="ToolTipService.ShowDuration" Value="8000" />
-        <Setter Property="BorderBrush" Value="Silver" />
+        <Setter Property="BorderBrush" Value="#AAA" />
         <Setter Property="Margin">
             <Setter.Value>
                 <MultiBinding Converter="{StaticResource NozzleMarginConverter}">
@@ -79,8 +79,7 @@
                         Name="Border"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="2"
-                        CornerRadius="3"
+                        BorderThickness="1.8"
                         SnapsToDevicePixels="True">
 
                         <controls:NozzleControl />

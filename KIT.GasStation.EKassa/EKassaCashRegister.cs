@@ -92,9 +92,16 @@ namespace KIT.GasStation.EKassa
                 Txt80 = _settings.TapeType == TapeType.TXT80 ? true : null,
             };
 
-            var data = await _client.ShiftOpenAsync(request);
-
-            PrintText(data.Txt);
+            try
+            {
+                var data = await _client.ShiftOpenAsync(request);
+                PrintText(data.Txt);
+            }
+            catch (EkassaHttpException e) when (e.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                // 403 = "Shift already opened" — смена уже открыта на кассе, не ошибка
+                _logger.Warning("Смена ККМ уже открыта. Код: {EkassaCode}, Сообщение: {EkassaError}", e.EkassaCode, e.EkassaError);
+            }
         }
 
         /// <inheritdoc/>
@@ -197,16 +204,15 @@ namespace KIT.GasStation.EKassa
                 OriginFdNumber = fiscalData.FiscalDocument,
             };
 
-            var data = await _client.CreateReceiptV2Async(receipt);
+            var newfiscalData = await _client.CreateReceiptV2Async(receipt);
 
             _logger.Information("Отправка данных в ККМ: {Data}", JsonSerializer.Serialize(receipt));
 
-            return new FiscalData
-            {
-                FiscalModule = GetFiscalModule(data),
-                FiscalDocument = GetFiscalDocument(data),
-                RegistrationNumber = data.FiscalNumber.ToString()
-            };
+            fiscalData.FiscalModule = GetFiscalModule(newfiscalData);
+            fiscalData.FiscalDocument = GetFiscalDocument(newfiscalData);
+            fiscalData.RegistrationNumber = newfiscalData.FiscalNumber.ToString();
+
+            return fiscalData;
         }
 
         /// <inheritdoc/>
@@ -216,35 +222,34 @@ namespace KIT.GasStation.EKassa
             {
                 _logger.Information("Получение статуса смены ККМ...");
 
-                var request = new ShiftStateRequest
+                // Используем get_pos_by_fiscal_number вместо shift_state_by_fiscal_number:
+                // ответ уже содержит shift_state (1=открыта, 0=закрыта) и shift_date.
+                var request = new GetPosByFiscalNumberRequest
                 {
-                    FiscalNumber = _cashRegister.RegistrationNumber,
-                    Txt = _settings.TapeType == TapeType.TXT ? true : null,
-                    Txt80 = _settings.TapeType == TapeType.TXT80 ? true : null
+                    FiscalNumber = _cashRegister.RegistrationNumber
                 };
 
-                var shiftReportData = await _client.ShiftStateAsync(request);
+                var posInfo = await _client.GetPosByFiscalNumberAsync(request);
 
-                _logger.Information("Статус кассы: {Status}", _cashRegister.Status);
-
-                if (shiftReportData.Fields?.Tags.TryGetValue("1012", out var tag1012) == true)
+                // shift_state: 1 = смена открыта, 0 = закрыта
+                if (posInfo.ShiftState == 1 && !string.IsNullOrWhiteSpace(posInfo.ShiftDate))
                 {
-                    var openDate = DateTime.Parse(tag1012.GetString()!);
-
-                    return new CashRegisterState
+                    if (DateTime.TryParse(posInfo.ShiftDate, out var openDate))
                     {
-                        OpenedAt = openDate
-                    };
+                        _logger.Information("Смена ККМ открыта с {OpenDate}", openDate);
+                        return new CashRegisterState { OpenedAt = openDate };
+                    }
+                    _logger.Information("Смена ККМ открыта (дата не распознана: {ShiftDate})", posInfo.ShiftDate);
+                    return new CashRegisterState { OpenedAt = DateTime.Now };
                 }
-                return new CashRegisterState();
+
+                _logger.Information("Смена ККМ закрыта (shift_state={ShiftState})", posInfo.ShiftState);
+                return new CashRegisterState { Status = CashRegisterStatus.Close };
             }
             catch (EkassaHttpException e)
             {
-                _logger.Error(e, "Ошибка при получении статуса смены ККМ. Код ошибки: {StatusCode}, Сообщение: {EkassaError}", e.StatusCode, e.EkassaError);
-                return new CashRegisterState()
-                {
-                    Status = CashRegisterStatus.Close
-                };
+                _logger.Error(e, "Ошибка при получении статуса смены ККМ. Код: {StatusCode}, Сообщение: {EkassaError}", e.StatusCode, e.EkassaError);
+                return new CashRegisterState { Status = CashRegisterStatus.Close };
             }
             catch (Exception e)
             {
