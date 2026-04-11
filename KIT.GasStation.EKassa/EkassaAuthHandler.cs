@@ -6,13 +6,11 @@ namespace KIT.GasStation.EKassa
     internal sealed class EkassaAuthHandler : DelegatingHandler
     {
         private readonly EkassaTokenStore _tokenStore;
-        private readonly EkassaOptions _options;
         private readonly EkassaLoginApi _loginApi;
 
-        public EkassaAuthHandler(EkassaTokenStore tokenStore, EkassaOptions options, EkassaLoginApi loginApi)
+        public EkassaAuthHandler(EkassaTokenStore tokenStore, EkassaLoginApi loginApi)
         {
             _tokenStore = tokenStore;
-            _options = options;
             _loginApi = loginApi;
         }
 
@@ -29,26 +27,9 @@ namespace KIT.GasStation.EKassa
             if (response.StatusCode != HttpStatusCode.Unauthorized)
                 return response;
 
-            // 4) 401 — обновляем токен и повторяем ограниченное число раз
-            response.Dispose();
-
-            for (int i = 0; i < _options.MaxAuthRetry; i++)
-            {
-                await _tokenStore.RefreshTokenAsync(_loginApi.LoginAsync, ct).ConfigureAwait(false);
-
-                // HttpRequestMessage нельзя переиспользовать, если был контент-стрим.
-                // Поэтому требование: запросы создаём заново в EkassaClient через Func<HttpRequestMessage>.
-                // Здесь handler уже получил конкретный request — повтор можно делать только если контент буферизован.
-                // Мы делаем проще: запрещаем повтор тут.
-                break;
-            }
-
-            // Возвращаем 401 как есть — повтор реализуем на уровне EkassaClient, где можно пересоздать запрос.
-            return new HttpResponseMessage(HttpStatusCode.Unauthorized)
-            {
-                RequestMessage = request,
-                ReasonPhrase = "Unauthorized (token refreshed; retry required)"
-            };
+            // Обновление токена и повтор делаются на уровне EkassaClient,
+            // чтобы избежать двойного login (важно: новый login инвалидирует прошлый токен по документации).
+            return response;
         }
 
         private void AttachBearer(HttpRequestMessage request)

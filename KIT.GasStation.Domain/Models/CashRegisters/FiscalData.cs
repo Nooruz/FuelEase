@@ -1,4 +1,4 @@
-﻿namespace KIT.GasStation.Domain.Models
+﻿namespace KIT.GasStation.Domain.Models.CashRegisters
 {
     public class FiscalData : DomainObject
     {
@@ -236,7 +236,7 @@
         /// <summary>
         /// Продажа топлива
         /// </summary>
-        public FuelSale FuelSale { get; set; } = null!;
+        public FuelSale? FuelSale { get; set; } = null!;
 
         #endregion
 
@@ -258,6 +258,28 @@
             }
 
             return this;
+        }
+
+        public FiscalData CreateReturnFiscalData()
+        {
+            return new FiscalData
+            {
+                FiscalDocument = FiscalDocument,
+                FiscalModule = FiscalModule,
+                RegistrationNumber = RegistrationNumber,
+                SourceFiscalData = FiscalDocument.ToString(),
+                FuelName = FuelName,
+                UnitOfMeasurement = UnitOfMeasurement,
+                ValueAddedTax = ValueAddedTax,
+                SalesTax = SalesTax,
+                Tnved = Tnved,
+                OperationType = OperationType.Return,
+                PaymentType = PaymentType,
+                FuelSaleId = FuelSaleId,
+                Price = Price,
+                Quantity = Quantity,
+                Total = Total,
+            };
         }
 
         #endregion

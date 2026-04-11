@@ -1,6 +1,7 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.State.CashRegisters;

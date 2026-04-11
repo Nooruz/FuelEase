@@ -2,6 +2,7 @@
 using KIT.GasStation.CashRegisters.Models;
 using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
 using KIT.GasStation.NewCas.Models;
@@ -74,7 +75,7 @@ namespace KIT.GasStation.NewCas
         public async Task InitializationAsync(Guid cashRegisterId)
         {
             CashRegister? cashRegister = await _hardwareConfigurationService.GetCashRegisterAsync(cashRegisterId);
-            
+
             if (cashRegister == null)
             {
                 _logger.Error("Касса не найдена. [{Timestamp}]", DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss.fff"));
@@ -138,7 +139,7 @@ namespace KIT.GasStation.NewCas
                         Count    = Math.Round(fiscalData.Total / fiscalData.Price, 6),
                         Price    = fiscalData.Price,
                         ItemName = fiscalData.UnitOfMeasurement,
-                        Article  = "",
+                        Article  = fiscalData.Tnved,
                         Total    = fiscalData.Total.ToString(),
                         Unit     = "л",
                         VatNum   = fiscalData.ValueAddedTax ? 1 : 0,
@@ -204,11 +205,11 @@ namespace KIT.GasStation.NewCas
                         Total = fiscalData.Total.ToString(),
                         Unit = fiscalData.UnitOfMeasurement,
                         VatNum = fiscalData.ValueAddedTax ? 1 : 0,
-                        StNum = (int)(fiscalData.SalesTax * 100) } 
+                        StNum = (int)(fiscalData.SalesTax * 100) }
                 },
-                PayItems = new []
+                PayItems = new[]
                 {
-                    new PayItems() 
+                    new PayItems()
                     {
                              PayType = GetPayType(fiscalData.PaymentType),
                              Total = fiscalData.Total.ToString()
@@ -269,8 +270,10 @@ namespace KIT.GasStation.NewCas
                 var report = new ShiftSalesReport
                 {
                     SaleReceiptCount = state.SaleNumber,
-                    CashSaleSum = (decimal)state.CashSum / 100m,
-                    CashlessSaleSum = (decimal)state.CashlessSum / 100m,
+                    CashSaleSum = (decimal)state.SaleSum,
+                    CashlessSaleSum = (decimal)state.CashlessSum,
+                    ReturnReceiptCount = state.SaleReturnNumber,
+                    CashReturnSum = (decimal)state.SaleReturnSum,
                 };
 
                 _logger?.Information(

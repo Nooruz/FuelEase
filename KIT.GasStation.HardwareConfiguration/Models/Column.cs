@@ -17,6 +17,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         private ColumnSettings _settings;
         private ConnectionStatus _connectionStatus;
         private bool _isLifted;
+        private decimal _systemCounter;
 
         #endregion
 
@@ -75,6 +76,20 @@ namespace KIT.GasStation.HardwareConfigurations.Models
             {
                 _nozzle = value;
                 OnPropertyChanged(nameof(Nozzle));
+            }
+        }
+
+        /// <summary>
+        /// Системный счетчик
+        /// </summary>
+        [XmlAttribute]
+        public decimal SystemCounter
+        {
+            get => _systemCounter;
+            set
+            {
+                _systemCounter = value;
+                OnPropertyChanged(nameof(SystemCounter));
             }
         }
 

@@ -1,5 +1,5 @@
 ﻿using KIT.GasStation.CashRegisters.Models;
-using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 
 namespace KIT.GasStation.CashRegisters.Services
 {

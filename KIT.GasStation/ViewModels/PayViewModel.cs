@@ -146,7 +146,7 @@ namespace KIT.GasStation.ViewModels
                 {
                     if (Properties.Settings.Default.ReceiptPrintingMode == "Before")
                     {
-                        var newFilscalData = CreateFuelSale.CreateFiscalData(OperationType.Sale);
+                        var newFilscalData = CreateFuelSale.CreateFiscalData();
                         var fiscalData = await _cashRegisterStore.SaleAsync(newFilscalData);
 
                         if (fiscalData is not null)

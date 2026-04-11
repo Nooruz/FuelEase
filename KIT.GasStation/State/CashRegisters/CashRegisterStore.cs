@@ -1,7 +1,7 @@
 ﻿using KIT.App.Infrastructure.Factories;
 using KIT.GasStation.CashRegisters.Models;
 using KIT.GasStation.CashRegisters.Services;
-using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.Exceptions;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
@@ -176,7 +176,15 @@ namespace KIT.GasStation.State.CashRegisters
 
         public async Task<FiscalData?> ReturnAsync(FiscalData fiscalData)
         {
-            return await _cashRegisterService.ReturnAsync(fiscalData);
+            var result = await _cashRegisterService.ReturnAsync(fiscalData);
+
+            // Обновляем отчёт по смене после каждой продажи
+            _ = Task.Run(async () =>
+            {
+                try { await GetShiftSalesReportAsync(); } catch { /* не критично */ }
+            });
+
+            return result;
         }
 
         #endregion

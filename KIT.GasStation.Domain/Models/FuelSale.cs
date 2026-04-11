@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using KIT.GasStation.Domain.Models.CashRegisters;
+using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KIT.GasStation.Domain.Models
@@ -28,6 +30,7 @@ namespace KIT.GasStation.Domain.Models
         private decimal? _changeSum;
         private FuelSaleStatus _fuelSaleStatus;
         private bool _isForSum;
+        private ObservableCollection<FiscalData> _fiscalDatas = new();
 
         #endregion
 
@@ -293,7 +296,15 @@ namespace KIT.GasStation.Domain.Models
         /// <summary>
         /// Фискальные данные
         /// </summary>
-        public ICollection<FiscalData>? FiscalDatas { get; set; } = new HashSet<FiscalData>();
+        public ObservableCollection<FiscalData> FiscalDatas
+        {
+            get => _fiscalDatas;
+            set
+            {
+                _fiscalDatas = value;
+                OnPropertyChanged(nameof(FiscalDatas));
+            }
+        }
 
         public Nozzle? Nozzle { get; set; }
 
@@ -373,20 +384,45 @@ namespace KIT.GasStation.Domain.Models
                 fiscalData.ValueAddedTax = Tank.Fuel.ValueAddedTax;
                 fiscalData.SalesTax = Tank.Fuel.SalesTax;
                 fiscalData.FuelName = Tank.Fuel.Name;
+                fiscalData.Tnved = Tank.Fuel.TNVED;
             }
 
             return fiscalData;
         }
 
-        public FiscalData CreateFiscalData(OperationType type)
+        public FiscalData CreateFiscalData()
         {
             var fiscalData = new FiscalData
             {
-                OperationType = type,
+                OperationType = OperationType.Sale,
                 PaymentType = PaymentType,
                 Price = Price,
-                Quantity = type is OperationType.Sale ? Quantity : ReceivedQuantity,
-                Total = type is OperationType.Sale ? Sum : ReceivedSum,
+                Quantity = Quantity,
+                Total = Sum,
+                FuelSaleId = Id,
+            };
+
+            if (Tank != null && Tank.Fuel != null)
+            {
+                fiscalData.UnitOfMeasurement = Tank.Fuel.UnitOfMeasurement?.Name;
+                fiscalData.ValueAddedTax = Tank.Fuel.ValueAddedTax;
+                fiscalData.SalesTax = Tank.Fuel.SalesTax;
+                fiscalData.FuelName = Tank.Fuel.Name;
+                fiscalData.Tnved = Tank.Fuel.TNVED;
+            }
+
+            return fiscalData;
+        }
+
+        public FiscalData CreateReceivedFiscalData()
+        {
+            var fiscalData = new FiscalData
+            {
+                OperationType = OperationType.Sale,
+                PaymentType = PaymentType,
+                Price = Price,
+                Quantity = ReceivedQuantity,
+                Total = ReceivedSum,
                 FuelSaleId = Id
             };
 
@@ -396,6 +432,7 @@ namespace KIT.GasStation.Domain.Models
                 fiscalData.ValueAddedTax = Tank.Fuel.ValueAddedTax;
                 fiscalData.SalesTax = Tank.Fuel.SalesTax;
                 fiscalData.FuelName = Tank.Fuel.Name;
+                fiscalData.Tnved = Tank.Fuel.TNVED;
             }
 
             return fiscalData;
@@ -421,6 +458,7 @@ namespace KIT.GasStation.Domain.Models
                 fiscalData.ValueAddedTax = nozzle.Tank.Fuel.ValueAddedTax;
                 fiscalData.SalesTax = nozzle.Tank.Fuel.SalesTax;
                 fiscalData.FuelName = nozzle.Tank.Fuel.Name;
+                fiscalData.Tnved = Tank.Fuel.TNVED;
             }
 
             return fiscalData;
@@ -440,6 +478,7 @@ namespace KIT.GasStation.Domain.Models
                 fiscalData.ValueAddedTax = nozzle.Tank.Fuel.ValueAddedTax;
                 fiscalData.SalesTax = nozzle.Tank.Fuel.SalesTax;
                 fiscalData.FuelName = nozzle.Tank.Fuel.Name;
+                fiscalData.Tnved = nozzle.Tank.Fuel.TNVED;
             }
 
             return fiscalData;
@@ -509,23 +548,23 @@ namespace KIT.GasStation.Domain.Models
         [Display(Name = "Талон")]
         Ticket,
 
-        /// <summary>
-        /// Дисконтная карта
-        /// </summary>
-        [Display(Name = "Дисконтная карта")]
-        DiscountCard,
+        ///// <summary>
+        ///// Дисконтная карта
+        ///// </summary>
+        //[Display(Name = "Дисконтная карта")]
+        //DiscountCard,
 
-        /// <summary>
-        /// Топливная карта
-        /// </summary>
-        [Display(Name = "Топливная карта")]
-        FuelCard,
+        ///// <summary>
+        ///// Топливная карта
+        ///// </summary>
+        //[Display(Name = "Топливная карта")]
+        //FuelCard,
 
-        /// <summary>
-        /// Другое
-        /// </summary>
-        [Display(Name = "Другое")]
-        Other
+        ///// <summary>
+        ///// Другое
+        ///// </summary>
+        //[Display(Name = "Другое")]
+        //Other
     }
 
     public enum OperationType

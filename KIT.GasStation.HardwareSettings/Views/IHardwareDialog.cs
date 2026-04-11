@@ -1,4 +1,4 @@
-﻿using KIT.GasStation.HardwareConfigurations.Models;
+using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareSettings.Models;
 
 namespace KIT.GasStation.HardwareSettings.Views

@@ -2,6 +2,7 @@
 using KIT.GasStation.CashRegisters.Models;
 using KIT.GasStation.CashRegisters.Services;
 using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.EKassa.Models;
 using KIT.GasStation.EKassa.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
@@ -154,6 +155,8 @@ namespace KIT.GasStation.EKassa
             fiscalData.FiscalDocument = GetFiscalDocument(newfiscalData);
             fiscalData.RegistrationNumber = newfiscalData.FiscalNumber.ToString();
 
+            PrintText(newfiscalData.Txt, newfiscalData.Link);
+
             return fiscalData;
         }
 
@@ -202,6 +205,8 @@ namespace KIT.GasStation.EKassa
                 Cash = fiscalData.PaymentType == PaymentType.Cash,
                 Operation = ReceiptOperation.INCOME_RETURN,
                 OriginFdNumber = fiscalData.FiscalDocument,
+                Txt = _settings.TapeType == TapeType.TXT ? true : null,
+                Txt80 = _settings.TapeType == TapeType.TXT80 ? true : null,
             };
 
             var newfiscalData = await _client.CreateReceiptV2Async(receipt);
@@ -211,6 +216,8 @@ namespace KIT.GasStation.EKassa
             fiscalData.FiscalModule = GetFiscalModule(newfiscalData);
             fiscalData.FiscalDocument = GetFiscalDocument(newfiscalData);
             fiscalData.RegistrationNumber = newfiscalData.FiscalNumber.ToString();
+
+            PrintText(newfiscalData.Txt, newfiscalData.Link);
 
             return fiscalData;
         }
@@ -382,7 +389,7 @@ namespace KIT.GasStation.EKassa
             var loginData = await loginApi.LoginAsync(CancellationToken.None);
             tokenStore.SetToken(loginData);
 
-            var authHandler = new EkassaAuthHandler(tokenStore, options, loginApi)
+            var authHandler = new EkassaAuthHandler(tokenStore, loginApi)
             {
                 InnerHandler = new HttpClientHandler()
             };

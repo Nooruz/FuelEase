@@ -1,6 +1,6 @@
 ﻿using KIT.GasStation.EKassa.Models;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 
 namespace KIT.GasStation.EKassa
@@ -20,16 +20,27 @@ namespace KIT.GasStation.EKassa
         public async Task<AuthLoginData> LoginAsync(CancellationToken ct)
         {
             var req = new AuthLoginRequest { Email = _options.Email, Password = _options.Password };
+            var json = JsonSerializer.Serialize(req, JsonOptions);
+            var content = new StringContent(json, Encoding.UTF8);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
             using var msg = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
             {
-                Content = JsonContent.Create(req, options: JsonOptions)
+                Content = content
             };
             msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
             using var resp = await _http.SendAsync(msg, ct).ConfigureAwait(false);
-            var payload = await resp.Content.ReadFromJsonAsync<EkassaResponse<AuthLoginData>>(JsonOptions, ct)
-                          .ConfigureAwait(false);
+            var raw = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            EkassaResponse<AuthLoginData>? payload = null;
+            try
+            {
+                payload = JsonSerializer.Deserialize<EkassaResponse<AuthLoginData>>(raw, JsonOptions);
+            }
+            catch
+            {
+                // Оставляем payload = null, исключение ниже будет с исходным HTTP-кодом.
+            }
 
             if (!resp.IsSuccessStatusCode || payload?.Data is null)
                 throw EkassaHttpException.From(resp, payload);

@@ -1,6 +1,7 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.DataAnnotations;
 using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.Helpers;
 using KIT.GasStation.State.CashRegisters;
@@ -29,7 +30,10 @@ namespace KIT.GasStation.ViewModels
         private readonly IUserStore _userStore;
         private ObservableCollection<FuelSale> _fuelSales = new();
         private ObservableCollection<FuelSale> _selectedFuelSales = new();
-        private bool _showLoadingPanel;
+        private FuelSale _selectedFuelSale;
+        private FiscalData _selectedFiscalData;
+        private bool _showFuelSaleLoadingPanel;
+        private bool _showFiscalDataLoadingPanel;
 
         #endregion
 
@@ -55,15 +59,73 @@ namespace KIT.GasStation.ViewModels
         }
         public List<KeyValuePair<PaymentType, string>> PaymentTypes => new(EnumHelper.GetLocalizedEnumValues<PaymentType>());
         public List<KeyValuePair<FuelSaleStatus, string>> FuelSaleStatuses => new(EnumHelper.GetLocalizedEnumValues<FuelSaleStatus>());
-        public bool ShowLoadingPanel
+        public bool ShowFuelSaleLoadingPanel
         {
-            get => _showLoadingPanel;
+            get => _showFuelSaleLoadingPanel;
             set
             {
-                _showLoadingPanel = value;
-                OnPropertyChanged(nameof(ShowLoadingPanel));
+                _showFuelSaleLoadingPanel = value;
+                OnPropertyChanged(nameof(ShowFuelSaleLoadingPanel));
             }
         }
+        public bool ShowFiscalDataLoadingPanel
+        {
+            get => _showFiscalDataLoadingPanel;
+            set
+            {
+                _showFiscalDataLoadingPanel = value;
+                OnPropertyChanged(nameof(ShowFiscalDataLoadingPanel));
+            }
+        }
+        public FuelSale SelectedFuelSale
+        {
+            get => _selectedFuelSale;
+            set
+            {
+                _selectedFuelSale = value;
+                OnPropertyChanged(nameof(SelectedFuelSale));
+                OnPropertyChanged(nameof(PrintReceiptTitle));
+                OnPropertyChanged(nameof(IsVisiblePrintReceipt));
+            }
+        }
+        public FiscalData SelectedFiscalData
+        {
+            get => _selectedFiscalData;
+            set
+            {
+                _selectedFiscalData = value;
+                OnPropertyChanged(nameof(SelectedFiscalData));
+            }
+        }
+        public string PrintReceiptTitle
+        {
+            get
+            {
+                if (SelectedFuelSale?.ReceivedSum > 0)
+                {
+                    return $"Создать чек на {SelectedFuelSale.ReceivedSum:N2} сом";
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+        }
+        public bool IsVisiblePrintReceipt
+        {
+            get
+            {
+                if (SelectedFuelSale?.ReceivedSum > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+        public List<KeyValuePair<OperationType, string>> OperationTypes => new(EnumHelper.GetLocalizedEnumValues<OperationType>());
 
         #endregion
 
@@ -82,6 +144,9 @@ namespace KIT.GasStation.ViewModels
             _cashRegisterStore = cashRegisterStore;
             _userStore = userStore;
             _fiscalDataService = fiscalDataService;
+
+            _fiscalDataService.OnCreated += FiscalDataService_OnCreated;
+            _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
         }
 
         #endregion
@@ -97,38 +162,25 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                if (SelectedFuelSales.Any())
-                {
-                    var result = MessageBoxService.ShowMessage("Сделать возврат ККМ?", "Завершение", MessageButton.YesNoCancel);
-                    if (result == MessageResult.Cancel)
-                    {
-                        return;
-                    }
-                    if (result == MessageResult.Yes)
-                    {
-                        ShowLoadingPanel = true;
-                        foreach (var item in SelectedFuelSales)
-                        {
-                            var createdFiscalData = item.CreateFiscalData(OperationType.Return);
+                if (!SelectedFuelSales.Any())
+                    return;
 
-                            var fiscalData = await _cashRegisterStore.ReturnAsync(createdFiscalData);
-                            if (fiscalData != null)
-                            {
-                                await _fiscalDataService.CreateAsync(fiscalData);
-                            }
-                            item.FuelSaleStatus = FuelSaleStatus.Completed;
-                            await _fuelSaleService.UpdateAsync(item.Id, item);
-                        }
-                    }
-                    else
-                    {
-                        ShowLoadingPanel = true;
-                        foreach (var item in SelectedFuelSales)
-                        {
-                            item.FuelSaleStatus = FuelSaleStatus.Completed;
-                            await _fuelSaleService.UpdateAsync(item.Id, item);
-                        }
-                    }
+                var result = MessageBoxService.ShowMessage(
+                    "Завершить выбранных продаж?",
+                    "Завершение",
+                    MessageButton.YesNoCancel);
+
+                if (result != MessageResult.Yes)
+                    return;
+
+                ShowFuelSaleLoadingPanel = true;
+
+                var selectedItems = SelectedFuelSales.ToList();
+
+                foreach (var item in selectedItems)
+                {
+                    item.FuelSaleStatus = FuelSaleStatus.Completed;
+                    await _fuelSaleService.UpdateAsync(item.Id, item);
                 }
             }
             catch (Exception e)
@@ -138,8 +190,7 @@ namespace KIT.GasStation.ViewModels
             }
             finally
             {
-                ShowLoadingPanel = false;
-                await GetData();
+                ShowFuelSaleLoadingPanel = false;
             }
         }
 
@@ -156,6 +207,81 @@ namespace KIT.GasStation.ViewModels
                 {
                     _fuelSaleService.ResumeFueling(item);
                 }
+            }
+        }
+
+        [Command]
+        public async Task Return()
+        {
+            try
+            {
+                if (SelectedFiscalData == null)
+                {
+                    MessageBoxService.ShowMessage("Выберите фискальный чек (ККМ) для возврата", "Ошибка", MessageButton.OK);
+                    return;
+                }
+
+                var result = MessageBoxService.ShowMessage("Сделать возврат ККМ?", "Завершение", MessageButton.YesNoCancel);
+
+                if (result == MessageResult.Cancel)
+                {
+                    return;
+                }
+
+                ShowFiscalDataLoadingPanel = true;
+
+                if (result == MessageResult.Yes)
+                {
+                    var fiscalData = SelectedFiscalData.CreateReturnFiscalData();
+                    var newFiscalData = await _cashRegisterStore.ReturnAsync(fiscalData);
+                    if (newFiscalData != null)
+                    {
+                        await _fiscalDataService.CreateAsync(newFiscalData);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK);
+            }
+            finally
+            {
+                ShowFiscalDataLoadingPanel = false;
+            }
+        }
+
+        [Command]
+        public async Task PrintReceipt()
+        {
+            try
+            {
+                var result = MessageBoxService.ShowMessage($"Создать чек на {SelectedFuelSale.ReceivedSum} сом?", "Создание чека", MessageButton.YesNo);
+
+                if (result == MessageResult.No)
+                {
+                    return;
+                }
+
+                ShowFuelSaleLoadingPanel = true;
+
+                var fiscalData = SelectedFuelSale.CreateReceivedFiscalData();
+
+                var newFiscalData = await _cashRegisterStore.SaleAsync(fiscalData);
+
+                if (newFiscalData != null)
+                {
+                    await _fiscalDataService.CreateAsync(newFiscalData);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK);
+            }
+            finally
+            {
+                ShowFuelSaleLoadingPanel = false;
             }
         }
 
@@ -177,6 +303,45 @@ namespace KIT.GasStation.ViewModels
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
+            }
+        }
+
+        private void FiscalDataService_OnCreated(FiscalData fiscalData)
+        {
+            try
+            {
+                var fuelSale = FuelSales.FirstOrDefault(x => x.Id == fiscalData.FuelSaleId);
+
+                if (fuelSale == null)
+                    return;
+
+                fuelSale.FiscalDatas.Add(fiscalData);
+            }
+            catch (Exception e)
+            {
+                _logger?.LogError(e, e.Message);
+            }
+        }
+
+        private void FuelSaleService_OnUpdated(FuelSale fuelSale)
+        {
+            try
+            {
+                if (fuelSale.FuelSaleStatus != FuelSaleStatus.Completed)
+                    return;
+
+                var existingFuelSale = FuelSales.FirstOrDefault(x => x.Id == fuelSale.Id);
+                if (existingFuelSale == null)
+                    return;
+
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    FuelSales.Remove(existingFuelSale);
+                });
+            }
+            catch (Exception e)
+            {
+                _logger?.LogError(e, e.Message);
             }
         }
 

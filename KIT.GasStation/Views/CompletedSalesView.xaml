@@ -8,12 +8,12 @@
     xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
     xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
     xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
-    Width="1000"
-    Height="600">
+    Width="1200"
+    Height="700">
 
     <dxlc:LayoutControl Orientation="Vertical">
 
-        <dxlc:GroupBox Padding="0" Header="Продажи">
+        <dxlc:GroupBox Header="Продажи">
 
             <dxg:GridControl
                 ItemsSource="{Binding FuelSales}"
@@ -65,43 +65,43 @@
 
         </dxlc:GroupBox>
 
-        <dxlc:GroupBox
-            Height="150"
-            Padding="0"
-            Header="Чеки">
+        <dxlc:GroupBox Height="200" Header="Фискальные чеки (ККМ)">
 
-            <dxg:GridControl ItemsSource="{Binding SelectedFuelSale.FiscalDatas}" SelectedItem="{Binding SelectedFiscalData}">
-                <dxg:GridControl.View>
-                    <dxg:TableView AllowEditing="False" ShowGroupPanel="False" />
-                </dxg:GridControl.View>
+            <dxlc:LayoutGroup Orientation="Vertical">
+                <dxg:GridControl ItemsSource="{Binding SelectedFuelSale.FiscalDatas}" SelectedItem="{Binding SelectedFiscalData}">
+                    <dxg:GridControl.View>
+                        <dxg:TableView AllowEditing="False" ShowGroupPanel="False" />
+                    </dxg:GridControl.View>
 
-                <dxg:GridColumn FieldName="FiscalDocument" Header="ФД" />
-                <dxg:GridColumn FieldName="Quantity" Header="Кол-во" />
-                <dxg:GridColumn FieldName="Total" Header="Сумма" />
-                <dxg:GridColumn FieldName="OperationType" Header="Вид оплаты">
-                    <dxg:GridColumn.EditSettings>
-                        <dxe:ComboBoxEditSettings
-                            DisplayMember="Value"
-                            ItemsSource="{Binding OperationTypes}"
-                            ValueMember="Key" />
-                    </dxg:GridColumn.EditSettings>
-                </dxg:GridColumn>
-            </dxg:GridControl>
+                    <dxg:GridColumn FieldName="FiscalDocument" Header="ФД" />
+                    <dxg:GridColumn FieldName="Quantity" Header="Кол-во" />
+                    <dxg:GridColumn FieldName="Total" Header="Сумма" />
+                    <dxg:GridColumn FieldName="OperationType" Header="Вид оплаты">
+                        <dxg:GridColumn.EditSettings>
+                            <dxe:ComboBoxEditSettings
+                                DisplayMember="Value"
+                                ItemsSource="{Binding OperationTypes}"
+                                ValueMember="Key" />
+                        </dxg:GridColumn.EditSettings>
+                    </dxg:GridColumn>
+                </dxg:GridControl>
+
+                <dxlc:LayoutGroup VerticalAlignment="Bottom">
+
+                    <Button
+                        HorizontalAlignment="Right"
+                        Command="{Binding ReturnCommand}"
+                        Content="Возврат ККМ" />
+                    <Button
+                        HorizontalAlignment="Right"
+                        Command="{Binding CloseCommand}"
+                        Content="Закрыть" />
+
+                </dxlc:LayoutGroup>
+            </dxlc:LayoutGroup>
+
 
         </dxlc:GroupBox>
-
-        <dxlc:LayoutGroup VerticalAlignment="Bottom">
-
-            <Button
-                HorizontalAlignment="Right"
-                Command="{Binding ReturnCommand}"
-                Content="Возврат товара ККМ" />
-            <Button
-                HorizontalAlignment="Right"
-                Command="{Binding CloseCommand}"
-                Content="Закрыть" />
-
-        </dxlc:LayoutGroup>
 
     </dxlc:LayoutControl>
 

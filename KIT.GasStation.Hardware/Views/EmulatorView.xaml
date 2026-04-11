@@ -1,72 +1,78 @@
-﻿<local:BaseView x:Class="KIT.GasStation.Hardware.Views.EmulatorView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
-             xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
-             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
-             xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
-             xmlns:local="clr-namespace:KIT.GasStation.Hardware.Views"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+﻿<local:BaseView
+    x:Class="KIT.GasStation.Hardware.Views.EmulatorView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    xmlns:local="clr-namespace:KIT.GasStation.Hardware.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
 
     <dx:LoadingDecorator FadeInDuration="0" FadeOutDuration="0:0:0:1">
 
         <dxlc:LayoutControl Orientation="Vertical">
 
-            <dxg:GridControl ItemsSource="{Binding SelectedController.Columns}"
-                             SelectedItem="{Binding SelectedColumn}">
+            <dxg:GridControl ItemsSource="{Binding SelectedController.Columns}" SelectedItem="{Binding SelectedColumn}">
                 <dxg:GridControl.View>
                     <dxg:TableView ShowGroupPanel="False">
                         <dxg:TableView.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Добавить" Command="{Binding AddColumnCommand}"/>
-                                <MenuItem Header="Удалить" Command="{Binding DeleteColumnCommand}"/>
+                                <MenuItem Command="{Binding AddColumnCommand}" Header="Добавить" />
+                                <MenuItem Command="{Binding DeleteColumnCommand}" Header="Удалить" />
                             </ContextMenu>
                         </dxg:TableView.ContextMenu>
                     </dxg:TableView>
                 </dxg:GridControl.View>
-                <dxg:GridColumn Header="Связь" FieldName="ConnectionStatus">
+                <dxg:GridColumn FieldName="ConnectionStatus" Header="Связь">
                     <dxg:GridColumn.CellTemplate>
                         <DataTemplate>
-                            <dxlc:LayoutControl Padding="0 0 5 0" ItemSpace="5">
-                                <Button Content="Проверка"
-                                        Command="{Binding DataContext.CheckStatusCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" />
-                                <TextBlock HorizontalAlignment="Center"
-                                           Text="{Binding RowData.Row.ConnectionStatus, Converter={StaticResource ColumnConnectionStatusConverter}}"
-                                           Foreground="{Binding RowData.Row.ConnectionStatus, Converter={StaticResource ColumnConnectionStatusForegroundConverter}}"
-                                           VerticalAlignment="Center"
-                                           Style="{StaticResource ConnectionStatus}"/>
+                            <dxlc:LayoutControl Padding="0,0,5,0" ItemSpace="5">
+                                <Button Command="{Binding DataContext.CheckStatusCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" Content="Проверка" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding RowData.Row.ConnectionStatus, Converter={StaticResource ColumnConnectionStatusForegroundConverter}}"
+                                    Style="{StaticResource ConnectionStatus}"
+                                    Text="{Binding RowData.Row.ConnectionStatus, Converter={StaticResource ColumnConnectionStatusConverter}}" />
                             </dxlc:LayoutControl>
                         </DataTemplate>
                     </dxg:GridColumn.CellTemplate>
                 </dxg:GridColumn>
-                <dxg:GridColumn Header="Адрес" FieldName="Address">
+                <dxg:GridColumn FieldName="Address" Header="Адрес">
                     <dxg:GridColumn.EditSettings>
-                        <dxe:SpinEditSettings AllowSpin="False"
-                                              MinValue="0"
-                                              MaxValue="255"/>
+                        <dxe:SpinEditSettings
+                            AllowSpin="False"
+                            MaxValue="255"
+                            MinValue="0" />
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
-                <dxg:GridColumn Header="Шланг"
-                                FieldName="Nozzle">
+                <dxg:GridColumn FieldName="Nozzle" Header="Шланг">
                     <dxg:GridColumn.EditSettings>
-                        <dxe:SpinEditSettings MinValue="1"
-                                              MaxValue="4"
-                                              AllowSpin="False"/>
+                        <dxe:SpinEditSettings
+                            AllowSpin="False"
+                            MaxValue="4"
+                            MinValue="1" />
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
-                <dxg:GridColumn Header="Имя"
-                                FieldName="Name"/>
-                <dxg:GridColumn Header="Блокирована"
-                                FieldName="Settings.IsDisabled"/>
+                <dxg:GridColumn FieldName="Name" Header="Имя" />
+                <dxg:GridColumn FieldName="Settings.IsDisabled" Header="Блокирована" />
+                <dxg:GridColumn FieldName="SystemCounter" Header="Системный счетчик" >
+                    <dxg:GridColumn.EditSettings>
+                        <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n2"/>
+                    </dxg:GridColumn.EditSettings>
+                </dxg:GridColumn>
             </dxg:GridControl>
 
-            <Button HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Content="Сохранить настройки"
-                    Command="{Binding SaveCommand}"/>
+            <Button
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Command="{Binding SaveCommand}"
+                Content="Сохранить настройки" />
 
         </dxlc:LayoutControl>
 

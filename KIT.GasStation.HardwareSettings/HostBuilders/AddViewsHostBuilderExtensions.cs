@@ -1,4 +1,4 @@
-﻿using KIT.GasStation.HardwareSettings.Forms;
+using KIT.GasStation.HardwareSettings.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -12,6 +12,7 @@ namespace KIT.GasStation.HardwareSettings.HostBuilders
             {
                 services.AddTransient<Main>();
                 services.AddTransient<HardwareDialog>();
+                services.AddTransient<ColumnCountDialog>();
             });
         }
     }

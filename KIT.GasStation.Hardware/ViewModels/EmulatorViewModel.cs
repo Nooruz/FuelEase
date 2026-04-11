@@ -4,7 +4,6 @@ using KIT.GasStation.Hardware.ViewModels.Base;
 using KIT.GasStation.Hardware.Views;
 using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.HardwareConfigurations.Services;
-using System;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.Hardware.ViewModels
@@ -93,6 +92,19 @@ namespace KIT.GasStation.Hardware.ViewModels
         [Command]
         public async Task Save()
         {
+            if (SelectedController == null) return;
+
+            if (SelectedController.Columns.Count == 0) return;
+
+            foreach (var item in SelectedController.Columns)
+            {
+                if (item.SystemCounter < 0)
+                {
+                    MessageBoxService.ShowMessage($"Системный счётчик колонки \"{item.Name}\" не может быть отрицательным.", "Ошибка", MessageButton.OK, MessageIcon.Error);
+                    return;
+                }
+            }
+
             await _hardwareConfigurationService.SaveControllerAsync(SelectedController);
         }
 

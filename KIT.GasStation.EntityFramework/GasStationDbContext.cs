@@ -1,4 +1,5 @@
 ﻿using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.Domain.Models.Discounts;
 using KIT.GasStation.Domain.Views;
 using Microsoft.EntityFrameworkCore;

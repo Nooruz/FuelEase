@@ -65,6 +65,18 @@ namespace KIT.GasStation.NewCas.Models
         public int SaleNumber { get; set; }
 
         /// <summary>
+        /// количество чеков возврата
+        /// </summary>
+        [JsonPropertyName("saleReturnNumber")]
+        public int SaleReturnNumber { get; set; }
+
+        /// <summary>
+        /// сумма чеков возвратов продаж
+        /// </summary>
+        [JsonPropertyName("saleReturnSum")]
+        public double SaleReturnSum { get; set; }
+
+        /// <summary>
         /// Регистрационный номер ККМ
         /// </summary>
         [JsonPropertyName("registrationNumber")]

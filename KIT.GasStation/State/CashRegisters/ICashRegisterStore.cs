@@ -1,5 +1,5 @@
 ﻿using KIT.GasStation.CashRegisters.Models;
-using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.HardwareConfigurations.Models;
 using Microsoft.Extensions.Hosting;
 using System;

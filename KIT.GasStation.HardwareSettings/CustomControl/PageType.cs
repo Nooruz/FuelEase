@@ -4,5 +4,10 @@
     {
         Lanfeng,
         Gilbarco,
+        PKElectronics,
+        Emulator,
+        EKassa,
+        NewCas,
+        KIT
     }
 }

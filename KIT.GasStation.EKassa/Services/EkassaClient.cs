@@ -57,7 +57,8 @@ namespace KIT.GasStation.EKassa.Services
             // Если 401 — делаем релогин и повтор
             if (r1.StatusCode == HttpStatusCode.Unauthorized)
             {
-                // принудительно обновим токен
+                // Единственное место повторной авторизации.
+                // В eKassa новый login инвалидирует ранее выданный токен.
                 await _tokenStore.RefreshTokenAsync(_loginApi.LoginAsync, ct).ConfigureAwait(false);
 
                 var r2 = await SendPostAsync<TData>(path, body, ct).ConfigureAwait(false);
@@ -79,6 +80,10 @@ namespace KIT.GasStation.EKassa.Services
             };
 
             msg.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            if (msg.Headers.Authorization is null && !string.IsNullOrWhiteSpace(_tokenStore.AccessToken))
+            {
+                msg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokenStore.AccessToken);
+            }
 
             // ===== ОТЛАДКА =====
             var requestBody = await msg.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
@@ -144,4 +149,4 @@ namespace KIT.GasStation.EKassa.Services
             return (false, default, ex, resp.StatusCode);
         }
     }
-}
+}

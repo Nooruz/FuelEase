@@ -1,4 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
+﻿using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.EntityFramework.Services.Common;
 using Microsoft.EntityFrameworkCore;

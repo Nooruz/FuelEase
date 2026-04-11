@@ -3,6 +3,7 @@ using KIT.GasStation.FuelDispenser;
 using KIT.GasStation.FuelDispenser.Hubs;
 using KIT.GasStation.FuelDispenser.Models;
 using KIT.GasStation.HardwareConfigurations.Models;
+using KIT.GasStation.HardwareConfigurations.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -23,6 +24,7 @@ namespace KIT.GasStation.Emulator
         private readonly StatusResponse _response = new() { Status = NozzleStatus.Ready };
         private CancellationToken _token;
         private readonly ConcurrentDictionary<string, (CancellationTokenSource cts, Task task)> _fuelingJobs = new();
+        private readonly IHardwareConfigurationService _hardwareConfigurationService;
 
         #endregion
 
@@ -35,10 +37,12 @@ namespace KIT.GasStation.Emulator
         #region Constructors
 
         public EmulatorFuelDispenser(IHubClient hubClient,
-            ILogger<EmulatorFuelDispenser> logger)
+            ILogger<EmulatorFuelDispenser> logger,
+            IHardwareConfigurationService hardwareConfigurationService)
         {
             _hubClient = hubClient;
             _logger = logger;
+            _hardwareConfigurationService = hardwareConfigurationService;
             //CreateLogger();
         }
 
@@ -123,9 +127,47 @@ namespace KIT.GasStation.Emulator
             _fuelingJobs[fuelingRequest.GroupName] = (cts, task);
         }
 
-        public Task GetCounterAsync(Guid commandId, string groupName) => Task.CompletedTask;
+        public async Task GetCounterAsync(Guid commandId, string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+                var column = GetColumnByGroupName(groupName);
+                if (column is null) return;
 
-        public Task GetCountersAsync(Guid commandId, string groupName) => Task.CompletedTask;
+                await _hub.InvokeAsync("CounterUpdated",
+                new CounterData { GroupName = column.GroupName, Counter = column.SystemCounter },
+                cancellationToken: _token);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
+
+        public async Task GetCountersAsync(Guid commandId, string groupName)
+        {
+            try
+            {
+                await PausePollingAsync();
+                foreach (var column in Controller.Columns)
+                    await _hub.InvokeAsync("CounterUpdated",
+                    new CounterData { GroupName = column.GroupName, Counter = column.SystemCounter },
+                    cancellationToken: _token);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+            }
+            finally
+            {
+                await ResumePollingAsync();
+            }
+        }
 
         public Task ChangeControlModeAsync(Guid commandId, string groupName, bool isProgramMode) => Task.CompletedTask;
 
@@ -213,7 +255,7 @@ namespace KIT.GasStation.Emulator
 
                 await Task.Delay(500, _token);
 
-                await _hub.InvokeAsync("OnWaitingAsync", groupName, cancellationToken: _token);
+                await _hub.InvokeAsync("WaitingAsync", groupName, cancellationToken: _token);
             }
             catch (Exception e)
             {
@@ -265,7 +307,7 @@ namespace KIT.GasStation.Emulator
 
         public async Task CompleteFuelingAsync(string groupName)
         {
-            await _hub.InvokeAsync("OnCompletedFuelingAsync", groupName, cancellationToken: _token);
+            await _hub.InvokeAsync("CompletedFuelingAsync", groupName, cancellationToken: _token);
         }
 
         #endregion
@@ -385,9 +427,15 @@ namespace KIT.GasStation.Emulator
 
         private async Task StartFuelingLoopAsync(FuelingRequest fuelingRequest, CancellationToken token)
         {
+            if (fuelingRequest is null)
+                throw new ArgumentNullException(nameof(fuelingRequest));
+
+            var pollingPaused = false;
+
             try
             {
-                await PausePollingAsync(); // если нужно — тут ок
+                await PausePollingAsync();
+                pollingPaused = true;
 
                 var column = GetColumnByGroupName(fuelingRequest.GroupName);
                 if (column is null)
@@ -396,35 +444,74 @@ namespace KIT.GasStation.Emulator
                     return;
                 }
 
-                //Если по сумме, то рассчитываем количество, если по объему — сумму
-                decimal sum = fuelingRequest.FuelingStartMode is FuelingStartMode.ByAmount ?
-                    fuelingRequest.Value : Math.Round(fuelingRequest.Value * column.Price, 2);
+                if (column.Price <= 0)
+                {
+                    _logger.LogWarning(
+                        "Для колонки {GroupName} указана некорректная цена: {Price}",
+                        fuelingRequest.GroupName,
+                        column.Price);
+                    return;
+                }
 
-                decimal quantity = fuelingRequest.FuelingStartMode is FuelingStartMode.ByAmount ?
-                    Math.Round(fuelingRequest.Value / column.Price, 3) : fuelingRequest.Value;
+                if (fuelingRequest.Value < 0)
+                {
+                    _logger.LogWarning(
+                        "Для колонки {GroupName} передано отрицательное значение: {Value}",
+                        fuelingRequest.GroupName,
+                        fuelingRequest.Value);
+                    return;
+                }
 
-                var rnd = new Random();
+                // Если старт по сумме — рассчитываем количество, если по объёму — сумму
+                decimal sum = fuelingRequest.FuelingStartMode == FuelingStartMode.ByAmount
+                    ? fuelingRequest.Value
+                    : Math.Round(fuelingRequest.Value * column.Price, 2);
+
+                decimal quantity = fuelingRequest.FuelingStartMode == FuelingStartMode.ByAmount
+                    ? Math.Round(fuelingRequest.Value / column.Price, 3)
+                    : fuelingRequest.Value;
+
+                var random = Random.Shared;
                 decimal receivedQuantity = 0;
-                _response.GroupName = fuelingRequest.GroupName;
-                _response.Status = NozzleStatus.WaitingRemoved;
-                await _hub.InvokeAsync("PublishStatus", _response, cancellationToken: token);
+                decimal lastSavedQuantity = 0;
+
+                var statusResponse = new StatusResponse
+                {
+                    GroupName = fuelingRequest.GroupName,
+                    Status = NozzleStatus.WaitingRemoved
+                };
+
+                await _hub.InvokeAsync("PublishStatus", statusResponse, cancellationToken: token);
 
                 await Task.Delay(1000, token);
 
-                _response.Status = NozzleStatus.PumpWorking;
-                await _hub.InvokeAsync("PublishStatus", _response, cancellationToken: token);
+                statusResponse.Status = NozzleStatus.PumpWorking;
+                await _hub.InvokeAsync("PublishStatus", statusResponse, cancellationToken: token);
 
                 while (true)
                 {
                     token.ThrowIfCancellationRequested();
 
-                    decimal step = (decimal)rnd.NextDouble() * 0.5m;
+                    decimal step = random.Next(0, 500) / 1000m;
                     receivedQuantity += step;
+
                     decimal receivedSum = Math.Round(receivedQuantity * column.Price, 2);
+
                     if (receivedQuantity > quantity)
                     {
                         receivedQuantity = quantity;
                         receivedSum = sum;
+                        column.SystemCounter += (quantity - lastSavedQuantity);
+                    }
+
+                    // Добавляем в системный счётчик только прирост за текущую итерацию
+                    decimal deltaQuantity = receivedQuantity - lastSavedQuantity;
+                    if (deltaQuantity > 0)
+                    {
+                        column.SystemCounter += deltaQuantity;
+                        lastSavedQuantity = receivedQuantity;
+
+                        await _hardwareConfigurationService.SaveControllerAsync(Controller);
                     }
 
                     var fuelingResponse = new FuelingResponse
@@ -434,7 +521,7 @@ namespace KIT.GasStation.Emulator
                         Sum = receivedSum
                     };
 
-                    await _hub.InvokeAsync("OnFuelingAsync", fuelingResponse, cancellationToken: token);
+                    await _hub.InvokeAsync("FuelingAsync", fuelingResponse, cancellationToken: token);
 
                     if (receivedQuantity >= quantity)
                         break;
@@ -444,11 +531,16 @@ namespace KIT.GasStation.Emulator
 
                 await Task.Delay(1000, token);
 
-                await _hub.InvokeAsync("CompletedFuelingAsync", fuelingRequest.GroupName, receivedQuantity, cancellationToken: _token);
+                await _hub.InvokeAsync(
+                    "CompletedFuelingAsync",
+                    fuelingRequest.GroupName,
+                    receivedQuantity,
+                    cancellationToken: token);
             }
             finally
             {
-                await ResumePollingAsync();
+                if (pollingPaused)
+                    await ResumePollingAsync();
             }
         }
 

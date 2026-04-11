@@ -234,6 +234,18 @@ namespace KIT.GasStation.HardwareConfigurations.Services
             }
         }
 
+        public async Task SaveColumnAsync(Column column)
+        {
+            try
+            {
+
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
         public async Task SaveCashRegisterAsync(CashRegister cashRegister)
         {
             try

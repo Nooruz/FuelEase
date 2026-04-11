@@ -1,4 +1,4 @@
-﻿using KIT.GasStation.Domain.Models;
+﻿using KIT.GasStation.Domain.Models.CashRegisters;
 
 namespace KIT.GasStation.Domain.Services
 {

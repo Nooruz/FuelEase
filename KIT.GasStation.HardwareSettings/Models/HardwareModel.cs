@@ -1,7 +1,6 @@
-﻿using KIT.App.Infrastructure.Helpers;
+using KIT.App.Infrastructure.Helpers;
 using KIT.App.Infrastructure.Services;
 using KIT.GasStation.HardwareConfigurations.Services;
-using KIT.GasStation.HardwareSettings.Views;
 
 namespace KIT.GasStation.HardwareSettings.Models
 {
@@ -13,7 +12,6 @@ namespace KIT.GasStation.HardwareSettings.Models
 
         private TDevice _createdDevice = new();
         private readonly IDeviceService<TDevice> _deviceService;
-        private readonly IHardwareDialog _hardwareDialog;
 
         #endregion
 
@@ -36,20 +34,16 @@ namespace KIT.GasStation.HardwareSettings.Models
 
         #region Constructors
 
-        public HardwareModel(IDeviceService<TDevice> deviceService,
-            IHardwareDialog hardwareDialog)
+        public HardwareModel(IDeviceService<TDevice> deviceService)
         {
             _deviceService = deviceService;
-            _hardwareDialog = hardwareDialog;
-
-            _hardwareDialog.AttachPresenter(this);
         }
 
         #endregion
 
-        #region Private Methods
+        #region Public Methods
 
-        private bool CheckDevice()
+        public bool CheckDevice()
         {
             if (EqualityComparer<TType>.Default.Equals(CreatedDevice.Type, default))
             {
@@ -66,6 +60,11 @@ namespace KIT.GasStation.HardwareSettings.Models
             }
 
             return true;
+        }
+
+        public async void SaveDeviceAsync()
+        {
+            await _deviceService.SaveDeviceAsync(CreatedDevice);
         }
 
         #endregion

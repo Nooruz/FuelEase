@@ -81,6 +81,11 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         Task SaveControllerAsync(Controller controller);
 
         /// <summary>
+        /// Сохраняет пистолет
+        /// </summary>
+        Task SaveColumnAsync(Column column);
+
+        /// <summary>
         /// Добавляет новую кассу или обновляет существующую в конфигурационном файле.
         /// </summary>
         /// <param name="cashRegister">Объект кассы для добавления или обновления.</param>

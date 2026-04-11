@@ -497,9 +497,12 @@ namespace KIT.GasStation.ViewModels
             var returnedFiscalData = await _cashRegisterStore.ReturnAsync(returnFiscalData);
             await _fiscalDataService.CreateAsync(returnedFiscalData);
 
-            var createFiscalData = sale.AfterCreateFiscalData(OperationType.Sale);
-            var createdFiscalData = await _cashRegisterStore.SaleAsync(createFiscalData);
-            await _fiscalDataService.CreateAsync(createdFiscalData);
+            if (sale.ReceivedQuantity > 0)
+            {
+                var createFiscalData = sale.AfterCreateFiscalData(OperationType.Sale);
+                var createdFiscalData = await _cashRegisterStore.SaleAsync(createFiscalData);
+                await _fiscalDataService.CreateAsync(createdFiscalData);
+            }
         }
 
         #endregion
