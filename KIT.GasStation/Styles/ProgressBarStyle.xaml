@@ -10,9 +10,9 @@
         <!--  Зададим умолчания, чтобы не забыть  -->
         <Setter Property="BorderBrush" Value="Black" />
         <Setter Property="BorderThickness" Value="2" />
-        <Setter Property="Background" Value="White" /> 
+        <Setter Property="Background" Value="White" />
         <!--  «Пустая» часть  -->
-        <Setter Property="Foreground" Value="Red" /> 
+        <Setter Property="Foreground" Value="Red" />
         <!--  «Заливка» (прогресс)  -->
 
         <!--  Поворот на -90°, если нужно «вертикальное» отображение  -->

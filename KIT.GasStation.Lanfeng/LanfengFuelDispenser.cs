@@ -160,10 +160,18 @@ namespace KIT.GasStation.Lanfeng
                     _deviceLogger?.Warning("Колонка {GroupName} не найдена", fuelingRequest.GroupName);
                     return;
                 }
-                var cmd = fuelingRequest.FuelingStartMode == FuelingStartMode.ByAmount
+
+                bool isByAmount = fuelingRequest.FuelingStartMode == FuelingStartMode.ByAmount;
+
+                Command cmd = isByAmount
                     ? Command.StartFuelingSum
                     : Command.StartFuelingQuantity;
-                await ExecuteCommandAsync(cmd, column.LanfengAddress, fuelingRequest.Value);
+
+                decimal value = isByAmount
+                    ? fuelingRequest.Sum
+                    : fuelingRequest.Quantity;
+
+                await ExecuteCommandAsync(cmd, column.LanfengAddress, value);
             }
             catch (Exception e)
             {

@@ -70,7 +70,7 @@ namespace KIT.GasStation.Hardware.ViewModels
                     Address = address,
                     Nozzle = pistol,
                     Name = name,
-                    Settings = new LanfengColumnSettings()
+                    Settings = new EmulatorColumnSettings()
                 };
 
                 SelectedController.Columns.Add(newColumn);

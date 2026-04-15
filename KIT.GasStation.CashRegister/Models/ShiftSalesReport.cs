@@ -8,40 +8,35 @@ namespace KIT.GasStation.CashRegisters.Models
     {
         #region Приход (продажи)
 
-        /// <summary>Количество чеков прихода за смену.</summary>
         public int SaleReceiptCount { get; set; }
-
-        /// <summary>Сумма продаж наличными (в сомах).</summary>
         public decimal CashSaleSum { get; set; }
-
-        /// <summary>Сумма продаж безналичными (в сомах).</summary>
         public decimal CashlessSaleSum { get; set; }
 
         #endregion
 
         #region Возврат прихода
 
-        /// <summary>Количество чеков возврата прихода за смену.</summary>
         public int ReturnReceiptCount { get; set; }
-
-        /// <summary>Сумма возвратов наличными (в сомах).</summary>
         public decimal CashReturnSum { get; set; }
-
-        /// <summary>Сумма возвратов безналичными (в сомах).</summary>
         public decimal CashlessReturnSum { get; set; }
+
+        #endregion
+
+        #region Переопределения для нестандартных ККМ
+
+        public decimal? TotalSaleSumOverride { get; set; }
+        public decimal? TotalReturnSumOverride { get; set; }
+        public decimal? NetSumOverride { get; set; }
 
         #endregion
 
         #region Вычисляемые свойства
 
-        /// <summary>Итого продажи (нал + безнал).</summary>
-        public decimal TotalSaleSum => CashSaleSum + CashlessSaleSum;
+        public decimal TotalSaleSum => TotalSaleSumOverride ?? (CashSaleSum + CashlessSaleSum);
 
-        /// <summary>Итого возвраты (нал + безнал).</summary>
-        public decimal TotalReturnSum => CashReturnSum + CashlessReturnSum;
+        public decimal TotalReturnSum => TotalReturnSumOverride ?? (CashReturnSum + CashlessReturnSum);
 
-        /// <summary>Итого чистая выручка (продажи − возвраты).</summary>
-        public decimal NetSum => TotalSaleSum - TotalReturnSum;
+        public decimal NetSum => NetSumOverride ?? (TotalSaleSum - TotalReturnSum);
 
         #endregion
     }

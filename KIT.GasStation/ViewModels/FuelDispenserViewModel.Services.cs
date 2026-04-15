@@ -46,7 +46,8 @@ namespace KIT.GasStation.ViewModels
                 var fuelingRequest = new FuelingRequest
                 {
                     GroupName = nozzle.Group,
-                    Value = startMode == FuelingStartMode.ByAmount ? fuelSale.Sum : fuelSale.Quantity,
+                    Quantity = fuelSale.Quantity,
+                    Sum = fuelSale.Sum,
                     FuelingStartMode = startMode
                 };
 
@@ -96,7 +97,8 @@ namespace KIT.GasStation.ViewModels
                 var fuelingRequest = new FuelingRequest
                 {
                     GroupName = nozzle.Group,
-                    Value = fuelSale.Sum - fuelSale.ReceivedSum,
+                    Quantity = fuelSale.Quantity - fuelSale.ReceivedQuantity,
+                    Sum = fuelSale.Sum - fuelSale.ReceivedSum,
                     FuelingStartMode = FuelingStartMode.ByAmount
                 };
 

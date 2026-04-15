@@ -1,4 +1,5 @@
 ﻿using KIT.App.Infrastructure.HostBuilders;
+using KIT.GasStation.Licensing.Extensions;
 using KIT.GasStation.Web.Services;
 using KIT.GasStation.Worker.Hubs;
 using KIT.GasStation.Worker.Services;
@@ -35,6 +36,9 @@ var builder = WebApplication.CreateBuilder(args);
         .AddDbContext()
         .AddServices()
         .AddCashRegisters();
+
+    // Модуль лицензирования и защиты ПО
+    builder.Services.AddLicensing(builder.Configuration);
 
     builder.Services.AddSignalR();
     builder.Services.AddSingleton<IGroupRegistry, GroupRegistry>();

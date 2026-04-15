@@ -61,9 +61,12 @@
                 </dxg:GridColumn>
                 <dxg:GridColumn FieldName="Name" Header="Имя" />
                 <dxg:GridColumn FieldName="Settings.IsDisabled" Header="Блокирована" />
-                <dxg:GridColumn FieldName="SystemCounter" Header="Системный счетчик" >
+                <dxg:GridColumn FieldName="SystemCounter" Header="Системный счетчик">
                     <dxg:GridColumn.EditSettings>
-                        <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n2"/>
+                        <dxe:TextEditSettings
+                            Mask="n2"
+                            MaskType="Numeric"
+                            MaskUseAsDisplayFormat="True" />
                     </dxg:GridColumn.EditSettings>
                 </dxg:GridColumn>
             </dxg:GridControl>

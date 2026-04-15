@@ -30,7 +30,21 @@
                                 Command="{Binding DataContext.ReturnCommand, RelativeSource={RelativeSource AncestorType={x:Type base:BaseView}, Mode=FindAncestor}}"
                                 Content="Возврат товара ККМ"
                                 Glyph="{dx:DXImage SvgImages/Outlook Inspired/Reset.svg}" />
+                            <dxb:BarButtonItem
+                                BarItemDisplayMode="ContentAndGlyph"
+                                Command="{Binding DataContext.PrintSaleReceiptCommand, RelativeSource={RelativeSource AncestorType={x:Type base:BaseView}, Mode=FindAncestor}}"
+                                Content="{Binding DataContext.SelectedFuelSale.PrintReceivedSaleReceiptTitle, RelativeSource={RelativeSource AncestorType={x:Type base:BaseView}, Mode=FindAncestor}}"
+                                Glyph="{dx:DXImage SvgImages/RichEdit/PrintLayoutView.svg}"
+                                IsVisible="{Binding DataContext.SelectedFuelSale.IsVisiblePrintReceivedSaleReceipt, RelativeSource={RelativeSource AncestorType={x:Type base:BaseView}, Mode=FindAncestor}}" />
                         </dxg:TableView.RowCellMenuCustomizations>
+                        <dxg:TableView.FormatConditions>
+                            <dxg:FormatCondition
+                                ApplyToRow="True"
+                                Expression="[IsProblematic] = True"
+                                FieldName="IsProblematic">
+                                <dx:Format Background="LightPink" Foreground="DarkRed" />
+                            </dxg:FormatCondition>
+                        </dxg:TableView.FormatConditions>
                     </dxg:TableView>
                 </dxg:GridControl.View>
 
@@ -76,12 +90,17 @@
                     <dxg:GridColumn FieldName="FiscalDocument" Header="ФД" />
                     <dxg:GridColumn FieldName="Quantity" Header="Кол-во" />
                     <dxg:GridColumn FieldName="Total" Header="Сумма" />
-                    <dxg:GridColumn FieldName="OperationType" Header="Вид оплаты">
+                    <dxg:GridColumn FieldName="OperationType" Header="Вид операции">
                         <dxg:GridColumn.EditSettings>
                             <dxe:ComboBoxEditSettings
                                 DisplayMember="Value"
                                 ItemsSource="{Binding OperationTypes}"
                                 ValueMember="Key" />
+                        </dxg:GridColumn.EditSettings>
+                    </dxg:GridColumn>
+                    <dxg:GridColumn FieldName="Discount.Amount" Header="Сумма скидки" >
+                        <dxg:GridColumn.EditSettings>
+                            <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n"/>
                         </dxg:GridColumn.EditSettings>
                     </dxg:GridColumn>
                 </dxg:GridControl>

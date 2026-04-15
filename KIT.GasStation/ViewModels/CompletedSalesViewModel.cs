@@ -8,9 +8,10 @@ using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.ViewModels.Base;
 using KIT.GasStation.ViewModels.Factories;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels
@@ -19,6 +20,7 @@ namespace KIT.GasStation.ViewModels
     {
         #region Private Members
 
+        private readonly ILogger<CompletedSalesViewModel> _logger;
         private readonly IShiftStore _shiftStore;
         private readonly IFuelSaleService _fuelSaleService;
         private readonly ICashRegisterStore _cashRegisterStore;
@@ -26,7 +28,8 @@ namespace KIT.GasStation.ViewModels
         private ObservableCollection<FuelSale> _fuelSales = new();
         private FuelSale _selectedFuelSale;
         private FiscalData _selectedFiscalData;
-        private bool _showLoadingPanel;
+        private bool _showFuelSaleLoadingPanel;
+        private bool _showFiscalDataLoadingPanel;
 
         #endregion
 
@@ -63,13 +66,22 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
-        public bool ShowLoadingPanel
+        public bool ShowFuelSaleLoadingPanel
         {
-            get => _showLoadingPanel;
+            get => _showFuelSaleLoadingPanel;
             set
             {
-                _showLoadingPanel = value;
-                OnPropertyChanged(nameof(ShowLoadingPanel));
+                _showFuelSaleLoadingPanel = value;
+                OnPropertyChanged(nameof(ShowFuelSaleLoadingPanel));
+            }
+        }
+        public bool ShowFiscalDataLoadingPanel
+        {
+            get => _showFiscalDataLoadingPanel;
+            set
+            {
+                _showFiscalDataLoadingPanel = value;
+                OnPropertyChanged(nameof(ShowFiscalDataLoadingPanel));
             }
         }
 
@@ -80,12 +92,14 @@ namespace KIT.GasStation.ViewModels
         public CompletedSalesViewModel(IShiftStore shiftStore,
             IFuelSaleService fuelSaleService,
             ICashRegisterStore cashRegisterStore,
-            IFiscalDataService fiscalDataService)
+            IFiscalDataService fiscalDataService,
+            ILogger<CompletedSalesViewModel> logger)
         {
             _shiftStore = shiftStore;
             _fuelSaleService = fuelSaleService;
             _cashRegisterStore = cashRegisterStore;
             _fiscalDataService = fiscalDataService;
+            _logger = logger;
         }
 
         #endregion
@@ -95,59 +109,47 @@ namespace KIT.GasStation.ViewModels
         [Command]
         public async Task Return()
         {
-            if (SelectedFiscalData == null)
-            {
-                MessageBoxService.ShowMessage("Для возврата необходимо сначала выбрать чек.", 
-                    "Выборерите чек",
-                    MessageButton.OK,
-                    MessageIcon.Warning);
-                return;
-            }
-
-            var returnedFiscalData = SelectedFuelSale.FiscalDatas.FirstOrDefault(fd => fd.OperationType == OperationType.Return);
-
-            if (returnedFiscalData != null)
-            {
-                var saleSum = SelectedFuelSale.FiscalDatas.Where(fd => fd.OperationType == OperationType.Sale).Sum(fd => fd.Total);
-                var returnSum = SelectedFuelSale.FiscalDatas.Where(fd => fd.OperationType == OperationType.Return).Sum(fd => fd.Total);
-
-                MessageBoxService.ShowMessage("Возврат по данной продаже уже был произведен ранее.",
-                    "Возврат невозможен",
-                    MessageButton.OK,
-                    MessageIcon.Warning);
-                return;
-            }
-
-            if (SelectedFuelSale.Tank == null)
-            {
-                MessageBoxService.ShowMessage(
-                                "Произошла ошибка. Повторите попытку позже.",
-                                "Ошибка системы",
-                                MessageButton.OK,
-                                MessageIcon.Error);
-                return;
-            }
-
-            ShowLoadingPanel = true;
-
             try
             {
-                var fuelSale = SelectedFuelSale.Clone();
+                if (SelectedFiscalData == null)
+                {
+                    MessageBoxService.ShowMessage("Выберите фискальный чек (ККМ) для возврата", "Ошибка", MessageButton.OK);
+                    return;
+                }
 
-                fuelSale.Sum = fuelSale.ReceivedSum;
-                fuelSale.Quantity = fuelSale.ReceivedQuantity;
+                var result = MessageBoxService.ShowMessage("Сделать возврат ККМ?", "Завершение", MessageButton.YesNoCancel);
 
-                //var fiscalData = await _cashRegisterStore.ReturnAsync(fuelSale, SelectedFuelSale.Tank.Fuel);
+                if (result == MessageResult.Cancel)
+                {
+                    return;
+                }
 
-                //if (fiscalData != null)
-                //{
-                //    await _fiscalDataService.UpdateAsync(fiscalData.Id, fiscalData);
-                //}
+                ShowFiscalDataLoadingPanel = true;
+
+                if (result == MessageResult.Yes)
+                {
+                    var fiscalData = SelectedFiscalData.CreateReturnFiscalData();
+                    var newFiscalData = await _cashRegisterStore.ReturnAsync(fiscalData);
+                    if (newFiscalData != null)
+                    {
+                        await _fiscalDataService.CreateAsync(newFiscalData);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK);
             }
             finally
             {
-                ShowLoadingPanel = false;
+                ShowFiscalDataLoadingPanel = false;
             }
+        }
+
+        public async Task StartAsync()
+        {
+            await GetData();
         }
 
         #endregion
@@ -159,11 +161,6 @@ namespace KIT.GasStation.ViewModels
             FuelSales = new(await _fuelSaleService.GetCompletedFuelSaleAsync(_shiftStore.CurrentShift.Id));
         }
 
-        public async Task StartAsync()
-        {
-            await GetData();
-        }
-
         #endregion
 
         #region Dispose
@@ -172,7 +169,7 @@ namespace KIT.GasStation.ViewModels
         {
             if (disposing)
             {
-                
+
             }
 
             base.Dispose(disposing);

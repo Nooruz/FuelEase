@@ -114,12 +114,20 @@
                         <dxg:GridColumn FieldName="FiscalDocument" Header="ФД" />
                         <dxg:GridColumn FieldName="Quantity" Header="Кол-во" />
                         <dxg:GridColumn FieldName="Total" Header="Сумма" />
-                        <dxg:GridColumn FieldName="OperationType" Header="Вид оплаты">
+                        <dxg:GridColumn FieldName="OperationType" Header="Вид операции">
                             <dxg:GridColumn.EditSettings>
                                 <dxe:ComboBoxEditSettings
                                     DisplayMember="Value"
                                     ItemsSource="{Binding OperationTypes}"
                                     ValueMember="Key" />
+                            </dxg:GridColumn.EditSettings>
+                        </dxg:GridColumn>
+                        <dxg:GridColumn FieldName="Discount.Amount" Header="Сумма скидки">
+                            <dxg:GridColumn.EditSettings>
+                                <dxe:TextEditSettings
+                                    Mask="n"
+                                    MaskType="Numeric"
+                                    MaskUseAsDisplayFormat="True" />
                             </dxg:GridColumn.EditSettings>
                         </dxg:GridColumn>
                     </dxg:GridControl>

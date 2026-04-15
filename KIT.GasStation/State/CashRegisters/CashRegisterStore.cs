@@ -30,6 +30,8 @@ namespace KIT.GasStation.State.CashRegisters
         private DateTime? _openAt;
         private DateTime? _closeAt;
         private ShiftSalesReport? _shiftSalesReport;
+        private int _shiftNumber;
+        private CashRegisterState _state = new();
 
         #endregion
 
@@ -88,6 +90,31 @@ namespace KIT.GasStation.State.CashRegisters
             {
                 _shiftSalesReport = value;
                 OnPropertyChanged(nameof(ShiftSalesReport));
+                OnPropertyChanged(nameof(ShiftStateMessage));
+            }
+        }
+        public int ShiftNumber
+        {
+            get => _shiftNumber;
+            private set
+            {
+                _shiftNumber = value;
+                OnPropertyChanged(nameof(ShiftNumber));
+            }
+        }
+
+        public string ShiftStateMessage
+        {
+            get
+            {
+                return Status switch
+                {
+                    CashRegisterStatus.Unknown => "Смена: неизвестен статус",
+                    CashRegisterStatus.Open => $"Смена: №{_state.ShiftNumber} от {_state.OpenedAt:dd.MM.yyyy HH:mm} (24 часа не прошли)",
+                    CashRegisterStatus.Close => $"Смена: №{_state.ShiftNumber} закрыта",
+                    CashRegisterStatus.Exceeded24Hours => $"Смена: №{_state.ShiftNumber} от {_state.OpenedAt:dd.MM.yyyy HH:mm} (прошло более 24 часов)",
+                    _ => "Смена: неизвестен статус",
+                };
             }
         }
 
@@ -138,20 +165,18 @@ namespace KIT.GasStation.State.CashRegisters
             {
                 try { await GetShiftSalesReportAsync(); } catch { /* не критично */ }
             });
+            await GetShiftStateAsync();
             await _cashRegisterService.XReportAsync();
         }
 
         public async Task<CashRegisterState> GetShiftStateAsync()
         {
-            var state = await _cashRegisterService.GetShiftStateAsync();
-            Status = state.Status;
-            OpenAt = state.OpenedAt;
-            // Обновляем отчёт по смене после каждой продажи
-            _ = Task.Run(async () =>
-            {
-                try { await GetShiftSalesReportAsync(); } catch { /* не критично */ }
-            });
-            return state;
+            _state = await _cashRegisterService.GetShiftStateAsync();
+            Status = _state.Status;
+            OpenAt = _state.OpenedAt;
+            ShiftNumber = _state.ShiftNumber;
+            OnPropertyChanged(nameof(ShiftStateMessage));
+            return _state;
         }
 
         public async Task<ShiftSalesReport> GetShiftSalesReportAsync()

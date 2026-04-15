@@ -311,6 +311,59 @@ namespace KIT.GasStation.Domain.Models
         [NotMapped]
         public string ReceivedPercentage => Quantity > 0 ? $"{(ReceivedQuantity / Quantity * 100):0}%" : "0%";
 
+        [NotMapped]
+        public bool IsProblematic => IsSaleProblematic();
+
+        /// <summary>
+        /// Общая сумма по всем фискальным операциям продажи (без учета возвратов).
+        /// Отражает сумму всех чеков типа "Продажа" по данной операции.
+        /// </summary>
+        [NotMapped]
+        public decimal TotalFiscalSale => FiscalDatas.Where(x => x.OperationType == OperationType.Sale).Sum(x => x.Total);
+
+        /// <summary>
+        /// Общая сумма по всем фискальным операциям возврата.
+        /// Отражает сумму всех чеков типа "Возврат" по данной операции.
+        /// </summary>
+        [NotMapped]
+        public decimal TotalFiscalReturn => FiscalDatas.Where(x => x.OperationType == OperationType.Return).Sum(x => x.Total);
+
+        /// <summary>
+        /// Итоговая сумма по фискальным операциям (продажи минус возвраты).
+        /// Отражает фактическую сумму, прошедшую через ККМ по данной продаже.
+        /// </summary>
+        [NotMapped]
+        public decimal TotalFiscalNet => TotalFiscalSale - TotalFiscalReturn;
+
+        [NotMapped]
+        public string PrintReceivedSaleReceiptTitle
+        {
+            get
+            {
+                if (IsVisiblePrintReceivedSaleReceipt)
+                {
+                    return $"Создать чек на {ReceivedSum:N2} сом";
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+        }
+
+        [NotMapped]
+        public bool IsVisiblePrintReceivedSaleReceipt
+        {
+            get
+            {
+                if (ReceivedSum <= 0)
+                    return false;
+
+
+                return Sum < TotalFiscalNet;
+            }
+        }
+
         #endregion
 
         /// <summary>
@@ -482,6 +535,16 @@ namespace KIT.GasStation.Domain.Models
             }
 
             return fiscalData;
+        }
+
+        private bool IsSaleProblematic()
+        {
+            // если нет отпуска — вообще не трогаем
+            if (ReceivedSum <= 0)
+                return false;
+
+            // сравниваем факт отпуска с тем, что прошло через ККМ
+            return TotalFiscalNet != ReceivedSum;
         }
     }
 

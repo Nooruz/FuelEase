@@ -13,6 +13,7 @@
         /// <summary>
         /// Количество или сумма, по которому нужно начать заправку. Если тип заправки - по количеству, то это количество в литрах. Если тип заправки - по сумме, то это сумма в соммах.
         /// </summary>
-        public decimal Value { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Sum { get; set; }
     }
 }

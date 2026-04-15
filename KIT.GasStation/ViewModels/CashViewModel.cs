@@ -1,7 +1,6 @@
 ﻿using KIT.GasStation.CashRegisters.Models;
 using KIT.GasStation.Domain.Models;
 using KIT.GasStation.Domain.Services;
-using KIT.GasStation.HardwareConfigurations.Models;
 using KIT.GasStation.State.CashRegisters;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.ViewModels.Base;
@@ -27,20 +26,18 @@ namespace KIT.GasStation.ViewModels
 
         public ObservableCollection<FuelSale> FuelSales => _fuelSales;
         public string ShiftStatus => GetShiftStatus();
-        public string CashRegisterShiftStatus
-        {
-            get => _cashRegisterShiftStatus;
-            set
-            {
-                _cashRegisterShiftStatus = value;
-                OnPropertyChanged(nameof(CashRegisterShiftStatus));
-            }
-        }
+        public string CashRegisterShiftStatus => _cashRegisterStore.ShiftStateMessage;
         public decimal Cash => FuelSales
                     .Where(f => f.PaymentType == PaymentType.Cash)
                     .Sum(f => f.ReceivedSum);
         public decimal Cashless => FuelSales
                     .Where(f => f.PaymentType == PaymentType.Cashless)
+                    .Sum(f => f.ReceivedSum);
+        public decimal Statement => FuelSales
+                    .Where(f => f.PaymentType == PaymentType.Statement)
+                    .Sum(f => f.ReceivedSum);
+        public decimal Ticket => FuelSales
+                    .Where(f => f.PaymentType == PaymentType.Ticket)
                     .Sum(f => f.ReceivedSum);
         public decimal Amount => FuelSales
                     .Sum(f => f.ReceivedSum);
@@ -62,8 +59,8 @@ namespace KIT.GasStation.ViewModels
             _shiftStore.OnClosed += shift => OnShiftUpdated(shift);
             _shiftStore.OnOpened += shift => OnShiftUpdated(shift);
             _shiftStore.OnLogin += shift => OnShiftUpdated(shift);
-            _cashRegisterStore.PropertyChanged += CashRegisterStore_PropertyChanged;
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
+            _cashRegisterStore.PropertyChanged += CashRegisterStore_PropertyChanged;
         }
 
         #endregion
@@ -72,27 +69,8 @@ namespace KIT.GasStation.ViewModels
 
         private void CashRegisterStore_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ICashRegisterStore.Status))
-            {
-                switch (_cashRegisterStore.Status)
-                {
-                    case CashRegisterStatus.Unknown:
-                        CashRegisterShiftStatus = "Смена ККМ: неизвестен статус";
-                        break;
-                    case CashRegisterStatus.Open:
-                        CashRegisterShiftStatus = $"Смена ККМ: открыта";
-                        break;
-                    case CashRegisterStatus.Close:
-                        CashRegisterShiftStatus = $"Смена ККМ: закрыто";
-                        break;
-                    case CashRegisterStatus.Exceeded24Hours:
-                        CashRegisterShiftStatus = $"Смена ККМ: превышено 24 часа с момента открытия";
-                        break;
-                    default:
-                        break;
-                }
-            }
             OnPropertyChanged(nameof(ShiftSalesReport));
+            OnPropertyChanged(nameof(CashRegisterShiftStatus));
         }
 
         private void OnShiftUpdated(Shift shift)
@@ -108,24 +86,6 @@ namespace KIT.GasStation.ViewModels
                     {
                         FuelSales.Add(sale);
                     }
-                }
-
-                switch (_cashRegisterStore.Status)
-                {
-                    case CashRegisterStatus.Unknown:
-                        CashRegisterShiftStatus = "Смена ККМ: неизвестен статус";
-                        break;
-                    case CashRegisterStatus.Open:
-                        CashRegisterShiftStatus = $"Смена ККМ: открыта";
-                        break;
-                    case CashRegisterStatus.Close:
-                        CashRegisterShiftStatus = $"Смена ККМ: закрыто";
-                        break;
-                    case CashRegisterStatus.Exceeded24Hours:
-                        CashRegisterShiftStatus = $"Смена ККМ: превышено 24 часа с момента открытия";
-                        break;
-                    default:
-                        break;
                 }
 
                 UpdateProperties();
@@ -163,6 +123,8 @@ namespace KIT.GasStation.ViewModels
             OnPropertyChanged(nameof(Cashless));
             OnPropertyChanged(nameof(CurrentShift));
             OnPropertyChanged(nameof(Amount));
+            OnPropertyChanged(nameof(Statement));
+            OnPropertyChanged(nameof(Ticket));
         }
 
         private string GetShiftStatus()

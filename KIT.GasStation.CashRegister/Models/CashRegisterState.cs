@@ -26,7 +26,7 @@ namespace KIT.GasStation.CashRegisters.Models
                 }
             }
         }
-
+        public int ShiftNumber { get; set; }
         public CashRegisterStatus Status { get; set; } = CashRegisterStatus.Unknown;
     }
 }

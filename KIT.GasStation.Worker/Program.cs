@@ -1,4 +1,5 @@
 ﻿using KIT.App.Infrastructure.HostBuilders;
+using KIT.GasStation.Licensing.Extensions;
 using KIT.GasStation.Web;
 using Serilog;
 
@@ -31,6 +32,9 @@ try
         .AddCashRegisters()
         .ConfigureServices((hostContext, services) =>
         {
+            // Модуль лицензирования и защиты ПО
+            services.AddLicensing(hostContext.Configuration);
+
             //var cfg = hostContext.Configuration;
             //var baseUrl = cfg["SignalR:BaseUrl"] ?? "http://localhost:5005";
             //var hubPath = cfg["SignalR:HubPath"] ?? "/deviceHub";

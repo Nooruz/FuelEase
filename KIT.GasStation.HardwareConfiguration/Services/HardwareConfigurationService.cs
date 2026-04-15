@@ -238,7 +238,31 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         {
             try
             {
+                var configuration = await ReadConfigurationFileAsync();
 
+                // Ищем именно владельца колонки, чтобы обновить элемент "на месте" в текущей коллекции.
+                // Это гарантирует, что коллекция Columns у контроллера не будет перезаписана/сужена.
+                var controllerWithColumn = configuration.Controllers
+                    .FirstOrDefault(controller => controller.Columns.Any(existingItem => existingItem.Id == column.Id));
+
+                // По требованию: не добавляем новую колонку, если существующая не найдена.
+                if (controllerWithColumn == null)
+                {
+                    return;
+                }
+
+                var existingColumn = controllerWithColumn.Columns
+                    .First(existingItem => existingItem.Id == column.Id);
+
+                // Обновляем только поля самой колонки.
+                // Коллекцию controllerWithColumn.Columns не заменяем и не изменяем её состав.
+                existingColumn.Name = column.Name;
+                existingColumn.Address = column.Address;
+                existingColumn.Nozzle = column.Nozzle;
+                existingColumn.SystemCounter = column.SystemCounter;
+                existingColumn.Settings = column.Settings;
+
+                await SaveConfigurationFileAsync(configuration);
             }
             catch (Exception)
             {

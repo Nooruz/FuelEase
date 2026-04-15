@@ -28,6 +28,7 @@ namespace KIT.GasStation.EntityFramework
         public DbSet<DiscountTariffPlan> DiscountTariffPlans { get; set; }
         public DbSet<DiscountSale> DiscountSales { get; set; }
         public DbSet<FiscalData> FiscalDatas { get; set; }
+        public DbSet<FiscalDiscount> FiscalDiscounts { get; set; }
         public DbSet<ShiftCounter> ShiftCounters { get; set; }
         public DbSet<TankShiftCounter> TankShiftCounters { get; set; }
         public DbSet<DocumentCounter> DocumentCounters { get; set; }
@@ -53,14 +54,14 @@ namespace KIT.GasStation.EntityFramework
                 new UserRole { Id = 2, Name = "Кассир" });
 
             _ = modelBuilder.Entity<Fuel>().HasData(
-                new Fuel { Id = 1, Name = "АИ-92", UnitOfMeasurementId = 1, ColorHex = "#F6B511" },
-                new Fuel { Id = 2, Name = "АИ-95", UnitOfMeasurementId = 1, ColorHex = "#ED2D38" },
-                new Fuel { Id = 3, Name = "АИ-98", UnitOfMeasurementId = 1, ColorHex = "#4FA800" },
-                new Fuel { Id = 4, Name = "АИ-100", UnitOfMeasurementId = 1, ColorHex = "#FFD700" },
-                new Fuel { Id = 5, Name = "ДТ", UnitOfMeasurementId = 1, ColorHex = "#737373" });
+                new Fuel { Id = 1, Name = "АИ-92", UnitOfMeasurementId = 1, ColorHex = "#F6B511", TNVED = "2710124130" },
+                new Fuel { Id = 2, Name = "АИ-95", UnitOfMeasurementId = 1, ColorHex = "#ED2D38", TNVED = "2710124500" },
+                new Fuel { Id = 3, Name = "АИ-98", UnitOfMeasurementId = 1, ColorHex = "#4FA800", TNVED = "2710124500" },
+                new Fuel { Id = 4, Name = "АИ-100", UnitOfMeasurementId = 1, ColorHex = "#FFD700", TNVED = "2710124900" },
+                new Fuel { Id = 5, Name = "ДТ", UnitOfMeasurementId = 1, ColorHex = "#737373", TNVED = "2710194210" });
 
             _ = modelBuilder.Entity<User>().HasData(
-                new User { Id = 1, UserRoleId = 1, FullName = "Администратор", Password = "1", CreatedDate = DateTime.Now });
+                new User { Id = 1, UserRoleId = 1, FullName = "Администратор", Password = "1", CreatedDate = new DateTime(1995, 3, 21) });
 
             _ = modelBuilder.Entity<Tank>()
                 .HasMany(f => f.FuelSales)
@@ -111,6 +112,11 @@ namespace KIT.GasStation.EntityFramework
                 // Но если задаёшь:
                 entity.HasIndex(x => x.FuelSaleId).IsUnique(false);
             });
+
+            modelBuilder.Entity<FiscalData>()
+                .HasOne(x => x.Discount)
+                .WithOne(x => x.FiscalData)
+                .HasForeignKey<FiscalDiscount>(x => x.FiscalDataId);
 
             // DocumentCounters — составной первичный ключ
             modelBuilder.Entity<DocumentCounter>()

@@ -26,6 +26,6 @@ namespace KIT.GasStation.NewCas.Models
         public int? SourceFDNumber { get; set; }
 
         [JsonPropertyName("discounts")]
-        public Discounts[] Discounts { get; set; }
+        public Discounts[]? Discounts { get; set; }
     }
 }

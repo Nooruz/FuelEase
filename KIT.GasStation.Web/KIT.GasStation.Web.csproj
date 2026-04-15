@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\KIT.App.Infrastructure\KIT.App.Infrastructure.csproj" />
+    <ProjectReference Include="..\KIT.GasStation.Licensing\KIT.GasStation.Licensing.csproj" />
   </ItemGroup>
 
 </Project>

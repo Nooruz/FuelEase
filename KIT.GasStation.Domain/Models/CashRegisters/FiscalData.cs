@@ -1,4 +1,6 @@
-﻿namespace KIT.GasStation.Domain.Models.CashRegisters
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace KIT.GasStation.Domain.Models.CashRegisters
 {
     public class FiscalData : DomainObject
     {
@@ -233,10 +235,22 @@
             }
         }
 
+        [NotMapped]
+        public decimal TotalToPay
+        {
+            get
+            {
+                var discount = Discount?.Amount ?? 0m;
+                var result = Total - discount;
+                return result < 0 ? 0 : result;
+            }
+        }
+
         /// <summary>
         /// Продажа топлива
         /// </summary>
         public FuelSale? FuelSale { get; set; } = null!;
+        public FiscalDiscount? Discount { get; set; }
 
         #endregion
 
@@ -279,10 +293,10 @@
                 Price = Price,
                 Quantity = Quantity,
                 Total = Total,
+                Discount = Discount,
             };
         }
 
         #endregion
     }
-
 }

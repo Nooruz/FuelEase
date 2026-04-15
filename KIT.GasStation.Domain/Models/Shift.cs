@@ -125,7 +125,6 @@ namespace KIT.GasStation.Domain.Models
                 {
                     return ShiftState.Closed;
                 }
-                ;
             }
         }
 
@@ -145,9 +144,6 @@ namespace KIT.GasStation.Domain.Models
         }
 
         [NotMapped]
-        public string NumberDisplay => $"{Number:D4}";
-
-        [NotMapped]
         public string ShiftStateDisplay
         {
             get
@@ -155,9 +151,9 @@ namespace KIT.GasStation.Domain.Models
                 return ShiftState switch
                 {
                     ShiftState.None => "Смена: Откройте смену.",
-                    ShiftState.Open => $"Смена: №{NumberDisplay} от {OpeningDate:dd.MM.yyyy HH:mm} (24 часа не прошли)",
-                    ShiftState.Closed => $"Смена: №{NumberDisplay} от {OpeningDate:dd.MM.yyyy HH:mm} (смена закрыта {OpeningDate:dd.MM.yyyy HH:mm})",
-                    ShiftState.Exceeded24Hours => $"Смена: №{NumberDisplay} от {OpeningDate:dd.MM.yyyy HH:mm} (прошло более 24 часов)",
+                    ShiftState.Open => $"Смена: №{Number} от {OpeningDate:dd.MM.yyyy HH:mm} (24 часа не прошли)",
+                    ShiftState.Closed => $"Смена: №{Number} от {OpeningDate:dd.MM.yyyy HH:mm} (смена закрыта {OpeningDate:dd.MM.yyyy HH:mm})",
+                    ShiftState.Exceeded24Hours => $"Смена: №{Number} от {OpeningDate:dd.MM.yyyy HH:mm} (прошло более 24 часов)",
                     _ => "Смена: Откройте смену.",
                 };
             }

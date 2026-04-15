@@ -188,6 +188,12 @@ namespace KIT.GasStation.Emulator
                 }
 
                 column.Price = priceRequest.Value;
+
+                if (column.Settings is EmulatorColumnSettings settings)
+                {
+                    settings.LastPrice = priceRequest.Value;
+                    await _hardwareConfigurationService.SaveColumnAsync(column);
+                }
             }
             catch (Exception e)
             {
@@ -221,6 +227,12 @@ namespace KIT.GasStation.Emulator
                     }
 
                     column.Price = request.Value;
+
+                    if (column.Settings is EmulatorColumnSettings settings)
+                    {
+                        settings.LastPrice = request.Value;
+                        await _hardwareConfigurationService.SaveColumnAsync(column);
+                    }
                 }
             }
             catch (Exception e)
@@ -278,7 +290,8 @@ namespace KIT.GasStation.Emulator
                     var request = new FuelingRequest
                     {
                         GroupName = resumeFuelingRequest.GroupName,
-                        Value = resumeFuelingRequest.Value,
+                        Sum = resumeFuelingRequest.Sum,
+                        Quantity = resumeFuelingRequest.Quantity,
                         FuelingStartMode = FuelingStartMode.ByAmount // для примера, можно расширить модель запроса
                     };
 
@@ -307,7 +320,17 @@ namespace KIT.GasStation.Emulator
 
         public async Task CompleteFuelingAsync(string groupName)
         {
-            await _hub.InvokeAsync("CompletedFuelingAsync", groupName, cancellationToken: _token);
+            var column = GetColumnByGroupName(groupName);
+            if (column is null)
+            {
+                _logger.LogWarning("Колонка {GroupName} не найдена", groupName);
+                return;
+            }
+
+            if (column.Settings is EmulatorColumnSettings settings)
+            {
+                await _hub.InvokeAsync("CompletedFuelingAsync", groupName, settings.ReceivedQuantity, cancellationToken: _token);
+            }
         }
 
         #endregion
@@ -453,27 +476,28 @@ namespace KIT.GasStation.Emulator
                     return;
                 }
 
-                if (fuelingRequest.Value < 0)
+                if (fuelingRequest.Quantity <= 0)
                 {
                     _logger.LogWarning(
-                        "Для колонки {GroupName} передано отрицательное значение: {Value}",
+                        "Для колонки {GroupName} передано некорректное количество: {Quantity}",
                         fuelingRequest.GroupName,
-                        fuelingRequest.Value);
+                        fuelingRequest.Quantity);
                     return;
                 }
 
-                // Если старт по сумме — рассчитываем количество, если по объёму — сумму
-                decimal sum = fuelingRequest.FuelingStartMode == FuelingStartMode.ByAmount
-                    ? fuelingRequest.Value
-                    : Math.Round(fuelingRequest.Value * column.Price, 2);
+                if (column.Settings is EmulatorColumnSettings setting)
+                {
+                    setting.LastQuantity = fuelingRequest.Quantity;
+                    setting.LastSum = fuelingRequest.Sum;
+                    await _hardwareConfigurationService.SaveColumnAsync(column);
+                }
 
-                decimal quantity = fuelingRequest.FuelingStartMode == FuelingStartMode.ByAmount
-                    ? Math.Round(fuelingRequest.Value / column.Price, 3)
-                    : fuelingRequest.Value;
+                decimal quantity = fuelingRequest.Quantity;
+                decimal sum = fuelingRequest.Sum;
 
                 var random = Random.Shared;
-                decimal receivedQuantity = 0;
-                decimal lastSavedQuantity = 0;
+                decimal receivedQuantity = 0m;
+                decimal lastSavedQuantity = 0m;
 
                 var statusResponse = new StatusResponse
                 {
@@ -492,26 +516,31 @@ namespace KIT.GasStation.Emulator
                 {
                     token.ThrowIfCancellationRequested();
 
-                    decimal step = random.Next(0, 500) / 1000m;
-                    receivedQuantity += step;
+                    decimal step = decimal.Round(random.Next(0, 500) / 1000m, 2, MidpointRounding.AwayFromZero);
 
-                    decimal receivedSum = Math.Round(receivedQuantity * column.Price, 2);
+                    receivedQuantity = decimal.Round(receivedQuantity + step, 2, MidpointRounding.AwayFromZero);
+                    decimal receivedSum = decimal.Round(receivedQuantity * column.Price, 2, MidpointRounding.AwayFromZero);
 
                     if (receivedQuantity > quantity)
                     {
                         receivedQuantity = quantity;
                         receivedSum = sum;
-                        column.SystemCounter += (quantity - lastSavedQuantity);
                     }
 
-                    // Добавляем в системный счётчик только прирост за текущую итерацию
-                    decimal deltaQuantity = receivedQuantity - lastSavedQuantity;
+                    decimal deltaQuantity = decimal.Round(receivedQuantity - lastSavedQuantity, 2, MidpointRounding.AwayFromZero);
+
                     if (deltaQuantity > 0)
                     {
-                        column.SystemCounter += deltaQuantity;
+                        column.SystemCounter = decimal.Round(column.SystemCounter + deltaQuantity, 2, MidpointRounding.AwayFromZero);
                         lastSavedQuantity = receivedQuantity;
 
-                        await _hardwareConfigurationService.SaveControllerAsync(Controller);
+                        if (column.Settings is EmulatorColumnSettings settings)
+                        {
+                            settings.ReceivedSum = receivedSum;
+                            settings.ReceivedQuantity = receivedQuantity;
+                        }
+
+                        await _hardwareConfigurationService.SaveColumnAsync(column);
                     }
 
                     var fuelingResponse = new FuelingResponse

@@ -160,7 +160,6 @@ namespace KIT.GasStation.ViewModels
 
             _fuelService.OnUpdated += FuelService_OnUpdated;
             _fuelSaleService.OnUpdated += FuelSaleService_OnUpdated;
-            _fuelSaleService.OnCreated += FuelSaleService_OnCreated;
             _shiftStore.OnNozzleSelectionChanged += ShiftStore_OnNozzleSelectionChanged;
             _nozzleStore.OnNozzleSelected += OnNozzleSelected;
             _hotKeysService.OnHotKeyPressed += HotKeysService_OnHotKeyPressed;
@@ -175,12 +174,7 @@ namespace KIT.GasStation.ViewModels
         {
             try
             {
-                var df = CreateFuelSale;
-
                 await OpenPayView();
-
-                var ss = CreateFuelSale;
-
             }
             catch (Exception e)
             {
@@ -327,6 +321,8 @@ namespace KIT.GasStation.ViewModels
 
             WindowService.Title = "Оплата";
             WindowService.Show(nameof(PayView), viewModel);
+
+            CleanForm();
         }
 
         private async Task OnFuelSale()
@@ -400,11 +396,6 @@ namespace KIT.GasStation.ViewModels
             {
                 _logger.LogError(e, e.Message);
             }
-        }
-
-        private void FuelSaleService_OnCreated(FuelSale fuelSale)
-        {
-            CleanForm();
         }
 
         private async Task<bool> CanFuelSale()

@@ -81,7 +81,7 @@ namespace KIT.GasStation.HardwareConfigurations.Services
         Task SaveControllerAsync(Controller controller);
 
         /// <summary>
-        /// Сохраняет пистолет
+        /// Сохраняет колонку (только обновление существующей, без добавления).
         /// </summary>
         Task SaveColumnAsync(Column column);
 

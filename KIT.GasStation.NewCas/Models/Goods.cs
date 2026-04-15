@@ -54,5 +54,8 @@ namespace KIT.GasStation.NewCas.Models
         /// </summary>
         [JsonPropertyName("stNum")]
         public int StNum { get; set; }
+
+        [JsonPropertyName("discounts")]
+        public Discounts[]? Discounts { get; set; }
     }
 }

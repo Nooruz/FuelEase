@@ -215,7 +215,8 @@ namespace KIT.GasStation.HostBuilders
             return new CompletedSalesViewModel(services.GetRequiredService<IShiftStore>(),
                 services.GetRequiredService<IFuelSaleService>(),
                 services.GetRequiredService<ICashRegisterStore>(),
-                services.GetRequiredService<IFiscalDataService>());
+                services.GetRequiredService<IFiscalDataService>(),
+                services.GetRequiredService<ILogger<CompletedSalesViewModel>>());
         }
 
         private static FuelIntakeDetailViewModel CreateFuelIntakeDetailViewModel(IServiceProvider services)

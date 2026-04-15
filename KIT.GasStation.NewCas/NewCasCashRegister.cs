@@ -9,9 +9,11 @@ using KIT.GasStation.NewCas.Models;
 using Serilog;
 using System.Drawing;
 using System.Drawing.Printing;
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -127,7 +129,6 @@ namespace KIT.GasStation.NewCas
         /// <inheritdoc/>
         public async Task<FiscalData?> SaleAsync(FiscalData fiscalData, string cashierName)
         {
-            // Данные для отправки в запросе
             var openAndCloseRec = new OpenAndCloseRec()
             {
                 RecType = RecType.Coming,
@@ -136,28 +137,41 @@ namespace KIT.GasStation.NewCas
                 {
                     new Goods
                     {
-                        Count    = Math.Round(fiscalData.Total / fiscalData.Price, 6),
-                        Price    = fiscalData.Price,
-                        ItemName = fiscalData.UnitOfMeasurement,
-                        Article  = fiscalData.Tnved,
-                        Total    = fiscalData.Total.ToString(),
-                        Unit     = "л",
-                        VatNum   = fiscalData.ValueAddedTax ? 1 : 0,
-                        StNum    = (int)(fiscalData.SalesTax * 100)
+                        Count = fiscalData.Price == 0
+                            ? 0
+                            : Math.Round(fiscalData.Total / fiscalData.Price, 6),
+                        Price = fiscalData.Price,
+                        ItemName = fiscalData.FuelName,
+                        Article = fiscalData.Tnved,
+                        Total = fiscalData.TotalToPay.ToString("0.00", CultureInfo.InvariantCulture),
+                        Unit = fiscalData.UnitOfMeasurement,
+                        VatNum = fiscalData.ValueAddedTax ? 1 : 0,
+                        StNum = (int)(fiscalData.SalesTax * 100),
                     }
                 },
+                Discounts = fiscalData.Discount is null
+                            ? null
+                            : new[]
+                            {
+                                new Discounts
+                                {
+                                    Title = string.IsNullOrWhiteSpace(fiscalData.Discount.Title)
+                                        ? "Скидка"
+                                        : fiscalData.Discount.Title,
+                                    Amount = fiscalData.Discount.Amount.ToString("0.00", CultureInfo.InvariantCulture)
+                                }
+                            },
                 PayItems = new[]
                 {
                     new PayItems
                     {
                         PayType = GetPayType(fiscalData.PaymentType),
-                        Total   = fiscalData.Total.ToString()
+                        Total = fiscalData.TotalToPay.ToString("0.00", CultureInfo.InvariantCulture)
                     }
                 }
             };
 
             var response = await SendRequest("/fiscal/bills/openAndCloseRec", openAndCloseRec);
-
             var newfiscalData = await CreateFiscalDataAsync(response);
 
             return fiscalData.UpdatedFiscalData(newfiscalData);
@@ -174,11 +188,7 @@ namespace KIT.GasStation.NewCas
             var response = await SendRequest("/fiscal/shifts/printXReport", request);
 
             var state = JsonSerializer.Deserialize<OpenAndCloseRecResp>(
-                await response.Content.ReadAsStringAsync());
-
-            if (state == null)
-                throw new CashRegisterException("ККМ вернула пустой ответ при печати X-отчета.");
-
+                await response.Content.ReadAsStringAsync()) ?? throw new CashRegisterException("ККМ вернула пустой ответ при печати X-отчета.");
             if (state.Status != OpenAndCloseRecRespStatus.Success)
                 throw new CashRegisterException($"Ошибка ККМ при печати X-отчета: {state.ErrorMessage}");
 
@@ -202,17 +212,29 @@ namespace KIT.GasStation.NewCas
                         Price = fiscalData.Price,
                         ItemName = fiscalData.FuelName,
                         Article = string.IsNullOrEmpty(fiscalData.Tnved) ? "" : fiscalData.Tnved,
-                        Total = fiscalData.Total.ToString(),
+                        Total = fiscalData.TotalToPay.ToString("0.00", CultureInfo.InvariantCulture),
                         Unit = fiscalData.UnitOfMeasurement,
                         VatNum = fiscalData.ValueAddedTax ? 1 : 0,
                         StNum = (int)(fiscalData.SalesTax * 100) }
                 },
+                Discounts = fiscalData.Discount is null
+                            ? null
+                            : new[]
+                            {
+                                new Discounts
+                                {
+                                    Title = string.IsNullOrWhiteSpace(fiscalData.Discount.Title)
+                                        ? "Скидка"
+                                        : fiscalData.Discount.Title,
+                                    Amount = fiscalData.Discount.Amount.ToString("0.00", CultureInfo.InvariantCulture)
+                                }
+                            },
                 PayItems = new[]
                 {
                     new PayItems()
                     {
                              PayType = GetPayType(fiscalData.PaymentType),
-                             Total = fiscalData.Total.ToString()
+                             Total = fiscalData.TotalToPay.ToString("0.00", CultureInfo.InvariantCulture)
                     }
                 }
             };
@@ -227,12 +249,16 @@ namespace KIT.GasStation.NewCas
         /// <inheritdoc/>
         public async Task<CashRegisterState> GetShiftStateAsync()
         {
-            var response = await SendRequest("/fiscal/shifts/getState", new { });
+            var response = await SendRequest("/fiscal/shifts/getDayState", new { });
 
-            var state = JsonSerializer.Deserialize<GetSateNewCas>(
+            var state = JsonSerializer.Deserialize<GetDaySateNewCas>(
             await response.Content.ReadAsStringAsync()) ?? throw new CashRegisterException("ККМ вернула неверный формат состояния смены.");
 
-            var shiftState = new CashRegisterState();
+            var shiftState = new CashRegisterState()
+            {
+                OpenedAt = state.ShiftDateTime,
+                ShiftNumber = state.ShiftNumber,
+            };
 
             if (state.IsShiftExpired)
             {
@@ -270,15 +296,28 @@ namespace KIT.GasStation.NewCas
                 var report = new ShiftSalesReport
                 {
                     SaleReceiptCount = state.SaleNumber,
-                    CashSaleSum = (decimal)state.SaleSum,
-                    CashlessSaleSum = (decimal)state.CashlessSum,
                     ReturnReceiptCount = state.SaleReturnNumber,
+
+                    // Для UI оставляем как их понимает оператор
+                    CashSaleSum = (decimal)state.CashSum,
+                    CashlessSaleSum = (decimal)state.CashlessSum,
                     CashReturnSum = (decimal)state.SaleReturnSum,
+                    CashlessReturnSum = 0m,
+
+                    // А вот итоги переопределяем по реальной семантике Goodoo
+                    TotalSaleSumOverride = (decimal)state.SaleSum,
+                    TotalReturnSumOverride = (decimal)state.SaleReturnSum,
+                    NetSumOverride = (decimal)state.CashSum + (decimal)state.CashlessSum
+                    // или: (decimal)state.SaleSum - (decimal)state.SaleReturnSum
                 };
 
                 _logger?.Information(
-                    "Отчёт по смене (NewCas): продажи нал={CashSale}, безнал={CashlessSale}, чеков={Count}",
-                    report.CashSaleSum, report.CashlessSaleSum, report.SaleReceiptCount);
+                    "Отчёт по смене (NewCas): cash={Cash}, cashless={Cashless}, return={Return}, saleTotal={SaleTotal}, net={Net}",
+                    report.CashSaleSum,
+                    report.CashlessSaleSum,
+                    report.TotalReturnSum,
+                    report.TotalSaleSum,
+                    report.NetSum);
 
                 return report;
             }
@@ -327,7 +366,8 @@ namespace KIT.GasStation.NewCas
 
                 var json = JsonSerializer.Serialize(message, new JsonSerializerOptions
                 {
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
                 });
 
                 LogData(json);

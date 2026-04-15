@@ -39,6 +39,22 @@
                     MaskType="Numeric"
                     MaskUseAsDisplayFormat="True" />
             </dxlc:LayoutItem>
+            <dxlc:LayoutItem Label="Ведомость">
+                <dxe:TextEdit
+                    EditValue="{Binding Statement, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
+            <dxlc:LayoutItem Label="Талон">
+                <dxe:TextEdit
+                    EditValue="{Binding Ticket, Mode=OneWay}"
+                    IsReadOnly="True"
+                    Mask="n"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True" />
+            </dxlc:LayoutItem>
             <dxlc:LayoutItem Label="Итого">
                 <dxe:TextEdit
                     EditValue="{Binding Amount, Mode=OneWay}"

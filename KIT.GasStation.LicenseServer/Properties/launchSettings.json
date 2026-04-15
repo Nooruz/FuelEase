@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "KIT.GasStation.LicenseServer": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:32180;http://localhost:32181"
+    }
+  }
+}

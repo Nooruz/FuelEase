@@ -10,6 +10,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
     [XmlInclude(typeof(LanfengColumnSettings))]
     [XmlInclude(typeof(PKElectronicsColumnSettings))]
     [XmlInclude(typeof(GilbarcoColumnSettings))]
+    [XmlInclude(typeof(EmulatorColumnSettings))]
     public abstract class ColumnSettings : INotifyPropertyChanged
     {
         #region Private Members
@@ -17,7 +18,7 @@ namespace KIT.GasStation.HardwareConfigurations.Models
         private ColumnStatus _status;
 
         #endregion
-        
+
         #region Public Properties
 
         /// <summary>

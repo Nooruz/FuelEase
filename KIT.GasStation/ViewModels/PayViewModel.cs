@@ -3,6 +3,7 @@ using DevExpress.Mvvm.DataAnnotations;
 using DevExpress.Xpf.Editors;
 using KIT.GasStation.CashRegisters.Exceptions;
 using KIT.GasStation.Domain.Models;
+using KIT.GasStation.Domain.Models.CashRegisters;
 using KIT.GasStation.Domain.Services;
 using KIT.GasStation.SplashScreen;
 using KIT.GasStation.State.CashRegisters;
@@ -141,32 +142,38 @@ namespace KIT.GasStation.ViewModels
                 // Устанавливаем дату создания продажи
                 CreateFuelSale.CreateDate = DateTime.Now;
 
-                // Если тип оплаты - наличные или безналичные средства, обрабатываем продажу через ККМ
-                if (CreateFuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
+                if (Properties.Settings.Default.ReceiptPrintingMode == "Before")
                 {
-                    if (Properties.Settings.Default.ReceiptPrintingMode == "Before")
+                    var newFilscalData = CreateFuelSale.CreateFiscalData();
+
+                    if (CreateFuelSale.PaymentType is PaymentType.Cash or PaymentType.Cashless)
                     {
-                        var newFilscalData = CreateFuelSale.CreateFiscalData();
-                        var fiscalData = await _cashRegisterStore.SaleAsync(newFilscalData);
-
-                        if (fiscalData is not null)
-                        {
-                            await _fuelSaleService.CreateAsync(CreateFuelSale);
-
-                            fiscalData.FuelSaleId = CreateFuelSale.Id;
-                            await _fiscalDataService.CreateAsync(fiscalData);
-                        }
-                        else
-                        {
-                            MessageBoxService.ShowMessage("Не удалось получить фискальные данные от ККМ.", "Ошибка", MessageButton.OK, MessageIcon.Error);
-                        }
+                        newFilscalData.Discount = null;
                     }
                     else
                     {
+                        newFilscalData.Discount = new FiscalDiscount
+                        {
+                            Amount = CreateFuelSale.Sum
+                        };
+                    }
+
+                    var fiscalData = await _cashRegisterStore.SaleAsync(newFilscalData);
+
+                    if (fiscalData is not null)
+                    {
                         await _fuelSaleService.CreateAsync(CreateFuelSale);
+
+                        // Сохраняем фискальные данные, связанные с продажей топлива. Id FuelSale будет присвоен после сохранения продажи,
+                        // поэтому сохраняем его после создания записи о продаже.
+                        fiscalData.FuelSaleId = CreateFuelSale.Id;
+                        await _fiscalDataService.CreateAsync(fiscalData);
+                    }
+                    else
+                    {
+                        MessageBoxService.ShowMessage("Не удалось получить фискальные данные от ККМ.", "Ошибка", MessageButton.OK, MessageIcon.Error);
                     }
                 }
-                // В противном случае создаем продажу через сервис продажи топлива
                 else
                 {
                     await _fuelSaleService.CreateAsync(CreateFuelSale);

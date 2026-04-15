@@ -247,7 +247,8 @@ namespace KIT.GasStation.ViewModels
                 var resumeFuelingRequest = new ResumeFuelingRequest
                 {
                     GroupName = SelectedNozzle.Group,
-                    Value = SelectedNozzle.CurrentFuelSale?.Sum - SelectedNozzle.CurrentFuelSale?.ReceivedSum ?? 0m
+                    Quantity = SelectedNozzle.CurrentFuelSale.Quantity - SelectedNozzle.CurrentFuelSale.ReceivedQuantity,
+                    Sum = SelectedNozzle.CurrentFuelSale.Sum - SelectedNozzle.CurrentFuelSale.ReceivedSum
                 };
 
                 await _hub.InvokeAsync("ResumeFuelingAsync", resumeFuelingRequest);
@@ -384,6 +385,7 @@ namespace KIT.GasStation.ViewModels
                     FuelName = SelectedNozzle.Tank.Fuel.Name,
                     ValueAddedTax = SelectedNozzle.Tank.Fuel.ValueAddedTax,
                     SalesTax = SelectedNozzle.Tank.Fuel.SalesTax,
+                    Tnved = SelectedNozzle.Tank.Fuel.TNVED,
                 };
 
                 if (Properties.Settings.Default.ReceiptPrintingMode == "Before")

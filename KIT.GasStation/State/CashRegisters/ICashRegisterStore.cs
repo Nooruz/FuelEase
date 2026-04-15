@@ -53,6 +53,8 @@ namespace KIT.GasStation.State.CashRegisters
         /// </summary>
         ShiftSalesReport? ShiftSalesReport { get; }
 
+        string ShiftStateMessage { get; }
+
         /// <summary>
         /// Получить отчёт по продажам за текущую смену.
         /// </summary>

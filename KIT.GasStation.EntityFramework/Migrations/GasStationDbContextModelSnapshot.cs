@@ -22,6 +22,97 @@ namespace KIT.GasStation.EntityFramework.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("KIT.GasStation.Domain.Models.CashRegisters.FiscalData", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Check")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("FiscalDocument")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FiscalModule")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FuelName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("FuelSaleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OperationType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PaymentType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("SalesTax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("SourceFiscalData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tnved")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("UnitOfMeasurement")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ValueAddedTax")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FuelSaleId");
+
+                    b.ToTable("FiscalDatas");
+                });
+
+            modelBuilder.Entity("KIT.GasStation.Domain.Models.CashRegisters.FiscalDiscount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("FiscalDataId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FiscalDataId")
+                        .IsUnique();
+
+                    b.ToTable("FiscalDiscounts");
+                });
+
             modelBuilder.Entity("KIT.GasStation.Domain.Models.Discount", b =>
                 {
                     b.Property<int>("Id")
@@ -172,71 +263,6 @@ namespace KIT.GasStation.EntityFramework.Migrations
                     b.ToTable("EventsPanel");
                 });
 
-            modelBuilder.Entity("KIT.GasStation.Domain.Models.FiscalData", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Check")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("FiscalDocument")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FiscalModule")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FuelName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("FuelSaleId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OperationType")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PaymentType")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("RegistrationNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("SalesTax")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("SourceFiscalData")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Tnved")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Total")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UnitOfMeasurement")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("ValueAddedTax")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FuelSaleId");
-
-                    b.ToTable("FiscalDatas");
-                });
-
             modelBuilder.Entity("KIT.GasStation.Domain.Models.Fuel", b =>
                 {
                     b.Property<int>("Id")
@@ -300,6 +326,7 @@ namespace KIT.GasStation.EntityFramework.Migrations
                             Name = "АИ-92",
                             Price = 0m,
                             SalesTax = 0m,
+                            TNVED = "2710124130",
                             UnitOfMeasurementId = 1,
                             ValueAddedTax = false
                         },
@@ -313,6 +340,7 @@ namespace KIT.GasStation.EntityFramework.Migrations
                             Name = "АИ-95",
                             Price = 0m,
                             SalesTax = 0m,
+                            TNVED = "2710124500",
                             UnitOfMeasurementId = 1,
                             ValueAddedTax = false
                         },
@@ -326,6 +354,7 @@ namespace KIT.GasStation.EntityFramework.Migrations
                             Name = "АИ-98",
                             Price = 0m,
                             SalesTax = 0m,
+                            TNVED = "2710124500",
                             UnitOfMeasurementId = 1,
                             ValueAddedTax = false
                         },
@@ -339,6 +368,7 @@ namespace KIT.GasStation.EntityFramework.Migrations
                             Name = "АИ-100",
                             Price = 0m,
                             SalesTax = 0m,
+                            TNVED = "2710124900",
                             UnitOfMeasurementId = 1,
                             ValueAddedTax = false
                         },
@@ -352,6 +382,7 @@ namespace KIT.GasStation.EntityFramework.Migrations
                             Name = "ДТ",
                             Price = 0m,
                             SalesTax = 0m,
+                            TNVED = "2710194210",
                             UnitOfMeasurementId = 1,
                             ValueAddedTax = false
                         });
@@ -781,7 +812,7 @@ namespace KIT.GasStation.EntityFramework.Migrations
                         {
                             Id = 1,
                             CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            CreatedDate = new DateTime(2026, 4, 6, 11, 15, 36, 996, DateTimeKind.Local).AddTicks(1394),
+                            CreatedDate = new DateTime(1995, 3, 21, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FullName = "Администратор",
                             IsAdmin = false,
                             IsDeleted = false,
@@ -876,6 +907,28 @@ namespace KIT.GasStation.EntityFramework.Migrations
                     b.ToView("TankFuelQuantityView", (string)null);
                 });
 
+            modelBuilder.Entity("KIT.GasStation.Domain.Models.CashRegisters.FiscalData", b =>
+                {
+                    b.HasOne("KIT.GasStation.Domain.Models.FuelSale", "FuelSale")
+                        .WithMany("FiscalDatas")
+                        .HasForeignKey("FuelSaleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FuelSale");
+                });
+
+            modelBuilder.Entity("KIT.GasStation.Domain.Models.CashRegisters.FiscalDiscount", b =>
+                {
+                    b.HasOne("KIT.GasStation.Domain.Models.CashRegisters.FiscalData", "FiscalData")
+                        .WithOne("Discount")
+                        .HasForeignKey("KIT.GasStation.Domain.Models.CashRegisters.FiscalDiscount", "FiscalDataId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FiscalData");
+                });
+
             modelBuilder.Entity("KIT.GasStation.Domain.Models.DiscountSale", b =>
                 {
                     b.HasOne("KIT.GasStation.Domain.Models.Discount", "Discount")
@@ -934,17 +987,6 @@ namespace KIT.GasStation.EntityFramework.Migrations
                         .IsRequired();
 
                     b.Navigation("Shift");
-                });
-
-            modelBuilder.Entity("KIT.GasStation.Domain.Models.FiscalData", b =>
-                {
-                    b.HasOne("KIT.GasStation.Domain.Models.FuelSale", "FuelSale")
-                        .WithMany("FiscalDatas")
-                        .HasForeignKey("FuelSaleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("FuelSale");
                 });
 
             modelBuilder.Entity("KIT.GasStation.Domain.Models.Fuel", b =>
@@ -1114,6 +1156,11 @@ namespace KIT.GasStation.EntityFramework.Migrations
                         .IsRequired();
 
                     b.Navigation("UserRole");
+                });
+
+            modelBuilder.Entity("KIT.GasStation.Domain.Models.CashRegisters.FiscalData", b =>
+                {
+                    b.Navigation("Discount");
                 });
 
             modelBuilder.Entity("KIT.GasStation.Domain.Models.Discount", b =>

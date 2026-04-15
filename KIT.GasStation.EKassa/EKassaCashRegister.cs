@@ -244,8 +244,9 @@ namespace KIT.GasStation.EKassa
                     if (DateTime.TryParse(posInfo.ShiftDate, out var openDate))
                     {
                         _logger.Information("Смена ККМ открыта с {OpenDate}", openDate);
-                        return new CashRegisterState { OpenedAt = openDate };
+                        return new CashRegisterState { OpenedAt = openDate, ShiftNumber = posInfo.Shift != null ? posInfo.Shift.Value : 0 };
                     }
+
                     _logger.Information("Смена ККМ открыта (дата не распознана: {ShiftDate})", posInfo.ShiftDate);
                     return new CashRegisterState { OpenedAt = DateTime.Now };
                 }
