@@ -42,6 +42,9 @@ namespace KIT.GasStation.Lanfeng
 
         private const int FrameLen = 14;
 
+        /// <summary>Интервал между опросами статуса ТРК.</summary>
+        private static readonly TimeSpan PollingInterval = TimeSpan.FromMilliseconds(300);
+
         #endregion
 
         #region Public Properties
@@ -475,6 +478,9 @@ namespace KIT.GasStation.Lanfeng
 
                     await ExecuteCommandSafeAsync(() =>
                         ExecuteCommandAsync(Command.Status, 0));
+
+                    // Пауза между опросами — не перегружаем ТРК и шину RS-485
+                    await Task.Delay(PollingInterval, _token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException ex) when (ex.CancellationToken == _token)
                 {

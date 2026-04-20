@@ -1,0 +1,40 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      Версия продукта: MAJOR.MINOR.PATCH
+        MAJOR — смена архитектуры или несовместимые изменения
+        MINOR — новая функциональность
+        PATCH — багфиксы и мелкие правки
+
+      Перед каждым релизом:
+        1. Поднять нужный сегмент версии здесь
+        2. git tag v$(Version)
+        3. git push origin v$(Version)
+    -->
+    <Version>1.0.0</Version>
+
+    <!--
+      AssemblyVersion — CLR использует для привязки сборок.
+      Меняем только MAJOR, чтобы не ломать зависимости между проектами.
+    -->
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+
+    <!--
+      FileVersion — видна в Проводнике → Свойства файла.
+      Обновляем при каждом релизе вместе с Version.
+    -->
+    <FileVersion>$(Version).0</FileVersion>
+
+    <!--
+      InformationalVersion — строка для людей.
+      Можно дополнить вручную: "1.0.0-beta", "1.0.0 (build 2025-04-18)" и т.д.
+    -->
+    <InformationalVersion>$(Version)</InformationalVersion>
+
+    <!-- Общие метаданные для всех сборок -->
+    <Company>ОсОО «КИТ»</Company>
+    <Product>КИТ-АЗС</Product>
+    <Copyright>© 2025 ОсОО «КИТ»</Copyright>
+    <NeutralLanguage>ru-RU</NeutralLanguage>
+  </PropertyGroup>
+</Project>

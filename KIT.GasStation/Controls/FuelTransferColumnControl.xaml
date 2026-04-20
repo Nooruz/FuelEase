@@ -85,7 +85,12 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <!--
+                Height="Auto" вместо "*" — обязательно при размещении контрола
+                внутри Viewbox: в unconstrained-пространстве * ряды схлопываются в 0.
+                ListBox сам вычислит нужную высоту по содержимому (NozzleControl Height=230).
+            -->
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Border

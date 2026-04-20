@@ -1,4 +1,3 @@
-using KIT.App.Infrastructure.HostBuilders;
 using KIT.GasStation.HardwareSettings.HostBuilders;
 using KIT.GasStation.HardwareSettings.Presenters;
 using KIT.GasStation.HardwareSettings.Views;

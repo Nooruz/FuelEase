@@ -11,7 +11,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\KIT.App.Infrastructure\KIT.App.Infrastructure.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KIT.GasStation.HardwareConfiguration\KIT.GasStation.HardwareConfigurations.csproj" />
   </ItemGroup>
 
 </Project>

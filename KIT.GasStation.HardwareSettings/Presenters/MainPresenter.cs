@@ -1,20 +1,10 @@
-using KIT.App.Infrastructure.Helpers;
-using KIT.App.Infrastructure.Services;
 using KIT.GasStation.HardwareConfigurations.Models;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings.ColumnSettings;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings.ColumnSettings.ColumnSettings;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings;
-using KIT.GasStation.HardwareConfigurations.Models.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings.ColumnSettings;
 using KIT.GasStation.HardwareConfigurations.Services;
 using KIT.GasStation.HardwareSettings.CustomControl;
 using KIT.GasStation.HardwareSettings.CustomControl.Factories;
 using KIT.GasStation.HardwareSettings.CustomControl.Views;
 using KIT.GasStation.HardwareSettings.Forms;
+using KIT.GasStation.HardwareSettings.Helpers;
 using KIT.GasStation.HardwareSettings.Models;
 using KIT.GasStation.HardwareSettings.Services;
 using KIT.GasStation.HardwareSettings.Views;
@@ -69,14 +59,12 @@ namespace KIT.GasStation.HardwareSettings.Presenters
         {
             if (node == null) return;
 
-            // Если выбран дочерний узел контроллера
             if (node.Tag is Controller controller)
             {
                 NavigateToController(controller);
                 return;
             }
 
-            // Если выбран дочерний узел кассы
             if (node.Tag is CashRegister cashRegister)
             {
                 NavigateToCashRegister(cashRegister);
@@ -164,15 +152,11 @@ namespace KIT.GasStation.HardwareSettings.Presenters
         {
             _view.ControllersNode.Nodes.Clear();
             foreach (var controller in _controllers)
-            {
                 AddControllerToTree(controller);
-            }
 
             _view.CashRegistersNode.Nodes.Clear();
             foreach (var cashRegister in _cashRegisters)
-            {
                 AddCashRegisterToTree(cashRegister);
-            }
 
             _view.ControllersNode.Expand();
             _view.CashRegistersNode.Expand();
@@ -187,7 +171,7 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             var node = new TreeNode(controller.Name)
             {
                 Tag = controller,
-                ContextMenuStrip = GetControllerItemContextMenu()
+                ContextMenuStrip = _view.ControllerItemContextMenu
             };
             _view.ControllersNode.Nodes.Add(node);
             return node;
@@ -198,34 +182,10 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             var node = new TreeNode(cashRegister.Name)
             {
                 Tag = cashRegister,
-                ContextMenuStrip = GetCashRegisterItemContextMenu()
+                ContextMenuStrip = _view.CashRegisterItemContextMenu
             };
             _view.CashRegistersNode.Nodes.Add(node);
             return node;
-        }
-
-        private ContextMenuStrip GetControllerItemContextMenu()
-        {
-            // Reuse the cmsControllerItem from the Main form
-            if (_view is Main mainForm)
-            {
-                return mainForm.Controls.Find("", true).Length > 0
-                    ? new ContextMenuStrip() : new ContextMenuStrip();
-            }
-            var cms = new ContextMenuStrip();
-            var deleteItem = new ToolStripMenuItem("Удалить");
-            deleteItem.Click += (s, e) => DeleteSelectedController();
-            cms.Items.Add(deleteItem);
-            return cms;
-        }
-
-        private ContextMenuStrip GetCashRegisterItemContextMenu()
-        {
-            var cms = new ContextMenuStrip();
-            var deleteItem = new ToolStripMenuItem("Удалить");
-            deleteItem.Click += (s, e) => DeleteSelectedCashRegister();
-            cms.Items.Add(deleteItem);
-            return cms;
         }
 
         #endregion
@@ -285,25 +245,11 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             _current = _pages.Create(PageType.Lanfeng);
             var view = (LanfengView)_current.View;
 
-            // Заполняем порты и скорости
-            view.cmbPort.Items.Clear();
-            foreach (var port in SerialPort.GetPortNames())
-                view.cmbPort.Items.Add(port);
-            if (!string.IsNullOrEmpty(controller.ComPort))
-                view.cmbPort.SelectedItem = controller.ComPort;
+            FillPortsCombo(view.cmbPort, controller.ComPort);
+            FillCombo(view.cmbBaudrate, new[] { 2400, 4800, 9550, 9600, 9650, 9700, 9750, 10500, 10600, 57600, 115200 }, controller.BaudRate);
 
-            var baudRates = new int[] { 2400, 4800, 9550, 9600, 9650, 9700, 9750, 10500, 10600, 57600, 115200 };
-            view.cmbBaudrate.Items.Clear();
-            foreach (var rate in baudRates)
-                view.cmbBaudrate.Items.Add(rate);
-            view.cmbBaudrate.SelectedItem = controller.BaudRate;
-
-            // Заполняем таблицу колонок
-            SetupFuelDispenserGrid(view.dgvColumns, controller, true);
-
-            // Кнопки
-            view.btnAddColumn.Click += (s, e) => AddColumnsToController(controller, view.dgvColumns,
-                () => new LanfengColumnSettings());
+            SetupFuelDispenserGrid(view.dgvColumns, controller, createSettings: () => new LanfengColumnSettings());
+            view.btnAddColumn.Click += (s, e) => AddColumnsToController(controller, view.dgvColumns, () => new LanfengColumnSettings());
             view.btnDeleteColumn.Click += (s, e) => DeleteSelectedColumn(controller, view.dgvColumns);
             view.btnSave.Click += async (s, e) =>
             {
@@ -324,12 +270,9 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             _current = _pages.Create(PageType.PKElectronics);
             var view = (PKElectronicsView)_current.View;
 
-            // Порты и скорости
             FillPortsCombo(view.cmbPort, controller.ComPort);
-            var baudRates = new int[] { 2400, 4800, 9550, 9600, 9650, 9700, 9750, 10500, 10600, 57600, 115200 };
-            FillCombo(view.cmbBaudRate, baudRates, controller.BaudRate);
+            FillCombo(view.cmbBaudRate, new[] { 2400, 4800, 9550, 9600, 9650, 9700, 9750, 10500, 10600, 57600, 115200 }, controller.BaudRate);
 
-            // Метод опроса
             var pollingModes = EnumHelper.GetLocalizedEnumValues<PollingMode>();
             view.cmbPollingMode.DisplayMember = "Value";
             view.cmbPollingMode.ValueMember = "Key";
@@ -337,7 +280,6 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             if (controller.Settings is PKElectronicsControllerSettings pkSettings)
                 view.cmbPollingMode.SelectedValue = pkSettings.PollingMode;
 
-            // Количество пистолетов на стороне
             var nozzlesPerSides = EnumHelper.GetLocalizedEnumValues<NozzlesPerSide>();
             view.cmbNozzlesPerSide.DisplayMember = "Value";
             view.cmbNozzlesPerSide.ValueMember = "Key";
@@ -345,12 +287,8 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             if (controller.Settings is PKElectronicsControllerSettings pkSettings2)
                 view.cmbNozzlesPerSide.SelectedValue = pkSettings2.NozzlesPerSide;
 
-            // Таблица колонок
-            SetupFuelDispenserGrid(view.dgvColumns, controller, false);
-
-            // Кнопки
-            view.btnAddColumn.Click += (s, e) => AddColumnsToController(controller, view.dgvColumns,
-                () => new PKElectronicsColumnSettings());
+            SetupFuelDispenserGrid(view.dgvColumns, controller, createSettings: () => new PKElectronicsColumnSettings());
+            view.btnAddColumn.Click += (s, e) => AddColumnsToController(controller, view.dgvColumns, () => new PKElectronicsColumnSettings());
             view.btnDeleteColumn.Click += (s, e) => DeleteSelectedColumn(controller, view.dgvColumns);
             view.btnSave.Click += async (s, e) =>
             {
@@ -371,42 +309,38 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             _current = _pages.Create(PageType.Gilbarco);
             var view = (GilbarcoView)_current.View;
 
-            // Порты и скорости
             FillPortsCombo(view.cmbPort, controller.ComPort);
-            var baudRates = new int[] { 4800, 5787, 9600 };
-            FillCombo(view.cmbBaudRate, baudRates, controller.BaudRate);
+            FillCombo(view.cmbBaudRate, new[] { 4800, 5787, 9600 }, controller.BaudRate);
 
-            // Контроль (Parity)
             view.cmbParity.Items.Clear();
             view.cmbParity.Items.Add(Parity.Even);
             view.cmbParity.Items.Add(Parity.Odd);
             view.cmbParity.Items.Add(Parity.None);
+
+            var columnQuantities = EnumHelper.GetLocalizedEnumValues<ColumnQuantity>();
+            view.cmbColumnQuantity.DisplayMember = "Value";
+            view.cmbColumnQuantity.ValueMember = "Key";
+            view.cmbColumnQuantity.DataSource = columnQuantities;
+
             if (controller.Settings is GilbarcoControllerSettings gilSettings)
             {
                 view.cmbParity.SelectedItem = gilSettings.Parity;
                 view.chkEchoSuppression.Checked = gilSettings.EchoSuppression;
             }
 
-            // Количество пистолетов на стороне
-            var columnQuantities = EnumHelper.GetLocalizedEnumValues<ColumnQuantity>();
-            view.cmbColumnQuantity.DisplayMember = "Value";
-            view.cmbColumnQuantity.ValueMember = "Key";
-            view.cmbColumnQuantity.DataSource = columnQuantities;
-
-            // Таблица колонок
-            SetupFuelDispenserGrid(view.dgvColumns, controller, false);
-
-            // Кнопки
+            SetupFuelDispenserGrid(view.dgvColumns, controller, createSettings: () => new GilbarcoColumnSettings
+            {
+                ColumnQuantity = view.cmbColumnQuantity.SelectedValue is ColumnQuantity cq ? cq : ColumnQuantity.Three,
+                PriceDecimalPoint = PriceDecimalPoint.Two
+            });
             view.btnAddColumn.Click += (s, e) =>
             {
-                var selectedQuantity = view.cmbColumnQuantity.SelectedValue is ColumnQuantity cq
-                    ? cq : ColumnQuantity.Three;
-                AddColumnsToController(controller, view.dgvColumns,
-                    () => new GilbarcoColumnSettings
-                    {
-                        ColumnQuantity = selectedQuantity,
-                        PriceDecimalPoint = PriceDecimalPoint.Two
-                    });
+                var selectedQuantity = view.cmbColumnQuantity.SelectedValue is ColumnQuantity cq ? cq : ColumnQuantity.Three;
+                AddColumnsToController(controller, view.dgvColumns, () => new GilbarcoColumnSettings
+                {
+                    ColumnQuantity = selectedQuantity,
+                    PriceDecimalPoint = PriceDecimalPoint.Two
+                });
             };
             view.btnDeleteColumn.Click += (s, e) => DeleteSelectedColumn(controller, view.dgvColumns);
             view.btnSave.Click += async (s, e) =>
@@ -428,12 +362,8 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             _current = _pages.Create(PageType.Emulator);
             var view = (EmulatorView)_current.View;
 
-            // Таблица колонок
             SetupEmulatorGrid(view.dgvColumns, controller);
-
-            // Кнопки
-            view.btnAddColumn.Click += (s, e) => AddColumnsToController(controller, view.dgvColumns,
-                () => new LanfengColumnSettings());
+            view.btnAddColumn.Click += (s, e) => AddColumnsToController(controller, view.dgvColumns, () => new LanfengColumnSettings());
             view.btnDeleteColumn.Click += (s, e) => DeleteSelectedColumn(controller, view.dgvColumns);
             view.btnSave.Click += async (s, e) =>
             {
@@ -464,79 +394,49 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             _current = _pages.Create(PageType.EKassa);
             var view = (EKassaView)_current.View;
 
-            // Заполняем поля
             view.txtAddress.Text = cashRegister.Address ?? "";
             view.txtRegistrationNumber.Text = cashRegister.RegistrationNumber ?? "";
             view.txtUserName.Text = cashRegister.UserName ?? "";
             view.txtPassword.Text = cashRegister.Password ?? "";
 
-            // Принтеры
             FillPrinters(view.cmbPrinter);
             if (cashRegister.Settings is EKassaCashRegisterSettings ekSettings)
             {
                 if (!string.IsNullOrEmpty(ekSettings.DefaultPrinterName))
                     view.cmbPrinter.SelectedItem = ekSettings.DefaultPrinterName;
 
-                // TapeType
                 var tapeTypes = Enum.GetValues(typeof(TapeType)).Cast<TapeType>().ToList();
                 view.cmbTapeType.DataSource = tapeTypes;
                 view.cmbTapeType.SelectedItem = ekSettings.TapeType;
             }
 
-            // Кнопки
             view.btnState.Click += async (s, e) =>
             {
-                try
-                {
-                    ReadCashRegisterFields(view, cashRegister);
-                    await _hardwareConfigurationService.SaveCashRegisterAsync(cashRegister);
-                    // TODO: ICashRegisterFactory integration
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                try { ReadCashRegisterFields(view, cashRegister); await _hardwareConfigurationService.SaveCashRegisterAsync(cashRegister); }
+                catch (Exception ex) { MessageBox.Show(ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             };
             view.btnOpenShift.Click += async (s, e) =>
             {
-                try
-                {
-                    ReadCashRegisterFields(view, cashRegister);
-                    await _hardwareConfigurationService.SaveCashRegisterAsync(cashRegister);
-                    // TODO: ICashRegisterFactory integration
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                try { ReadCashRegisterFields(view, cashRegister); await _hardwareConfigurationService.SaveCashRegisterAsync(cashRegister); }
+                catch (Exception ex) { MessageBox.Show(ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             };
             view.btnCloseShift.Click += async (s, e) =>
             {
-                try
-                {
-                    ReadCashRegisterFields(view, cashRegister);
-                    await _hardwareConfigurationService.SaveCashRegisterAsync(cashRegister);
-                    // TODO: ICashRegisterFactory integration
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                try { ReadCashRegisterFields(view, cashRegister); await _hardwareConfigurationService.SaveCashRegisterAsync(cashRegister); }
+                catch (Exception ex) { MessageBox.Show(ex.Message, "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             };
             view.btnSave.Click += async (s, e) =>
             {
                 ReadCashRegisterFields(view, cashRegister);
                 if (ValidateEKassa(cashRegister))
-                {
                     await _hardwareConfigurationService.SaveCashRegisterAsync(cashRegister);
-                }
             };
 
             _current.OnShow();
             _view.ShowContent(_current.View);
         }
 
-        private void ReadCashRegisterFields(EKassaView view, CashRegister cashRegister)
+        private static void ReadCashRegisterFields(EKassaView view, CashRegister cashRegister)
         {
             cashRegister.Address = view.txtAddress.Text;
             cashRegister.RegistrationNumber = view.txtRegistrationNumber.Text;
@@ -544,7 +444,7 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             cashRegister.Password = view.txtPassword.Text;
         }
 
-        private bool ValidateEKassa(CashRegister cr)
+        private static bool ValidateEKassa(CashRegister cr)
         {
             if (string.IsNullOrEmpty(cr.Address))
             {
@@ -586,13 +486,10 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             view.txtAddress.Text = cashRegister.Address ?? "";
             view.txtRegistrationNumber.Text = cashRegister.RegistrationNumber ?? "";
 
-            // Принтеры
             FillPrinters(view.cmbPrinter);
-            if (cashRegister.Settings is NewCasCashRegisterSettings ncSettings)
-            {
-                if (!string.IsNullOrEmpty(ncSettings.DefaultPrinterName))
-                    view.cmbPrinter.SelectedItem = ncSettings.DefaultPrinterName;
-            }
+            if (cashRegister.Settings is NewCasCashRegisterSettings ncSettings
+                && !string.IsNullOrEmpty(ncSettings.DefaultPrinterName))
+                view.cmbPrinter.SelectedItem = ncSettings.DefaultPrinterName;
 
             view.btnSave.Click += async (s, e) =>
             {
@@ -609,7 +506,6 @@ namespace KIT.GasStation.HardwareSettings.Presenters
                     MessageBox.Show("Адрес неправильно заполнен!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     return;
                 }
-
                 await _hardwareConfigurationService.SaveCashRegisterAsync(cashRegister);
             };
 
@@ -623,17 +519,15 @@ namespace KIT.GasStation.HardwareSettings.Presenters
 
         private void View_AddFuelDispenserClicked(object? sender, EventArgs e)
         {
-            IDeviceService<Controller> controllerService = new ControllerService(_hardwareConfigurationService);
-            var model = new HardwareModel<Controller, ControllerType>(controllerService);
-
+            var service = new ControllerService(_hardwareConfigurationService);
+            var model = new HardwareModel<Controller, ControllerType>(service);
             _dialogService.Show<HardwareDialog, HardwareModel<Controller, ControllerType>>(model);
         }
 
         private void View_AddCashRegisterClicked(object? sender, EventArgs e)
         {
-            IDeviceService<CashRegister> cashRegisterService = new CashRegisterService(_hardwareConfigurationService);
-            var model = new HardwareModel<CashRegister, CashRegisterType>(cashRegisterService);
-
+            var service = new CashRegisterService(_hardwareConfigurationService);
+            var model = new HardwareModel<CashRegister, CashRegisterType>(service);
             _dialogService.Show<HardwareDialog, HardwareModel<CashRegister, CashRegisterType>>(model);
         }
 
@@ -647,7 +541,6 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             if (existing != null)
             {
                 existing.Update(controller);
-                // Обновляем текст узла в дереве
                 UpdateTreeNodeText(_view.ControllersNode, controller.Id, controller.Name);
             }
             else
@@ -672,16 +565,12 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             }
         }
 
-        private void UpdateTreeNodeText(TreeNode parentNode, Guid id, string name)
+        private static void UpdateTreeNodeText(TreeNode parentNode, Guid id, string name)
         {
             foreach (TreeNode node in parentNode.Nodes)
             {
-                if (node.Tag is Controller c && c.Id == id)
-                {
-                    node.Text = name;
-                    return;
-                }
-                if (node.Tag is CashRegister cr && cr.Id == id)
+                if ((node.Tag is Controller c && c.Id == id) ||
+                    (node.Tag is CashRegister cr && cr.Id == id))
                 {
                     node.Text = name;
                     return;
@@ -700,7 +589,7 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             _view.ShowContent(new Panel());
         }
 
-        private void FillPortsCombo(ComboBox cmb, string? selectedPort)
+        private static void FillPortsCombo(ComboBox cmb, string? selectedPort)
         {
             cmb.Items.Clear();
             foreach (var port in SerialPort.GetPortNames())
@@ -709,7 +598,7 @@ namespace KIT.GasStation.HardwareSettings.Presenters
                 cmb.SelectedItem = selectedPort;
         }
 
-        private void FillCombo(ComboBox cmb, int[] values, int selectedValue)
+        private static void FillCombo(ComboBox cmb, int[] values, int selectedValue)
         {
             cmb.Items.Clear();
             foreach (var v in values)
@@ -717,28 +606,31 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             cmb.SelectedItem = selectedValue;
         }
 
-        private void FillPrinters(ComboBox cmb)
+        private static void FillPrinters(ComboBox cmb)
         {
             cmb.Items.Clear();
             cmb.Items.Add("Не задан");
             try
             {
                 foreach (string printer in System.Drawing.Printing.PrinterSettings.InstalledPrinters)
-                {
                     cmb.Items.Add(printer);
-                }
             }
             catch { }
         }
 
-        private void ReadPortAndBaudRate(ComboBox cmbPort, ComboBox cmbBaudRate, Controller controller)
+        private static void ReadPortAndBaudRate(ComboBox cmbPort, ComboBox cmbBaudRate, Controller controller)
         {
             controller.ComPort = cmbPort.SelectedItem?.ToString() ?? "";
             if (cmbBaudRate.SelectedItem is int baudRate)
                 controller.BaudRate = baudRate;
         }
 
-        private void SetupFuelDispenserGrid(DataGridView dgv, Controller controller, bool isLanfeng)
+        /// <summary>
+        /// Создаёт и настраивает DataGridView для колонок контроллера.
+        /// Подписка на CellValueChanged выполняется однократно — утечки нет,
+        /// потому что каждый раз создаётся новый экземпляр View через IPage.
+        /// </summary>
+        private static void SetupFuelDispenserGrid(DataGridView dgv, Controller controller, Func<ColumnSettings> createSettings)
         {
             dgv.Columns.Clear();
             dgv.Rows.Clear();
@@ -746,112 +638,72 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             dgv.Columns.Add("Address", "Адрес");
             dgv.Columns.Add("Nozzle", "Шланг");
             dgv.Columns.Add("Name", "Имя");
-
-            var chkCol = new DataGridViewCheckBoxColumn
-            {
-                Name = "IsDisabled",
-                HeaderText = "Блокирована"
-            };
-            dgv.Columns.Add(chkCol);
+            dgv.Columns.Add(new DataGridViewCheckBoxColumn { Name = "IsDisabled", HeaderText = "Блокирована" });
 
             foreach (var column in controller.Columns)
             {
-                var rowIdx = dgv.Rows.Add(
-                    column.Address,
-                    column.Nozzle,
-                    column.Name,
-                    column.Settings?.IsDisabled ?? false
-                );
+                var rowIdx = dgv.Rows.Add(column.Address, column.Nozzle, column.Name, column.Settings?.IsDisabled ?? false);
                 dgv.Rows[rowIdx].Tag = column;
             }
 
-            // Подписка на изменение ячеек для записи обратно в модель
+            dgv.CellValueChanged += (s, e) => ApplyFuelDispenserCellChange(dgv, e);
+        }
+
+        private static void SetupEmulatorGrid(DataGridView dgv, Controller controller)
+        {
+            dgv.Columns.Clear();
+            dgv.Rows.Clear();
+
+            dgv.Columns.Add("Address", "Адрес");
+            dgv.Columns.Add("Nozzle", "Шланг");
+            dgv.Columns.Add("Name", "Имя");
+            dgv.Columns.Add(new DataGridViewCheckBoxColumn { Name = "IsDisabled", HeaderText = "Блокирована" });
+            dgv.Columns.Add("SystemCounter", "Системный счётчик");
+
+            foreach (var column in controller.Columns)
+            {
+                var rowIdx = dgv.Rows.Add(column.Address, column.Nozzle, column.Name, column.Settings?.IsDisabled ?? false, column.SystemCounter);
+                dgv.Rows[rowIdx].Tag = column;
+            }
+
             dgv.CellValueChanged += (s, e) =>
             {
+                ApplyFuelDispenserCellChange(dgv, e);
+
                 if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
                 var row = dgv.Rows[e.RowIndex];
                 if (row.Tag is not Column col) return;
 
-                switch (dgv.Columns[e.ColumnIndex].Name)
-                {
-                    case "Address":
-                        if (int.TryParse(row.Cells["Address"].Value?.ToString(), out int addr))
-                            col.Address = addr;
-                        break;
-                    case "Nozzle":
-                        if (int.TryParse(row.Cells["Nozzle"].Value?.ToString(), out int nozzle))
-                            col.Nozzle = nozzle;
-                        break;
-                    case "Name":
-                        col.Name = row.Cells["Name"].Value?.ToString() ?? "";
-                        break;
-                    case "IsDisabled":
-                        if (col.Settings != null)
-                            col.Settings.IsDisabled = (bool)(row.Cells["IsDisabled"].Value ?? false);
-                        break;
-                }
+                if (dgv.Columns[e.ColumnIndex].Name == "SystemCounter" &&
+                    decimal.TryParse(row.Cells["SystemCounter"].Value?.ToString(), out decimal sc))
+                    col.SystemCounter = sc;
             };
         }
 
-        private void SetupEmulatorGrid(DataGridView dgv, Controller controller)
+        private static void ApplyFuelDispenserCellChange(DataGridView dgv, DataGridViewCellEventArgs e)
         {
-            dgv.Columns.Clear();
-            dgv.Rows.Clear();
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            var row = dgv.Rows[e.RowIndex];
+            if (row.Tag is not Column col) return;
 
-            dgv.Columns.Add("Address", "Адрес");
-            dgv.Columns.Add("Nozzle", "Шланг");
-            dgv.Columns.Add("Name", "Имя");
-
-            var chkCol = new DataGridViewCheckBoxColumn
+            switch (dgv.Columns[e.ColumnIndex].Name)
             {
-                Name = "IsDisabled",
-                HeaderText = "Блокирована"
-            };
-            dgv.Columns.Add(chkCol);
-
-            dgv.Columns.Add("SystemCounter", "Системный счетчик");
-
-            foreach (var column in controller.Columns)
-            {
-                var rowIdx = dgv.Rows.Add(
-                    column.Address,
-                    column.Nozzle,
-                    column.Name,
-                    column.Settings?.IsDisabled ?? false,
-                    column.SystemCounter
-                );
-                dgv.Rows[rowIdx].Tag = column;
+                case "Address":
+                    if (int.TryParse(row.Cells["Address"].Value?.ToString(), out int addr))
+                        col.Address = addr;
+                    break;
+                case "Nozzle":
+                    if (int.TryParse(row.Cells["Nozzle"].Value?.ToString(), out int nozzle))
+                        col.Nozzle = nozzle;
+                    break;
+                case "Name":
+                    col.Name = row.Cells["Name"].Value?.ToString() ?? "";
+                    break;
+                case "IsDisabled":
+                    if (col.Settings != null)
+                        col.Settings.IsDisabled = (bool)(row.Cells["IsDisabled"].Value ?? false);
+                    break;
             }
-
-            dgv.CellValueChanged += (s, e) =>
-            {
-                if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
-                var row = dgv.Rows[e.RowIndex];
-                if (row.Tag is not Column col) return;
-
-                switch (dgv.Columns[e.ColumnIndex].Name)
-                {
-                    case "Address":
-                        if (int.TryParse(row.Cells["Address"].Value?.ToString(), out int addr))
-                            col.Address = addr;
-                        break;
-                    case "Nozzle":
-                        if (int.TryParse(row.Cells["Nozzle"].Value?.ToString(), out int nozzle))
-                            col.Nozzle = nozzle;
-                        break;
-                    case "Name":
-                        col.Name = row.Cells["Name"].Value?.ToString() ?? "";
-                        break;
-                    case "IsDisabled":
-                        if (col.Settings != null)
-                            col.Settings.IsDisabled = (bool)(row.Cells["IsDisabled"].Value ?? false);
-                        break;
-                    case "SystemCounter":
-                        if (decimal.TryParse(row.Cells["SystemCounter"].Value?.ToString(), out decimal sc))
-                            col.SystemCounter = sc;
-                        break;
-                }
-            };
         }
 
         private void AddColumnsToController(Controller controller, DataGridView dgv, Func<ColumnSettings> createSettings)
@@ -859,37 +711,26 @@ namespace KIT.GasStation.HardwareSettings.Presenters
             using var dlg = new ColumnCountDialog();
             if (dlg.ShowDialog() != DialogResult.OK || dlg.ColumnCount <= 0) return;
 
-            int newColumnsCount = dlg.ColumnCount;
             int currentCount = controller.Columns.Count;
 
-            for (int i = 0; i < newColumnsCount; i++)
+            for (int i = 0; i < dlg.ColumnCount; i++)
             {
                 int totalIndex = currentCount + i;
-                int address = totalIndex / 4;
-                int pistol = (totalIndex % 4) + 1;
-                string name = $"Колонка_{controller.Columns.Count + 1}";
-
                 var newColumn = new Column
                 {
-                    Address = address,
-                    Nozzle = pistol,
-                    Name = name,
+                    Address = totalIndex / 4,
+                    Nozzle  = (totalIndex % 4) + 1,
+                    Name    = $"Колонка_{controller.Columns.Count + 1}",
                     Settings = createSettings()
                 };
-
                 controller.Columns.Add(newColumn);
 
-                var rowIdx = dgv.Rows.Add(
-                    newColumn.Address,
-                    newColumn.Nozzle,
-                    newColumn.Name,
-                    newColumn.Settings?.IsDisabled ?? false
-                );
+                var rowIdx = dgv.Rows.Add(newColumn.Address, newColumn.Nozzle, newColumn.Name, newColumn.Settings?.IsDisabled ?? false);
                 dgv.Rows[rowIdx].Tag = newColumn;
             }
         }
 
-        private void DeleteSelectedColumn(Controller controller, DataGridView dgv)
+        private static void DeleteSelectedColumn(Controller controller, DataGridView dgv)
         {
             if (dgv.SelectedRows.Count == 0) return;
 
@@ -899,9 +740,7 @@ namespace KIT.GasStation.HardwareSettings.Presenters
 
             var row = dgv.SelectedRows[0];
             if (row.Tag is Column column)
-            {
                 controller.Columns.Remove(column);
-            }
             dgv.Rows.Remove(row);
         }
 

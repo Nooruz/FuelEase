@@ -28,6 +28,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "KIT-AZS License Server", Version = "v1" });
+    c.AddSecurityDefinition("ApiKey", new()
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Name = "X-Admin-Key",
+        Description = "Admin API key (required for /api/admin/* endpoints)"
+    });
 });
 
 var app = builder.Build();
@@ -42,6 +49,34 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseSerilogRequestLogging();
+
+// Middleware: защита Admin-эндпоинтов API-ключом
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/admin"))
+    {
+        var adminKey = builder.Configuration["Licensing:AdminApiKey"];
+
+        // Если ключ не настроен — заблокировать всё
+        if (string.IsNullOrEmpty(adminKey))
+        {
+            context.Response.StatusCode = 503;
+            await context.Response.WriteAsync("Admin API key not configured on server.");
+            return;
+        }
+
+        if (!context.Request.Headers.TryGetValue("X-Admin-Key", out var incomingKey) ||
+            !string.Equals(incomingKey, adminKey, StringComparison.Ordinal))
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("Unauthorized: invalid or missing X-Admin-Key header.");
+            return;
+        }
+    }
+
+    await next();
+});
+
 app.MapControllers();
 
 app.Run();

@@ -124,8 +124,9 @@ public sealed class LicenseService
 
         if (existingActivation != null)
         {
-            // Повторная активация на том же железе — обновляем InstanceId
+            // Повторная активация на том же железе — обновляем InstanceId и MachineName
             existingActivation.InstanceId = request.InstanceId;
+            existingActivation.MachineName = request.MachineName;
             existingActivation.LeaseToken = GenerateLeaseToken();
             existingActivation.LeaseExpiryUtc = DateTime.UtcNow.AddHours(LeaseHours);
             existingActivation.LastHeartbeatUtc = DateTime.UtcNow;
@@ -237,6 +238,21 @@ public sealed class LicenseService
                 Revoked = true,
                 Message = "Лицензия отозвана",
                 ServerTimeUtc = DateTime.UtcNow
+            };
+        }
+
+        // Проверяем LeaseToken — защита от replay-атак
+        if (!string.IsNullOrEmpty(activation.LeaseToken) &&
+            !string.IsNullOrEmpty(request.LeaseToken) &&
+            !string.Equals(activation.LeaseToken, request.LeaseToken, StringComparison.Ordinal))
+        {
+            await LogSecurityEvent(request.LicenseId, "InvalidLeaseToken",
+                $"LeaseToken mismatch from IP: {ipAddress}", ipAddress);
+
+            return new HeartbeatResponse
+            {
+                Success = false,
+                Message = "Недействительный lease-токен — требуется повторная активация"
             };
         }
 

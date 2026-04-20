@@ -131,7 +131,8 @@ namespace KIT.GasStation.ViewModels
 
             if (e.PropertyName is nameof(FuelDispenserViewModel.X)
                               or nameof(FuelDispenserViewModel.Y)
-                              or nameof(FuelDispenserViewModel.Width))
+                              or nameof(FuelDispenserViewModel.Width)
+                              or nameof(FuelDispenserViewModel.Height))
             {
                 if (sender is FuelDispenserViewModel vm)
                 {
@@ -141,7 +142,8 @@ namespace KIT.GasStation.ViewModels
                         Side = vm.Side,
                         X = vm.X,
                         Y = vm.Y,
-                        Width = vm.Width
+                        Width = vm.Width,
+                        Height = vm.Height
                     };
                     SavePositions();
                 }
@@ -161,7 +163,18 @@ namespace KIT.GasStation.ViewModels
                 {
                     vm.X = pos.X;
                     vm.Y = pos.Y;
-                    vm.Width = pos.Width;
+
+                    // Применяем сохранённую ширину только если она не меньше MinWidth.
+                    // Старые записи (до введения Viewbox) могли хранить ширину 100–200px,
+                    // что при Viewbox scale < 0.65 даёт нечитаемый контент.
+                    if (pos.Width >= vm.MinWidth)
+                        vm.Width = pos.Width;
+                    // иначе остаётся дефолтное значение из FuelDispenserBaseViewModel (_width = 350)
+
+                    // Height не привязан к ListBoxItem (высота auto из Viewbox).
+                    // Сохраняем в ViewModel на будущее, но визуально не влияет.
+                    if (pos.Height > 0)
+                        vm.Height = pos.Height;
                 }
                 finally
                 {
@@ -287,6 +300,7 @@ namespace KIT.GasStation.ViewModels
         public double X { get; set; }
         public double Y { get; set; }
         public double Width { get; set; }
+        public double Height { get; set; }
     }
 
     public enum FuelTransperControllerControlMode

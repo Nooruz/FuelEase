@@ -155,7 +155,12 @@ namespace KIT.GasStation.ViewModels
                 }).ToList();
 
                 await _hub.InvokeAsync("SetPricesAsync", prices);
-                await _hub.InvokeAsync("GetCountersAsync", first.Group);
+
+                // Запрашиваем счётчики для всех групп (не только первой):
+                // при запуске ПО это позволяет сразу обнаружить незарегистрированные продажи
+                // для ВСЕХ пистолетов, даже если они в разных группах.
+                foreach (var group in groups)
+                    await _hub.InvokeAsync("GetCountersAsync", group);
             }
 
             await RequestWorkerStateSnapshotAsync(groups);
@@ -260,11 +265,14 @@ namespace KIT.GasStation.ViewModels
             if (!isProtected || currentNozzle.Id != SelectedNozzle?.Id)
                 currentNozzle.Status = newStatus;
 
+            // Сбрасываем другие пистолеты в Ready ТОЛЬКО если их статус не уже Ready
+            // (иначе каждое событие вызывает лишние PropertyChanged → перерисовку UI)
             foreach (var n in Nozzles)
             {
                 if (n.Id == currentNozzle.Id) continue;
                 if (isProtected && n.Id == SelectedNozzle?.Id) continue;
-                n.Status = NozzleStatus.Ready;
+                if (n.Status != NozzleStatus.Ready)
+                    n.Status = NozzleStatus.Ready;
             }
 
             if (newStatus != NozzleStatus.Ready)

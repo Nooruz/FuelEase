@@ -31,4 +31,13 @@
     <ProjectReference Include="..\KIT.App.Infrastructure\KIT.App.Infrastructure.csproj" />
     <ProjectReference Include="..\KIT.GasStation.Licensing\KIT.GasStation.Licensing.csproj" />
   </ItemGroup>
+
+	<ItemGroup>
+		<None Update="uninstall.bat">
+		  <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</None>
+		<None Update="install.bat" CopyToPublishDirectory="Always" />
+		<None Update="uninstall.bat" CopyToPublishDirectory="Always" />
+	</ItemGroup>
+	
 </Project>

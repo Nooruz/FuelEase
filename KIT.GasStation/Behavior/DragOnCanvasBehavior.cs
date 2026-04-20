@@ -11,14 +11,14 @@ namespace KIT.GasStation.Behavior
 {
     public static class DragOnCanvasBehavior
     {
-        // Насколько близко надо подтащить, чтобы сработало прилипание
-        private const double HorizontalSnapDistance = 14;
-        private const double VerticalSnapDistance = 2;
+        // Дистанция прилипания (пиксели) — одинакова для обоих осей
+        private const double SnapDistance = 14;
 
-        // Допуск по второй оси, чтобы snap не срабатывал через полэкрана
-        private const double OrthogonalSnapTolerance = 16;
+        // Допуск по перпендикулярной оси: snap срабатывает, если элементы
+        // хотя бы частично находятся в одной полосе ±OrthogonalSnapTolerance
+        private const double OrthogonalSnapTolerance = 30;
 
-        // Зазор между элементами
+        // Зазор между элементами при прилипании
         private const double Gap = 2;
 
         public static readonly DependencyProperty IsEnabledProperty =
@@ -146,11 +146,18 @@ namespace KIT.GasStation.Behavior
 
             var desiredRect = new Rect(desiredX, desiredY, width, height);
 
+            // Базовый прямоугольник для проверки «новых» пересечений —
+            // позиция карточки в момент начала перетаскивания.
+            // Если элементы уже перекрывались ДО начала drag, мы это игнорируем
+            // и разрешаем перемещение, пока не создаются НОВЫЕ пересечения.
+            var startRect = new Rect(state.StartLeft, state.StartTop, width, height);
+
             // Пытаемся найти лучшую snap-позицию
             SnapCandidate? snapCandidate = FindBestSnap(
                 itemsControl,
                 presenter,
                 desiredRect,
+                startRect,
                 canvas.ActualWidth,
                 canvas.ActualHeight);
 
@@ -168,17 +175,17 @@ namespace KIT.GasStation.Behavior
 
             var finalRect = new Rect(finalX, finalY, width, height);
 
-            // Если snapped-позиция пересекается — пробуем обычную
-            if (IntersectsAny(itemsControl, presenter, finalRect))
+            // Если snapped-позиция создаёт НОВОЕ пересечение — пробуем обычную
+            if (CreatesNewIntersection(itemsControl, presenter, finalRect, startRect))
             {
-                if (!IntersectsAny(itemsControl, presenter, desiredRect))
+                if (!CreatesNewIntersection(itemsControl, presenter, desiredRect, startRect))
                 {
                     finalX = desiredX;
                     finalY = desiredY;
                 }
                 else
                 {
-                    // И snapped, и desired пересекаются — не двигаем
+                    // И snapped, и desired создают новое пересечение — не двигаем
                     return;
                 }
             }
@@ -224,6 +231,7 @@ namespace KIT.GasStation.Behavior
             ItemsControl itemsControl,
             FrameworkElement movingPresenter,
             Rect desiredRect,
+            Rect startRect,
             double canvasWidth,
             double canvasHeight)
         {
@@ -249,7 +257,8 @@ namespace KIT.GasStation.Behavior
 
                     var snappedRect = new Rect(snappedX, snappedY, desiredRect.Width, desiredRect.Height);
 
-                    if (IntersectsAny(itemsControl, movingPresenter, snappedRect))
+                    // Snap-позиция не должна создавать НОВЫХ пересечений
+                    if (CreatesNewIntersection(itemsControl, movingPresenter, snappedRect, startRect))
                         continue;
 
                     double score = DistanceSquared(desiredRect.Left, desiredRect.Top, snappedX, snappedY);
@@ -346,50 +355,42 @@ namespace KIT.GasStation.Behavior
 
         private static bool IsNearLeft(Rect movingRect, Rect targetRect)
         {
-            double horizontalDistance = Math.Abs(movingRect.Right - targetRect.Left);
-
-            bool verticallyRelated = RangesOverlapOrClose(
+            double distance = Math.Abs(movingRect.Right - targetRect.Left);
+            bool related = RangesOverlapOrClose(
                 movingRect.Top, movingRect.Bottom,
                 targetRect.Top, targetRect.Bottom,
                 OrthogonalSnapTolerance);
-
-            return horizontalDistance <= HorizontalSnapDistance && verticallyRelated;
+            return distance <= SnapDistance && related;
         }
 
         private static bool IsNearRight(Rect movingRect, Rect targetRect)
         {
-            double horizontalDistance = Math.Abs(movingRect.Left - targetRect.Right);
-
-            bool verticallyRelated = RangesOverlapOrClose(
+            double distance = Math.Abs(movingRect.Left - targetRect.Right);
+            bool related = RangesOverlapOrClose(
                 movingRect.Top, movingRect.Bottom,
                 targetRect.Top, targetRect.Bottom,
                 OrthogonalSnapTolerance);
-
-            return horizontalDistance <= HorizontalSnapDistance && verticallyRelated;
+            return distance <= SnapDistance && related;
         }
 
         private static bool IsNearTop(Rect movingRect, Rect targetRect)
         {
-            double verticalDistance = Math.Abs(movingRect.Bottom - targetRect.Top);
-
-            bool horizontallyRelated = RangesOverlapOrClose(
+            double distance = Math.Abs(movingRect.Bottom - targetRect.Top);
+            bool related = RangesOverlapOrClose(
                 movingRect.Left, movingRect.Right,
                 targetRect.Left, targetRect.Right,
                 OrthogonalSnapTolerance);
-
-            return verticalDistance <= VerticalSnapDistance && horizontallyRelated;
+            return distance <= SnapDistance && related;
         }
 
         private static bool IsNearBottom(Rect movingRect, Rect targetRect)
         {
-            double verticalDistance = Math.Abs(movingRect.Top - targetRect.Bottom);
-
-            bool horizontallyRelated = RangesOverlapOrClose(
+            double distance = Math.Abs(movingRect.Top - targetRect.Bottom);
+            bool related = RangesOverlapOrClose(
                 movingRect.Left, movingRect.Right,
                 targetRect.Left, targetRect.Right,
                 OrthogonalSnapTolerance);
-
-            return verticalDistance <= VerticalSnapDistance && horizontallyRelated;
+            return distance <= SnapDistance && related;
         }
 
         private static bool RangesOverlapOrClose(
@@ -413,10 +414,16 @@ namespace KIT.GasStation.Behavior
             return false;
         }
 
-        private static bool IntersectsAny(
+        /// <summary>
+        /// Возвращает true, если <paramref name="newRect"/> пересекается с элементом,
+        /// которого <paramref name="baseRect"/> НЕ пересекал.
+        /// Позволяет перетаскивать карточки, которые уже перекрывались при запуске ПО.
+        /// </summary>
+        private static bool CreatesNewIntersection(
             ItemsControl itemsControl,
             FrameworkElement movingPresenter,
-            Rect movingRect)
+            Rect newRect,
+            Rect baseRect)
         {
             foreach (var item in itemsControl.Items)
             {
@@ -428,7 +435,10 @@ namespace KIT.GasStation.Behavior
                 if (otherRect == null)
                     continue;
 
-                if (movingRect.IntersectsWith(otherRect.Value))
+                bool alreadyIntersecting = baseRect.IntersectsWith(otherRect.Value);
+                bool wouldIntersect      = newRect.IntersectsWith(otherRect.Value);
+
+                if (!alreadyIntersecting && wouldIntersect)
                     return true;
             }
 

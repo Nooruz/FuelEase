@@ -149,9 +149,21 @@ namespace KIT.GasStation.ViewModels
 
         /// <summary>
         /// Обрабатывает обновление счётчика одного пистолета (событие GetCounterAsync).
+        /// Защищён тем же мьютексом, что и пакетный вариант — предотвращает дублирование записей
+        /// при частом опросе (каждые 300 мс от Lanfeng/Gilbarco).
         /// </summary>
-        private Task CounterUpdated(CounterData counterData)
-            => ProcessNozzleCounterAsync(counterData.GroupName, counterData.Counter);
+        private async Task CounterUpdated(CounterData counterData)
+        {
+            await _countersGate.WaitAsync();
+            try
+            {
+                await ProcessNozzleCounterAsync(counterData.GroupName, counterData.Counter);
+            }
+            finally
+            {
+                _countersGate.Release();
+            }
+        }
 
         /// <summary>
         /// Обрабатывает обновление счётчика одного пистолета (устаревший формат FuelingResponse).
@@ -186,7 +198,8 @@ namespace KIT.GasStation.ViewModels
             decimal expectedCounter = shiftCounter.BeginSaleCounter + totalSales + unregisteredSalesQty;
             decimal unregisteredQty = nozzle.LastCounter - (shiftCounter.BeginNozzleCounter + expectedCounter);
 
-            if (unregisteredQty == 0m) return;
+            // <= 0: нулевое расхождение — всё сошлось; отрицательное — ошибка данных/переполнение счётчика
+            if (unregisteredQty <= 0m) return;
 
             var unregisteredSale = new UnregisteredSale
             {
@@ -249,16 +262,25 @@ namespace KIT.GasStation.ViewModels
         }
 
         /// <summary>
-        /// При закрытии смены: фиксирует конечные показания счётчиков в записях ShiftCounter.
+        /// При закрытии смены: запрашивает актуальные счётчики всех пистолетов (для финальной
+        /// проверки незарегистрированных продаж), затем фиксирует конечные показания в ShiftCounter.
         /// </summary>
         private async void ShiftStore_OnClosed(Shift shift)
         {
             try
             {
-                var first = Nozzles.FirstOrDefault();
-                if (first is not null)
-                    await _hub.InvokeAsync("GetCountersAsync", first.Group);
+                // Запрашиваем счётчики для ВСЕХ пистолетов, чтобы обнаружить незарегистрированные
+                // продажи, совершённые в конце смены. Используем distinct-группы, как при открытии.
+                var groups = Nozzles
+                    .Select(n => n.Group)
+                    .Where(g => !string.IsNullOrWhiteSpace(g))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
 
+                foreach (var group in groups)
+                    await _hub.InvokeAsync("GetCountersAsync", group);
+
+                // Даём время на приход ответов и обработку ProcessNozzleCounterAsync
                 await Task.Delay(1500);
 
                 foreach (var nozzle in Nozzles)

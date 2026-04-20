@@ -29,6 +29,13 @@
 
   <ItemGroup>
     <PackageReference Include="WixSharp-wix4.WPF" Version="2.12.0" />
+    <!-- Для SQL-подключения в CustomActions.InitializeDatabase -->
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- DPAPI (ProtectedData) входит в состав .NET Framework. -->
+    <Reference Include="System.Security" />
   </ItemGroup>
 
 

@@ -20,12 +20,39 @@
     mc:Ignorable="d">
 
     <local:BaseView.Resources>
-        <Style x:Key="ResizeThumbStyle" TargetType="Thumb">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Opacity" Value="0.01" />
+
+        <!--  Левый / правый край: вертикальная линия-индикатор  -->
+        <Style x:Key="ResizeThumbStyleH" TargetType="Thumb">
             <Setter Property="Panel.ZIndex" Value="10" />
             <Setter Property="behaviors:ResizeOnCanvasBehavior.IsEnabled" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="PART_HitArea" Background="Transparent">
+                            <Rectangle
+                                x:Name="PART_Handle"
+                                Width="2"
+                                HorizontalAlignment="Center"
+                                Fill="#0078D7"
+                                Opacity="0"
+                                RadiusX="1"
+                                RadiusY="1" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="PART_Handle" Property="Opacity" Value="0.55" />
+                                <Setter TargetName="PART_HitArea" Property="Background" Value="#1A0078D7" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="PART_Handle" Property="Opacity" Value="1" />
+                                <Setter TargetName="PART_HitArea" Property="Background" Value="#330078D7" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
     </local:BaseView.Resources>
 
     <DockPanel>
@@ -50,6 +77,9 @@
                     <Setter Property="Canvas.Left" Value="{Binding X}" />
                     <Setter Property="Canvas.Top" Value="{Binding Y}" />
                     <Setter Property="Width" Value="{Binding Width}" />
+                    <!--  Height намеренно не привязан: высота карточки определяется автоматически
+                          содержимым Viewbox (масштабирование по ширине, высота следует пропорционально).
+                          Это корректно работает для любого количества пистолетов (1–8).  -->
                     <Setter Property="Padding" Value="0" />
                     <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                     <Setter Property="Template">
@@ -65,6 +95,7 @@
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type viewModels:FuelDispenserViewModel}">
                     <Grid behaviors:DragOnCanvasBehavior.IsEnabled="True" Background="Transparent">
+
                         <Border
                             x:Name="MainBorder"
                             Padding="6"
@@ -80,36 +111,61 @@
                                     ShadowDepth="2"
                                     Color="#000000" />
                             </Border.Effect>
-                            <customControls:FuelTransferColumnControl
+
+                            <!--
+                                Viewbox масштабирует содержимое по ШИРИНЕ (Stretch=Uniform,
+                                высота не фиксируется). Дизайнерская ширина — 340px (≈ d:DesignWidth=350
+                                минус Margin 3 с каждой стороны FuelTransferColumnControl).
+
+                                Логика масштабирования:
+                                  • Viewbox получает доступную ширину (Width карточки − 12px Border padding)
+                                  • scale = доступная_ширина / 340
+                                  • Высота контента = естественная_высота × scale
+                                  • Карточка расширяется вниз автоматически — без пустого пространства
+
+                                Это корректно для 1, 2, 4, 8 и любого числа пистолетов,
+                                т.к. Viewbox не ограничивает высоту.
+                            -->
+                            <Viewbox
                                 HorizontalAlignment="Stretch"
-                                SnapsToDevicePixels="True"
-                                UseLayoutRounding="True" />
+                                VerticalAlignment="Top"
+                                Stretch="Uniform">
+                                <customControls:FuelTransferColumnControl
+                                    Width="340"
+                                    SnapsToDevicePixels="True"
+                                    UseLayoutRounding="True" />
+                            </Viewbox>
                         </Border>
 
-                        <!--  Стороны (ресайз)  -->
+                        <!--
+                            Только левый и правый края — высота карточки вычисляется автоматически
+                            Viewbox'ом пропорционально ширине, поэтому Top/Bottom thumbs не нужны.
+                        -->
+
+                        <!--  Левый край (SizeWE)  -->
                         <Thumb
-                            Width="6"
-                            Height="Auto"
-                            Margin="0,10"
+                            Width="7"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Stretch"
+                            Margin="0,12,0,12"
                             behaviors:ResizeOnCanvasBehavior.Direction="Left"
                             Cursor="SizeWE"
-                            Style="{StaticResource ResizeThumbStyle}" />
+                            Style="{StaticResource ResizeThumbStyleH}" />
 
+                        <!--  Правый край (SizeWE)  -->
                         <Thumb
-                            Width="6"
-                            Height="Auto"
-                            Margin="0,10"
+                            Width="7"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Stretch"
+                            Margin="0,12,0,12"
                             behaviors:ResizeOnCanvasBehavior.Direction="Right"
                             Cursor="SizeWE"
-                            Style="{StaticResource ResizeThumbStyle}" />
+                            Style="{StaticResource ResizeThumbStyleH}" />
+
                     </Grid>
 
                     <DataTemplate.Triggers>
-                        <!--  Выделение: синяя рамка + усиленная тень  -->
+                        <!--  Выделение: синяя рамка  -->
                         <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                             <Setter TargetName="MainBorder" Property="BorderBrush" Value="{StaticResource ControllerSelectedColorBrush}" />
                             <Setter TargetName="MainBorder" Property="BorderThickness" Value="2" />

@@ -30,4 +30,25 @@ public sealed class LicensingOptions
 
     /// <summary>Список защищаемых сборок (для anti-tamper проверки).</summary>
     public List<string> ProtectedAssemblies { get; set; } = new();
+
+    /// <summary>
+    /// Ключ лицензии для автоматической активации при первом запуске.
+    /// После успешной активации сервис продолжит работу используя сохранённый файл лицензии.
+    /// Можно оставить пустым, если лицензия уже активирована.
+    /// </summary>
+    public string LicenseKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Отключить проверку целостности сборок (AntiTamper).
+    /// Устанавливать true ТОЛЬКО в appsettings.Development.json — в Production всегда false.
+    /// </summary>
+    public bool DisableAntiTamper { get; set; } = false;
+
+    /// <summary>
+    /// Полностью отключить систему лицензирования: пропустить активацию,
+    /// проверку подписи, онлайн-heartbeat и все остальные проверки.
+    /// Лицензия считается действительной автоматически.
+    /// ТОЛЬКО для разработки — в Production всегда false.
+    /// </summary>
+    public bool DisableLicensing { get; set; } = false;
 }

@@ -1,6 +1,6 @@
-using KIT.App.Infrastructure.Helpers;
-using KIT.App.Infrastructure.Services;
 using KIT.GasStation.HardwareConfigurations.Services;
+using KIT.GasStation.HardwareSettings.Helpers;
+using KIT.GasStation.HardwareSettings.Services;
 
 namespace KIT.GasStation.HardwareSettings.Models
 {

@@ -7,7 +7,7 @@ namespace KIT.GasStation.LicenseServer.Controllers;
 
 /// <summary>
 /// Административные эндпоинты для управления лицензиями.
-/// В продакшене должны быть защищены авторизацией!
+/// Защищены API-ключом через заголовок X-Admin-Key (см. Program.cs middleware).
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -132,7 +132,31 @@ public class AdminController : ControllerBase
         return Ok(events);
     }
 
-    /// <summary>Генерация RSA ключей (утилитарный эндпоинт для первоначальной настройки).</summary>
+    /// <summary>Деактивация конкретного устройства (например, при замене железа).</summary>
+    [HttpPost("licenses/{licenseId}/deactivate")]
+    public async Task<IActionResult> DeactivateDevice(string licenseId, [FromBody] DeactivateRequest request)
+    {
+        var activation = await _db.Activations
+            .FirstOrDefaultAsync(a => a.LicenseId == licenseId &&
+                (a.HardwareId == request.HardwareId || a.InstanceId == request.InstanceId));
+
+        if (activation == null)
+            return NotFound("Активация не найдена");
+
+        activation.IsActive = false;
+        await _db.SaveChangesAsync();
+
+        _logger.LogWarning("Устройство деактивировано вручную: LicenseId={LicenseId}, Machine={Machine}",
+            licenseId, activation.MachineName);
+
+        return Ok(new { Message = $"Устройство {activation.MachineName} деактивировано" });
+    }
+
+    /// <summary>
+    /// Генерация RSA ключей (утилитарный эндпоинт для первоначальной настройки).
+    /// ВНИМАНИЕ: после генерации нужно обновить PrivateKey в appsettings сервера
+    /// и PublicKey во всех клиентских appsettings, затем перевыпустить лицензии.
+    /// </summary>
     [HttpPost("generate-keys")]
     public IActionResult GenerateKeys()
     {
@@ -145,10 +169,21 @@ public class AdminController : ControllerBase
         {
             PrivateKey = privateKey,
             PublicKey = publicKey,
-            Instructions = "Сохраните PrivateKey в appsettings сервера (Licensing:PrivateKey). " +
-                           "PublicKey добавьте в appsettings клиентских приложений (Licensing:PublicKey)."
+            Instructions = new[]
+            {
+                "1. Сохраните PrivateKey в appsettings сервера (Licensing:PrivateKey)",
+                "2. PublicKey добавьте в appsettings клиентских приложений (Licensing:PublicKey)",
+                "3. Удалите локальные файлы лицензий на всех устройствах (license.dat, state.dat)",
+                "4. Повторно активируйте каждое устройство (через LicenseKey в appsettings клиента)"
+            }
         });
     }
+}
+
+public sealed class DeactivateRequest
+{
+    public string HardwareId { get; set; } = string.Empty;
+    public string InstanceId { get; set; } = string.Empty;
 }
 
 public sealed class RevokeRequest

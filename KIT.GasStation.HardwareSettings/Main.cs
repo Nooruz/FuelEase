@@ -26,6 +26,8 @@ namespace KIT.GasStation.HardwareSettings
         public TreeView TreeViewControl => treeView1;
         public TreeNode ControllersNode => nodeControllers;
         public TreeNode CashRegistersNode => nodeCashRegisters;
+        public ContextMenuStrip ControllerItemContextMenu => cmsControllerItem;
+        public ContextMenuStrip CashRegisterItemContextMenu => cmsCashRegisterItem;
 
         #endregion
 

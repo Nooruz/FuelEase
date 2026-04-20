@@ -40,6 +40,7 @@ var builder = WebApplication.CreateBuilder(args);
     // Модуль лицензирования и защиты ПО
     builder.Services.AddLicensing(builder.Configuration);
 
+    builder.Services.AddControllers();
     builder.Services.AddSignalR();
     builder.Services.AddSingleton<IGroupRegistry, GroupRegistry>();
     builder.Services.AddSingleton<IWorkerStateStore, WorkerStateStore>();
@@ -100,6 +101,7 @@ var builder = WebApplication.CreateBuilder(args);
     app.UseSerilogRequestLogging();
     app.UseCors(); // если включал CORS выше
     app.MapHealthChecks("/health");
+    app.MapControllers();
 
     app.MapHub<DeviceHubClient>("/deviceresponse");
 

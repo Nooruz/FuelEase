@@ -9,8 +9,8 @@ using Microsoft.Extensions.Options;
 namespace KIT.GasStation.Licensing.Core;
 
 /// <summary>
-/// Фоновый сервис: периодическая проверка лицензии, heartbeat, grace period.
-/// Интегрируется как IHostedService — при блокировке останавливает хост.
+/// Фоновый сервис: первичная активация → периодическая проверка → heartbeat → grace period.
+/// Интегрируется как IHostedService. При невосстановимой ошибке останавливает хост.
 /// </summary>
 public sealed class LicenseGuardService : BackgroundService
 {
@@ -25,6 +25,9 @@ public sealed class LicenseGuardService : BackgroundService
     private readonly IHostApplicationLifetime _lifetime;
     private readonly ILogger<LicenseGuardService> _logger;
 
+    // TaskCompletionSource — позволяет другим сервисам дождаться завершения начальной проверки
+    private readonly TaskCompletionSource _initialCheckCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     private LicensePayload? _currentPayload;
     private LicenseState _currentState = new();
     private volatile bool _isLicenseValid;
@@ -35,6 +38,12 @@ public sealed class LicenseGuardService : BackgroundService
     /// <summary>Текущий статус лицензии.</summary>
     public LicenseStatus CurrentStatus => _currentState.Status;
 
+    /// <summary>
+    /// Task, завершающийся после первичной проверки лицензии при старте.
+    /// Позволяет другим сервисам (Worker, SignalR и т.д.) дождаться результата.
+    /// </summary>
+    public Task InitialCheckCompleted => _initialCheckCompleted.Task;
+
     /// <summary>Оставшееся время Grace Period (null если не в grace).</summary>
     public TimeSpan? GraceRemaining
     {
@@ -42,7 +51,6 @@ public sealed class LicenseGuardService : BackgroundService
         {
             if (_currentState.Status != LicenseStatus.GracePeriod)
                 return null;
-
             var elapsed = DateTime.UtcNow - _currentState.GracePeriodStartUtc;
             var remaining = TimeSpan.FromDays(_options.GracePeriodDays) - elapsed;
             return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
@@ -77,52 +85,146 @@ public sealed class LicenseGuardService : BackgroundService
     {
         _logger.LogInformation("LicenseGuard запущен");
 
-        // Начальная проверка при старте
-        var startupResult = await PerformFullCheck(stoppingToken);
-        if (!startupResult)
+        try
         {
-            _logger.LogCritical("Лицензия невалидна при запуске — остановка сервиса");
-            _lifetime.StopApplication();
-            return;
-        }
-
-        // Проверка anti-tamper при старте
-        var tamperResult = _antiTamper.Verify();
-        if (!tamperResult.IsValid)
-        {
-            _securityLogger.LogTamperDetected(tamperResult.Message);
-            _logger.LogCritical("Обнаружена модификация сборок: {Message}", tamperResult.Message);
-            _lifetime.StopApplication();
-            return;
-        }
-
-        // Периодическая проверка
-        var interval = TimeSpan.FromMinutes(_options.OnlineCheckIntervalMinutes);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
+            // ── Режим разработки: полностью пропустить лицензирование ──────────────
+            if (_options.DisableLicensing)
             {
-                await Task.Delay(interval, stoppingToken);
-                await PerformFullCheck(stoppingToken);
+                _logger.LogWarning(
+                    "Лицензирование полностью отключено (DisableLicensing=true) — " +
+                    "ТОЛЬКО для разработки! В Production установите false.");
+                _isLicenseValid = true;
+                _initialCheckCompleted.TrySetResult();
+                return;
+            }
+            // ──────────────────────────────────────────────────────────────────────
 
-                if (!_isLicenseValid)
+            // Anti-tamper при старте (быстро, не требует сети)
+            // В режиме разработки можно отключить через Licensing:DisableAntiTamper = true
+            if (_options.DisableAntiTamper)
+            {
+                _logger.LogWarning("AntiTamper отключён (DisableAntiTamper=true) — только для разработки!");
+            }
+            else
+            {
+                var tamperResult = _antiTamper.Verify();
+                if (!tamperResult.IsValid)
                 {
-                    _logger.LogCritical("Лицензия стала невалидной — остановка через 60 секунд");
-                    await Task.Delay(TimeSpan.FromSeconds(60), stoppingToken);
+                    _securityLogger.LogTamperDetected(tamperResult.Message);
+                    _logger.LogCritical("Обнаружена модификация сборок: {Message}", tamperResult.Message);
+                    _initialCheckCompleted.TrySetResult();
                     _lifetime.StopApplication();
                     return;
                 }
             }
-            catch (OperationCanceledException)
+
+            // Шаг 1: попытка автоматической активации, если файла лицензии нет
+            await TryAutoActivateAsync(stoppingToken);
+
+            // Шаг 2: начальная полная проверка
+            var startupOk = await PerformFullCheck(stoppingToken);
+
+            // Сигнализируем другим сервисам что начальная проверка завершена
+            _initialCheckCompleted.TrySetResult();
+
+            if (!startupOk)
             {
-                break;
+                _logger.LogCritical(
+                    "Лицензия невалидна при запуске (статус: {Status}) — остановка через 5 секунд",
+                    _currentState.Status);
+                // Небольшая задержка, чтобы логи успели записаться
+                await Task.Delay(TimeSpan.FromSeconds(5), CancellationToken.None);
+                _lifetime.StopApplication();
+                return;
             }
-            catch (Exception ex)
+
+            _logger.LogInformation("Лицензия проверена. Статус: {Status}", _currentState.Status);
+
+            // Шаг 3: периодическая фоновая проверка
+            var interval = TimeSpan.FromMinutes(_options.OnlineCheckIntervalMinutes);
+
+            while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogError(ex, "Ошибка в цикле проверки лицензии");
+                await Task.Delay(interval, stoppingToken);
+
+                await PerformFullCheck(stoppingToken);
+
+                if (!_isLicenseValid)
+                {
+                    _logger.LogCritical(
+                        "Лицензия стала невалидной (статус: {Status}) — остановка через 60 секунд",
+                        _currentState.Status);
+                    await Task.Delay(TimeSpan.FromSeconds(60), CancellationToken.None);
+                    _lifetime.StopApplication();
+                    return;
+                }
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Нормальное завершение по stoppingToken
+            _initialCheckCompleted.TrySetResult();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Необработанная ошибка в LicenseGuardService");
+            _initialCheckCompleted.TrySetResult();
+        }
+    }
+
+    /// <summary>
+    /// Автоматическая активация при первом запуске.
+    /// Срабатывает, если в appsettings указан LicenseKey и локальный файл лицензии не найден.
+    /// </summary>
+    private async Task TryAutoActivateAsync(CancellationToken ct)
+    {
+        // Если файл лицензии уже есть — активация не нужна
+        if (_store.LoadLicense() != null)
+            return;
+
+        if (string.IsNullOrEmpty(_options.LicenseKey))
+        {
+            _logger.LogWarning(
+                "Файл лицензии не найден и LicenseKey не указан в конфигурации. " +
+                "Добавьте Licensing:LicenseKey в appsettings.json для автоматической активации.");
+            return;
+        }
+
+        _logger.LogInformation("Файл лицензии не найден — выполняю автоматическую активацию...");
+
+        var hwid = HardwareFingerprint.Generate();
+
+        // Загружаем или генерируем InstanceId
+        var state = _store.LoadState() ?? new LicenseState();
+        if (string.IsNullOrEmpty(state.InstanceId))
+        {
+            _cloneDetector.Initialize(state);
+            _store.SaveState(state);
+        }
+
+        var response = await _onlineClient.ActivateAsync(
+            _options.LicenseKey, hwid, state.InstanceId, ct);
+
+        if (response == null || !response.Success || response.LicenseFile == null)
+        {
+            _logger.LogError("Автоматическая активация не удалась: {Message}",
+                response?.Message ?? "Сервер лицензирования недоступен");
+            return;
+        }
+
+        // Сохраняем файл лицензии
+        _store.SaveLicense(response.LicenseFile);
+
+        // Обновляем состояние с lease-данными от сервера
+        state.LeaseToken = response.LeaseToken;
+        state.LeaseExpiryUtc = response.LeaseExpiryUtc;
+        state.LastOnlineCheckUtc = DateTime.UtcNow;
+        state.ConsecutiveFailedOnlineChecks = 0;
+        _timeGuard.UpdateTimestamps(state, response.ServerTimeUtc);
+        _store.SaveState(state);
+
+        _securityLogger.LogActivationSuccess(_options.LicenseKey);
+        _logger.LogInformation("Лицензия успешно активирована и сохранена.");
     }
 
     /// <summary>
@@ -130,7 +232,6 @@ public sealed class LicenseGuardService : BackgroundService
     /// </summary>
     private async Task<bool> PerformFullCheck(CancellationToken ct)
     {
-        // 1. Загрузка лицензии и состояния
         var licenseFile = _store.LoadLicense();
         if (licenseFile == null)
         {
@@ -142,7 +243,7 @@ public sealed class LicenseGuardService : BackgroundService
 
         _currentState = _store.LoadState() ?? new LicenseState();
 
-        // 2. Проверка подписи и срока
+        // 1. Проверка подписи и срока
         var hwid = HardwareFingerprint.Generate();
         var validationResult = _validator.Validate(licenseFile, hwid);
 
@@ -162,16 +263,15 @@ public sealed class LicenseGuardService : BackgroundService
             return false;
         }
 
-        // 3. Проверка времени
+        // 2. Проверка времени
         var timeCheck = _timeGuard.Check(_currentState);
         if (!timeCheck.IsValid)
         {
             _securityLogger.LogTimeRollback(timeCheck.Reason);
-            // Откат времени → переход в Grace (не мгновенная блокировка)
             EnterGracePeriodIfNeeded("Обнаружен откат времени");
         }
 
-        // 4. Проверка клонирования
+        // 3. Проверка клонирования
         var cloneCheck = _cloneDetector.Check(_currentPayload, _currentState);
         if (cloneCheck.NeedsInitialization)
         {
@@ -186,7 +286,7 @@ public sealed class LicenseGuardService : BackgroundService
             return false;
         }
 
-        // 5. Онлайн-проверка (heartbeat)
+        // 4. Онлайн heartbeat
         var heartbeat = await _onlineClient.HeartbeatAsync(
             _currentPayload.LicenseId,
             _currentState.InstanceId,
@@ -214,36 +314,30 @@ public sealed class LicenseGuardService : BackgroundService
                 return false;
             }
 
-            // Обновляем lease и серверное время
             _currentState.LeaseToken = heartbeat.NewLeaseToken;
             _currentState.LeaseExpiryUtc = heartbeat.LeaseExpiryUtc;
             _currentState.LastOnlineCheckUtc = DateTime.UtcNow;
             _currentState.ConsecutiveFailedOnlineChecks = 0;
-
             _timeGuard.UpdateTimestamps(_currentState, heartbeat.ServerTimeUtc);
 
-            // Выход из Grace Period при успешном онлайн-чеке
             if (_currentState.Status == LicenseStatus.GracePeriod && validationResult.IsValid)
             {
                 _currentState.Status = LicenseStatus.Active;
                 _currentState.GracePeriodStartUtc = DateTime.MinValue;
-                _logger.LogInformation("Выход из Grace Period — лицензия снова активна");
+                _logger.LogInformation("Выход из Grace Period — лицензия активна");
             }
         }
         else
         {
-            // Онлайн-проверка не удалась
             _currentState.ConsecutiveFailedOnlineChecks++;
             _securityLogger.LogOnlineCheckFailed(
                 $"Попытка #{_currentState.ConsecutiveFailedOnlineChecks}");
 
             if (_currentState.ConsecutiveFailedOnlineChecks >= _options.MaxFailedOnlineChecks)
-            {
                 EnterGracePeriodIfNeeded("Слишком много неудачных онлайн-проверок");
-            }
         }
 
-        // 6. Проверка Grace Period
+        // 5. Итог: grace или active
         if (_currentState.Status == LicenseStatus.GracePeriod)
         {
             var elapsed = DateTime.UtcNow - _currentState.GracePeriodStartUtc;
@@ -255,7 +349,6 @@ public sealed class LicenseGuardService : BackgroundService
                 _store.SaveState(_currentState);
                 return false;
             }
-
             _isLicenseValid = true;
         }
         else if (validationResult.IsValid)
@@ -265,15 +358,12 @@ public sealed class LicenseGuardService : BackgroundService
         }
         else
         {
-            // Лицензия истекла — входим в Grace
             EnterGracePeriodIfNeeded("Срок действия лицензии истёк");
             _isLicenseValid = _currentState.Status == LicenseStatus.GracePeriod;
         }
 
-        // Обновляем временные метки
         _timeGuard.UpdateTimestamps(_currentState);
         _store.SaveState(_currentState);
-
         return _isLicenseValid;
     }
 
@@ -281,7 +371,6 @@ public sealed class LicenseGuardService : BackgroundService
     {
         if (_currentState.Status == LicenseStatus.GracePeriod)
             return;
-
         _currentState.Status = LicenseStatus.GracePeriod;
         _currentState.GracePeriodStartUtc = DateTime.UtcNow;
         _securityLogger.LogGracePeriodStarted(_options.GracePeriodDays);

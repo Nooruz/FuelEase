@@ -72,6 +72,7 @@
     <PackageReference Include="DevExpress.Wpf.Accordion.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.Controls.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.Core.ru" Version="21.2.3" />
+    <PackageReference Include="DevExpress.Wpf.Charts.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.Dashboard.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.Docking.ru" Version="21.2.3" />
     <PackageReference Include="DevExpress.Wpf.Grid.Core.ru" Version="21.2.3" />

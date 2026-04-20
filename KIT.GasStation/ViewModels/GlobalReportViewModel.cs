@@ -59,6 +59,7 @@ namespace KIT.GasStation.ViewModels
         public GlobalReportViewModel(ILogger<GlobalReportViewModel> logger,
             INavigator navigator,
             ILogger<ShiftInfoViewModel> shiftInfoViewModelLogger,
+            ILogger<AnalyticsViewModel> analyticsViewModelLogger,
             IShiftService shiftService,
             IUserStore userStore,
             IFuelSaleService fuelSaleService,
@@ -77,6 +78,7 @@ namespace KIT.GasStation.ViewModels
             _navigator = navigator;
 
             ServiceContainer.RegisterService(shiftInfoViewModelLogger);
+            ServiceContainer.RegisterService(analyticsViewModelLogger);
             ServiceContainer.RegisterService(shiftService);
             ServiceContainer.RegisterService(userStore);
             ServiceContainer.RegisterService(fuelSaleService);
@@ -118,12 +120,14 @@ namespace KIT.GasStation.ViewModels
         public async Task StartAsync()
         {
             var shiftInfo = new ShiftInfoViewModel(nameof(ShiftInfoView), this, "Смена");
-
             await shiftInfo.StartAsync();
-
             shiftInfo.SetIcon("GridTasks");
-
             ModuleViewModels.Add(shiftInfo);
+
+            var analytics = new AnalyticsViewModel(nameof(AnalyticsView), this, "Аналитика");
+            await analytics.StartAsync();
+            analytics.SetIcon("Analytics");
+            ModuleViewModels.Add(analytics);
         }
 
         #endregion

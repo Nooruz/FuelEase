@@ -17,6 +17,8 @@ namespace KIT.GasStation.HardwareSettings.Views
         TreeView TreeViewControl { get; }
         TreeNode ControllersNode { get; }
         TreeNode CashRegistersNode { get; }
+        ContextMenuStrip ControllerItemContextMenu { get; }
+        ContextMenuStrip CashRegisterItemContextMenu { get; }
 
         void ShowContent(Control content);
         void AttachPresenter(MainPresenter presenter);

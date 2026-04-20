@@ -56,42 +56,23 @@ namespace KIT.GasStation.Emulator
 
             try
             {
+                // Запускаем polling-loop (OnTickAsync) через OnOpenAsync → StartPollingAsync
                 await OnOpenAsync(token);
                 opened = true;
 
-                while (!token.IsCancellationRequested)
-                {
-                    try
-                    {
-                        // Краткая задержка между тиками, если OnTickAsync завершается быстро
-                        await Task.Delay(TimeSpan.FromMilliseconds(100), token);
-                    }
-                    catch (OperationCanceledException) when (token.IsCancellationRequested)
-                    {
-                        // Ожидаем штатное завершение по токену отмены
-                        break;
-                    }
-                    catch (Exception)
-                    {
-                        // Логируем ошибку, но продолжаем цикл
-                        // Реализуйте ILogger в базовом классе или передайте его через конструктор
-                        //_logger.Error(ex, "Ошибка в OnTickAsync");
-                        await Task.Delay(TimeSpan.FromSeconds(1), token);
-                    }
-                }
-
+                // Ждём отмены токена — вся работа идёт в _pollingTask (OnTickAsync)
                 await Task.Delay(Timeout.Infinite, token);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
-                _logger.LogInformation("Цикл ТРК отменен по токену");
+                _logger.LogInformation("Цикл ТРК отменён по токену");
             }
             finally
             {
                 if (opened)
                 {
                     await OnCloseAsync();
-                    _logger.LogInformation("Цикл ТРК завершен");
+                    _logger.LogInformation("Цикл ТРК завершён");
                 }
             }
         }
@@ -337,6 +318,9 @@ namespace KIT.GasStation.Emulator
 
         #region Private Voids
 
+        // Интервал публикации статуса Ready (не требует частого обновления)
+        private static readonly TimeSpan StatusPublishInterval = TimeSpan.FromMilliseconds(500);
+
         private async Task OnTickAsync()
         {
             _logger.LogInformation("ТРК Эмулятор запущена");
@@ -354,6 +338,9 @@ namespace KIT.GasStation.Emulator
                     _response.Status = NozzleStatus.Ready;
 
                     await _hub.InvokeAsync("PublishStatus", _response, cancellationToken: _token);
+
+                    // Пауза между публикациями — статус Ready не требует отправки 100+ раз/сек
+                    await Task.Delay(StatusPublishInterval, _token);
                 }
                 catch (OperationCanceledException ex) when (ex.CancellationToken == _token)
                 {

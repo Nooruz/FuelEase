@@ -39,14 +39,12 @@ public static class LicensingServiceExtensions
             client.DefaultRequestHeaders.Add("User-Agent", "KIT-AZS-License-Client/1.0");
         });
 
-        // Фоновый сервис проверки
-        services.AddHostedService<LicenseGuardService>();
+        // LicenseGuardService регистрируем как Singleton явно —
+        // это позволяет инжектировать его напрямую (например, в Worker для await InitialCheckCompleted)
+        services.AddSingleton<LicenseGuardService>();
 
-        // Регистрируем LicenseGuardService как Singleton для доступа к IsLicenseValid
-        services.AddSingleton(provider =>
-            provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>()
-                .OfType<LicenseGuardService>()
-                .First());
+        // Также регистрируем как IHostedService, чтобы .NET запустил его автоматически
+        services.AddHostedService(sp => sp.GetRequiredService<LicenseGuardService>());
 
         return services;
     }

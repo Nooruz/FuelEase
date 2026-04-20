@@ -1,4 +1,5 @@
-﻿using KIT.GasStation.ViewModels;
+using KIT.GasStation.ViewModels;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -10,10 +11,14 @@ namespace KIT.GasStation.Behavior
     {
         Left,
         Right,
+        Top,
+        Bottom
     }
 
     public static class ResizeOnCanvasBehavior
     {
+        #region Attached Properties
+
         public static readonly DependencyProperty IsEnabledProperty =
             DependencyProperty.RegisterAttached(
                 "IsEnabled",
@@ -40,25 +45,71 @@ namespace KIT.GasStation.Behavior
         public static void SetDirection(DependencyObject obj, ResizeDirection value) =>
             obj.SetValue(DirectionProperty, value);
 
+        // Прямоугольник карточки в момент начала ресайза.
+        // Используется в IntersectsNew чтобы разрешить движение,
+        // если элементы уже перекрывались до начала операции.
+        private static readonly DependencyProperty DragInitialRectProperty =
+            DependencyProperty.RegisterAttached(
+                "DragInitialRect",
+                typeof(Rect),
+                typeof(ResizeOnCanvasBehavior),
+                new PropertyMetadata(Rect.Empty));
+
+        #endregion
+
+        #region Subscription
+
         private static void OnIsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not Thumb thumb)
                 return;
 
             if ((bool)e.NewValue)
-                thumb.DragDelta += Thumb_DragDelta;
+            {
+                thumb.DragStarted += Thumb_DragStarted;
+                thumb.DragDelta   += Thumb_DragDelta;
+            }
             else
-                thumb.DragDelta -= Thumb_DragDelta;
+            {
+                thumb.DragStarted -= Thumb_DragStarted;
+                thumb.DragDelta   -= Thumb_DragDelta;
+            }
         }
+
+        #endregion
+
+        #region DragStarted — фиксируем начальный прямоугольник
+
+        private static void Thumb_DragStarted(object sender, DragStartedEventArgs e)
+        {
+            if (sender is not Thumb thumb)
+                return;
+
+            var presenter = FindPresenter(thumb);
+            if (presenter == null)
+                return;
+
+            double x = GetLeft(presenter);
+            double y = GetTop(presenter);
+            double w = presenter.ActualWidth;
+            double h = presenter.ActualHeight;
+
+            if (w > 0 && h > 0)
+                thumb.SetValue(DragInitialRectProperty, new Rect(x, y, w, h));
+        }
+
+        #endregion
+
+        #region DragDelta — логика ресайза
 
         private static void Thumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
             if (sender is not Thumb thumb)
                 return;
 
-            var presenter = (FrameworkElement)FindAncestor<ListBoxItem>(thumb) ?? FindAncestor<ContentPresenter>(thumb);
+            var presenter    = FindPresenter(thumb);
             var itemsControl = FindAncestor<ItemsControl>(thumb);
-            var canvas = FindAncestor<Canvas>(thumb);
+            var canvas       = FindAncestor<Canvas>(thumb);
 
             if (presenter == null || itemsControl == null || canvas == null)
                 return;
@@ -66,103 +117,146 @@ namespace KIT.GasStation.Behavior
             if (presenter.DataContext is not FuelDispenserViewModel vm)
                 return;
 
-            double x = Canvas.GetLeft(presenter);
-            double y = Canvas.GetTop(presenter);
-
-            if (double.IsNaN(x)) x = 0;
-            if (double.IsNaN(y)) y = 0;
-
-            double width = presenter.ActualWidth;
-            double height = presenter.ActualHeight;
+            // Используем vm-значения (а не presenter.Actual*), потому что Actual*
+            // обновляется только после layout-прохода — позже, чем следующий DragDelta.
+            // Если читать устаревший ActualWidth, «правый край» при Left-resize уплывает
+            // на несколько пикселей с каждым событием.
+            double x      = vm.X;
+            double y      = vm.Y;
+            double width  = vm.Width;
+            double height = vm.Height > 0 ? vm.Height : (presenter.ActualHeight > 0 ? presenter.ActualHeight : 1);
 
             if (width <= 0)
-                width = vm.Width;
-
-            if (height <= 0)
                 return;
 
-            double minWidth = vm.MinWidth;
-            double newX = x;
-            double newWidth = width;
+            var currentRect = new Rect(x, y, width, height);
+            var initialRect = (Rect)thumb.GetValue(DragInitialRectProperty);
+
+            double minWidth  = vm.MinWidth;
+            double minHeight = vm.MinHeight;
+
+            double newX      = x;
+            double newY      = y;
+            double newWidth  = width;
+            double newHeight = height;
 
             switch (GetDirection(thumb))
             {
                 case ResizeDirection.Right:
-                    {
-                        newWidth = width + e.HorizontalChange;
-
-                        if (newWidth < minWidth)
-                            newWidth = minWidth;
-
-                        if (newX + newWidth > canvas.ActualWidth)
-                            newWidth = canvas.ActualWidth - newX;
-
-                        break;
-                    }
+                {
+                    newWidth = Math.Max(minWidth,
+                                   Math.Min(width + e.HorizontalChange,
+                                            canvas.ActualWidth - x));
+                    break;
+                }
 
                 case ResizeDirection.Left:
-                    {
-                        double right = x + width;
+                {
+                    double right = x + width;
+                    newWidth = Math.Max(minWidth, width - e.HorizontalChange);
+                    newX     = right - newWidth;
+                    if (newX < 0) { newX = 0; newWidth = right; }
+                    break;
+                }
 
-                        newWidth = width - e.HorizontalChange;
+                case ResizeDirection.Bottom:
+                {
+                    newHeight = Math.Max(minHeight,
+                                    Math.Min(height + e.VerticalChange,
+                                             canvas.ActualHeight - y));
+                    break;
+                }
 
-                        if (newWidth < minWidth)
-                            newWidth = minWidth;
-
-                        newX = right - newWidth;
-
-                        if (newX < 0)
-                        {
-                            newX = 0;
-                            newWidth = right;
-                        }
-
-                        break;
-                    }
+                case ResizeDirection.Top:
+                {
+                    double bottom = y + height;
+                    newHeight = Math.Max(minHeight, height - e.VerticalChange);
+                    newY      = bottom - newHeight;
+                    if (newY < 0) { newY = 0; newHeight = bottom; }
+                    break;
+                }
 
                 default:
                     return;
             }
 
-            if (newWidth < minWidth)
+            var newRect = new Rect(newX, newY, newWidth, newHeight);
+
+            // Разрешаем движение, только если оно не создаёт НОВЫХ пересечений
+            // (т.е. с элементами, которые уже не пересекались в начале операции).
+            Rect checkBase = initialRect.IsEmpty ? currentRect : initialRect;
+            if (CreatesNewIntersection(itemsControl, presenter, newRect, checkBase))
                 return;
 
-            var newRect = new Rect(newX, y, newWidth, height);
-
-            if (IntersectsAny(itemsControl, presenter, newRect))
-                return;
-
-            vm.X = newX;
-            vm.Width = newWidth;
+            vm.X      = newX;
+            vm.Y      = newY;
+            vm.Width  = newWidth;
+            vm.Height = newHeight;
         }
 
-        private static bool IntersectsAny(ItemsControl itemsControl, FrameworkElement currentPresenter, Rect rect)
+        #endregion
+
+        #region Intersection helpers
+
+        /// <summary>
+        /// Возвращает true, если <paramref name="newRect"/> пересекается с элементом,
+        /// который <paramref name="baseRect"/> НЕ пересекал.
+        /// Это позволяет двигать карточку, даже если она уже перекрывается с другой
+        /// (например, после загрузки из сохранённых позиций).
+        /// </summary>
+        private static bool CreatesNewIntersection(
+            ItemsControl itemsControl,
+            FrameworkElement movingPresenter,
+            Rect newRect,
+            Rect baseRect)
         {
             foreach (var item in itemsControl.Items)
             {
                 var other = itemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement;
-                if (other == null || other == currentPresenter)
+                if (other == null || other == movingPresenter)
                     continue;
 
-                double otherX = Canvas.GetLeft(other);
-                double otherY = Canvas.GetTop(other);
+                double ox = GetLeft(other);
+                double oy = GetTop(other);
+                double ow = other.ActualWidth;
+                double oh = other.ActualHeight;
 
-                if (double.IsNaN(otherX)) otherX = 0;
-                if (double.IsNaN(otherY)) otherY = 0;
-
-                double otherWidth = other.ActualWidth;
-                double otherHeight = other.ActualHeight;
-
-                if (otherWidth <= 0 || otherHeight <= 0)
+                if (ow <= 0 || oh <= 0)
                     continue;
 
-                var otherRect = new Rect(otherX, otherY, otherWidth, otherHeight);
+                var otherRect = new Rect(ox, oy, ow, oh);
 
-                if (rect.IntersectsWith(otherRect))
+                bool alreadyIntersecting = baseRect.IsEmpty
+                    ? false
+                    : baseRect.IntersectsWith(otherRect);
+
+                bool wouldIntersect = newRect.IntersectsWith(otherRect);
+
+                if (!alreadyIntersecting && wouldIntersect)
                     return true;
             }
 
             return false;
+        }
+
+        #endregion
+
+        #region Utility
+
+        private static FrameworkElement? FindPresenter(Thumb thumb) =>
+            (FrameworkElement?)FindAncestor<ListBoxItem>(thumb)
+            ?? FindAncestor<ContentPresenter>(thumb);
+
+        private static double GetLeft(FrameworkElement el)
+        {
+            var v = Canvas.GetLeft(el);
+            return double.IsNaN(v) ? 0 : v;
+        }
+
+        private static double GetTop(FrameworkElement el)
+        {
+            var v = Canvas.GetTop(el);
+            return double.IsNaN(v) ? 0 : v;
         }
 
         private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
@@ -177,5 +271,7 @@ namespace KIT.GasStation.Behavior
 
             return null;
         }
+
+        #endregion
     }
 }
