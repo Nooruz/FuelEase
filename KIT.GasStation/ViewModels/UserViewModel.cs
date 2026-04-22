@@ -106,7 +106,9 @@ namespace KIT.GasStation.ViewModels
                             Id = SelectedUser.Id,
                             FullName = SelectedUser.FullName,
                             UserRoleId = SelectedUser.UserRoleId,
-                            Password = SelectedUser.Password,
+                            // Password не копируем — редактирование пароля через отдельное поле формы
+                            PasswordHash = SelectedUser.PasswordHash,
+                            PasswordSalt = SelectedUser.PasswordSalt,
                             IsDeleted = SelectedUser.IsDeleted
                         }
                     };
@@ -151,14 +153,9 @@ namespace KIT.GasStation.ViewModels
 
         private void UserService_OnUpdated(User updatedUser)
         {
-            User? user = Users.FirstOrDefault(u => u.Id == updatedUser.Id);
-            if (user != null)
-            {
-                user.FullName = updatedUser.FullName;
-                user.UserRoleId = updatedUser.UserRoleId;
-                user.Password = updatedUser.Password;
-                user.UserRoleId = updatedUser.UserRoleId;
-            }
+            int index = Users.ToList().FindIndex(u => u.Id == updatedUser.Id);
+            if (index >= 0)
+                Users[index] = updatedUser;
         }
 
         private void UserService_OnCreated(User user)

@@ -109,8 +109,9 @@ namespace KIT.GasStation.ViewModels.Discounts
 
         private void DiscountService_OnUpdated(Discount updatedDiscount)
         {
-            Discount? discount = Discounts.FirstOrDefault(d => d.Id == updatedDiscount.Id);
-            discount?.Update(updatedDiscount);
+            int index = Discounts.ToList().FindIndex(d => d.Id == updatedDiscount.Id);
+            if (index >= 0)
+                Discounts[index] = updatedDiscount;
         }
 
         private void DiscountService_OnCreated(Discount createdDiscount)

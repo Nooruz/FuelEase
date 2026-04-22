@@ -1,75 +1,34 @@
-﻿namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Приём топлива (поставка)
+/// </summary>
+public class FuelIntake : DomainObject
 {
-    /// <summary>
-    /// Прием топлива
-    /// </summary>
-    public class FuelIntake : DomainObject
-    {
-        #region Private Members
+    /// <summary>Дата и время приёма</summary>
+    public DateTime CreateDate { get; set; }
 
-        private DateTime _createDate;
-        private string? _number;
-        private int _tankId;
-        private int _shiftId;
-        private decimal _quantity;
+    /// <summary>Номер накладной / документа</summary>
+    public string? Number { get; set; }
 
-        #endregion
+    /// <summary>Id резервуара</summary>
+    public int TankId { get; set; }
 
-        #region Public Properties
+    /// <summary>Id смены</summary>
+    public int ShiftId { get; set; }
 
-        public DateTime CreateDate
-        {
-            get => _createDate;
-            set
-            {
-                _createDate = value;
-                OnPropertyChanged(nameof(CreateDate));
-            }
-        }
-        public string? Number
-        {
-            get => _number;
-            set
-            {
-                _number = value;
-                OnPropertyChanged(nameof(Number));
-            }
-        }
-        public int TankId
-        {
-            get => _tankId;
-            set
-            {
-                _tankId = value;
-                OnPropertyChanged(nameof(TankId));
-            }
-        }
-        public int ShiftId
-        {
-            get => _shiftId;
-            set
-            {
-                _shiftId = value;
-                OnPropertyChanged(nameof(ShiftId));
-            }
-        }
-        public decimal Quantity
-        {
-            get => _quantity;
-            set
-            {
-                _quantity = value;
-                OnPropertyChanged(nameof(Quantity));
-            }
-        }
-        public Tank Tank { get; set; }
-        public Shift Shift { get; set; }
+    /// <summary>Принятое количество (литры)</summary>
+    public decimal Quantity { get; set; }
 
-        public override void Update(DomainObject updatedItem)
-        {
+    /// <summary>Поставщик / перевозчик (необязательно)</summary>
+    public string? SupplierName { get; set; }
 
-        }
+    /// <summary>Номер ТЦ (топливозаправщика / трактора-цистерны)</summary>
+    public string? TruckNumber { get; set; }
 
-        #endregion
-    }
+    /// <summary>Закупочная цена за литр</summary>
+    public decimal PricePerLitre { get; set; }
+
+    public Tank? Tank { get; set; }
+    public Shift? Shift { get; set; }
 }

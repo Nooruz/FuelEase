@@ -395,7 +395,7 @@ namespace KIT.GasStation.ViewModels.GlobalReports
                 if (SelectedShift != null)
                 {
                     Shift shift = await _shiftService.GetAsync(SelectedShift.Id);
-                    SelectedShift.SetUpdates(shift);
+                    SelectedShift.SyncFrom(shift);
                 }
             }
             catch (Exception e)
@@ -422,7 +422,7 @@ namespace KIT.GasStation.ViewModels.GlobalReports
             try
             {
                 Shift? shift = Shifts.FirstOrDefault(s => s.Equals(updatedShift));
-                shift?.SetUpdates(updatedShift);
+                shift?.SyncFrom(updatedShift);
             }
             catch (Exception e)
             {
@@ -821,3 +821,4 @@ namespace KIT.GasStation.ViewModels.GlobalReports
     }
 
 }
+                                 

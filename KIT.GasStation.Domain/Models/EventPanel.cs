@@ -1,133 +1,54 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Запись в панели событий смены
+/// </summary>
+public class EventPanel : DomainObject
 {
-    /// <summary>
-    /// Панель события
-    /// </summary>
-    public class EventPanel : DomainObject
-    {
-        #region Private Members
+    /// <summary>Текст сообщения</summary>
+    public string Message { get; set; } = string.Empty;
 
-        private string _message;
-        private DateTime _createdDate;
-        private EventPanelType _type;
-        private EventEntity _eventEntity;
-        private int _shiftId;
-        private int _entityId;
+    /// <summary>Дата и время события</summary>
+    public DateTime CreatedDate { get; set; }
 
-        #endregion
+    /// <summary>Id смены</summary>
+    public int ShiftId { get; set; }
 
-        #region Public Properties
+    /// <summary>Тип события</summary>
+    public EventPanelType Type { get; set; }
 
-        /// <summary>
-        /// Информация
-        /// </summary>
-        public string Message
-        {
-            get => _message;
-            set
-            {
-                _message = value;
-                OnPropertyChanged(nameof(Message));
-            }
-        }
-        
-        /// <summary>
-        /// Дата создания
-        /// </summary>
-        public DateTime CreatedDate
-        {
-            get => _createdDate;
-            set
-            {
-                _createdDate = value;
-                OnPropertyChanged(nameof(CreatedDate));
-            }
-        }
+    /// <summary>Сущность, к которой относится событие</summary>
+    public EventEntity EventEntity { get; set; }
 
-        public int ShiftId
-        {
-            get => _shiftId;
-            set
-            {
-                _shiftId = value;
-                OnPropertyChanged(nameof(ShiftId));
-            }
-        }
+    /// <summary>Id связанной сущности</summary>
+    public int EntityId { get; set; }
 
-        /// <summary>
-        /// Тип информации
-        /// </summary>
-        public EventPanelType Type
-        {
-            get => _type;
-            set
-            {
-                _type = value;
-                OnPropertyChanged(nameof(Type));
-            }
-        }
+    public Shift? Shift { get; set; }
+}
 
-        public EventEntity EventEntity
-        {
-            get => _eventEntity;
-            set
-            {
-                _eventEntity = value;
-                OnPropertyChanged(nameof(EventEntity));
-            }
-        }
+public enum EventPanelType
+{
+    None,
 
-        public int EntityId
-        {
-            get => _entityId;
-            set
-            {
-                _entityId = value;
-                OnPropertyChanged(nameof(EntityId));
-            }
-        }
+    [Display(Name = "Информация")]
+    Information,
 
-        public Shift Shift { get; set; }
+    [Display(Name = "Ошибка")]
+    Error
+}
 
-        public override void Update(DomainObject updatedItem)
-        {
-
-        }
-
-        #endregion
-    }
-
-    public enum EventPanelType
-    {
-        None,
-
-        [Display(Name = "Информация")]
-        Information,
-
-        [Display(Name = "Ошибка")]
-        Error
-    }
-
-    public enum EventEntity
-    {
-        Shift,
-
-        CashRegister,
-
-        FuelSale,
-
-        Fuel,
-
-        Nozzle,
-
-        Tank,
-
-        UnregisteredSale,
-
-        User,
-
-        Discount
-    }
+public enum EventEntity
+{
+    Shift,
+    CashRegister,
+    FuelSale,
+    Fuel,
+    Nozzle,
+    Tank,
+    UnregisteredSale,
+    User,
+    Discount,
+    CashOperation
 }

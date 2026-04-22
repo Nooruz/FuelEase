@@ -1,93 +1,24 @@
-﻿namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Применённая скидка к продаже
+/// </summary>
+public class DiscountSale : DomainObject
 {
-    public class DiscountSale : DomainObject
-    {
-        #region Private Members
+    public int FuelSaleId { get; set; }
 
-        private int _fuelSaleId;
-        private int _discountId;
-        private decimal _discountPrice;
-        private decimal _discountSum;
-        private decimal _discountQuantity;
+    /// <summary>Id скидки</summary>
+    public int DiscountId { get; set; }
 
-        #endregion
+    /// <summary>Цена после скидки</summary>
+    public decimal DiscountPrice { get; set; }
 
-        #region Public Properties
+    /// <summary>Сэкономленная сумма</summary>
+    public decimal DiscountSum { get; set; }
 
-        public int FuelSaleId
-        {
-            get => _fuelSaleId;
-            set
-            {
-                _fuelSaleId = value;
-                OnPropertyChanged(nameof(FuelSaleId));
-            }
-        }
+    /// <summary>Количество топлива со скидкой</summary>
+    public decimal DiscountQuantity { get; set; }
 
-        /// <summary>
-        /// Id скидки
-        /// </summary>
-        public int DiscountId
-        {
-            get => _discountId;
-            set
-            {
-                _discountId = value;
-                OnPropertyChanged(nameof(DiscountId));
-            }
-        }
-
-        /// <summary>
-        /// Скидочная цена
-        /// </summary>
-        public decimal DiscountPrice
-        {
-            get => _discountPrice;
-            set
-            {
-                _discountPrice = value;
-                OnPropertyChanged(nameof(DiscountPrice));
-            }
-        }
-
-        /// <summary>
-        /// Сумма скидки
-        /// </summary>
-        public decimal DiscountSum
-        {
-            get => _discountSum;
-            set
-            {
-                _discountSum = value;
-                OnPropertyChanged(nameof(DiscountSum));
-            }
-        }
-
-        /// <summary>
-        /// Количество скидки
-        /// </summary>
-        public decimal DiscountQuantity
-        {
-            get => _discountQuantity;
-            set
-            {
-                _discountQuantity = value;
-                OnPropertyChanged(nameof(DiscountQuantity));
-            }
-        }
-
-        public FuelSale FuelSale { get; set; }
-
-        /// <summary>
-        /// Скидка
-        /// </summary>
-        public Discount Discount { get; set; }
-
-        #endregion
-
-        public override void Update(DomainObject updatedItem)
-        {
-            
-        }
-    }
+    public FuelSale? FuelSale { get; set; }
+    public Discount? Discount { get; set; }
 }

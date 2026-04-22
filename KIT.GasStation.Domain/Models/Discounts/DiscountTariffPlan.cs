@@ -1,90 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace KIT.GasStation.Domain.Models.Discounts;
 
-namespace KIT.GasStation.Domain.Models.Discounts
+/// <summary>
+/// Тарифный план (диапазон сумм → процент скидки)
+/// </summary>
+public class DiscountTariffPlan : DomainObject
 {
-    /// <summary>
-    /// Тарифный план для скидки
-    /// </summary>
-    public class DiscountTariffPlan : DomainObject
-    {
-        #region Private Members
+    /// <summary>Id скидки</summary>
+    public int DiscountId { get; set; }
 
-        private int _discountId;
-        private decimal _minimumValue;
-        private decimal _maximumValue;
-        private decimal _discountValue;
+    /// <summary>Минимальная сумма покупки для применения скидки</summary>
+    public decimal MinimumValue { get; set; }
 
-        #endregion
+    /// <summary>Максимальная сумма покупки (0 = без ограничения)</summary>
+    public decimal MaximumValue { get; set; }
 
-        #region Public Properties
+    /// <summary>Размер скидки в процентах</summary>
+    public decimal DiscountValue { get; set; }
 
-        /// <summary>
-        /// Минимальное значение
-        /// </summary>
-        public decimal MinimumValue
-        {
-            get => _minimumValue;
-            set
-            {
-                _minimumValue = value;
-                OnPropertyChanged(nameof(MinimumValue));
-            }
-        }
-
-        /// <summary>
-        /// Максимальное значение
-        /// </summary>
-        public decimal MaximumValue
-        {
-            get => _maximumValue;
-            set
-            {
-                _maximumValue = value;
-                OnPropertyChanged(nameof(MaximumValue));
-            }
-        }
-
-        /// <summary>
-        /// Скидка
-        /// </summary>
-        public decimal DiscountValue
-        {
-            get => _discountValue;
-            set
-            {
-                _discountValue = value;
-                OnPropertyChanged(nameof(DiscountValue));
-            }
-        }
-
-        /// <summary>
-        /// Id скидки
-        /// </summary>
-        public int DiscountId
-        {
-            get => _discountId;
-            set
-            {
-                _discountId = value;
-                OnPropertyChanged(nameof(DiscountId));
-            }
-        }
-
-        public Discount Discount { get; set; }
-
-        #endregion
-
-        #region Public Voids
-
-        public override void Update(DomainObject updatedItem)
-        {
-
-        }
-
-        #endregion
-    }
+    public Discount? Discount { get; set; }
 }

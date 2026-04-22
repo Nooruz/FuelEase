@@ -98,12 +98,14 @@ namespace KIT.GasStation.ViewModels
                 {
                     //await _navigator.PreloadViewModelsAsync(new[] { ViewType.Main, ViewType.EventPanelView });
 
+#pragma warning disable CS0618 // Password используется как поле ввода пользователя до рефакторинга UI
                     await _authenticator.Login(SelectedUser.FullName, SelectedUser.Password);
 
                     if (RememberMe)
                     {
                         Properties.Settings.Default.DefaultUserName = SelectedUser.FullName;
                         Properties.Settings.Default.DefaultUserPassword = SelectedUser.Password;
+#pragma warning restore CS0618
                         Properties.Settings.Default.Save();
                     }
                 }
@@ -134,8 +136,9 @@ namespace KIT.GasStation.ViewModels
             {
                 try
                 {
-                    User? user = Users.FirstOrDefault(u => u.Id == updatedUser.Id);
-                    user?.Update(updatedUser);
+                    int index = Users.ToList().FindIndex(u => u.Id == updatedUser.Id);
+                    if (index >= 0)
+                        Users[index] = updatedUser;
                 }
                 catch (Exception e)
                 {

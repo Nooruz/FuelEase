@@ -1,103 +1,25 @@
-﻿namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Счётчики ТРК по смене
+/// </summary>
+public class ShiftCounter : DomainObject
 {
-    /// <summary>
-    /// Счетчики ТРК по смене
-    /// </summary>
-    public class ShiftCounter : DomainObject
-    {
-        #region Private Members
+    public int ShiftId { get; set; }
+    public int NozzleId { get; set; }
 
-        private int _shiftId;
-        private int _nozzleId;
-        private decimal _beginNozzleCounter;
-        private decimal _endNozzleCountCounter;
-        private decimal _beginSaleCounter;
-        private decimal _endSaleCounter;
+    /// <summary>Показание счётчика ТРК на начало смены</summary>
+    public decimal BeginNozzleCounter { get; set; }
 
-        #endregion
+    /// <summary>Показание счётчика ТРК на конец смены</summary>
+    public decimal EndNozzleCounter { get; set; }
 
-        #region Public Properties
+    /// <summary>Показание счётчика СУ на начало смены</summary>
+    public decimal BeginSaleCounter { get; set; }
 
-        public int ShiftId
-        {
-            get => _shiftId;
-            set
-            {
-                _shiftId = value;
-                OnPropertyChanged(nameof(ShiftId));
-            }
-        }
+    /// <summary>Показание счётчика СУ на конец смены</summary>
+    public decimal EndSaleCounter { get; set; }
 
-        public int NozzleId
-        {
-            get => _nozzleId;
-            set
-            {
-                _nozzleId = value;
-                OnPropertyChanged(nameof(NozzleId));
-            }
-        }
-
-        /// <summary>
-        /// Счетчик на начало ТРК
-        /// </summary>
-        public decimal BeginNozzleCounter
-        {
-            get => _beginNozzleCounter;
-            set
-            {
-                _beginNozzleCounter = value;
-                OnPropertyChanged(nameof(BeginNozzleCounter));
-            }
-        }
-
-        /// <summary>
-        /// Счетчик на конец ТРК
-        /// </summary>
-        public decimal EndNozzleCounter
-        {
-            get => _endNozzleCountCounter;
-            set
-            {
-                _endNozzleCountCounter = value;
-                OnPropertyChanged(nameof(EndNozzleCounter));
-            }
-        }
-
-        /// <summary>
-        /// Счетчик на начало СУ
-        /// </summary>
-        public decimal BeginSaleCounter
-        {
-            get => _beginSaleCounter;
-            set
-            {
-                _beginSaleCounter = value;
-                OnPropertyChanged(nameof(BeginSaleCounter));
-            }
-        }
-
-        /// <summary>
-        /// Счетчик на конец СУ
-        /// </summary>
-        public decimal EndSaleCounter
-        {
-            get => _endSaleCounter;
-            set
-            {
-                _endSaleCounter = value;
-                OnPropertyChanged(nameof(EndSaleCounter));
-            }
-        }
-
-        public Shift Shift { get; set; }
-        public Nozzle Nozzle { get; set; }
-
-        #endregion
-
-        public override void Update(DomainObject updatedItem)
-        {
-            throw new NotImplementedException();
-        }
-    }
+    public Shift? Shift { get; set; }
+    public Nozzle? Nozzle { get; set; }
 }

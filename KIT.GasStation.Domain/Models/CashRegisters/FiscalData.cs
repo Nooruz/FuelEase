@@ -1,105 +1,28 @@
-﻿namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Фискальные данные чека
+/// </summary>
+public class FiscalData : DomainObject
 {
-    public class FiscalData : DomainObject
-    {
-        #region Private Members
+    /// <summary>Фискальный документ (ФД)</summary>
+    public int? FiscalDocument { get; set; }
 
-        private int? _fiscalDocument;
-        private string? _fiscalModule;
-        private string? _check;
-        private string? _returnCheck;
-        private string? _registrationNumber;
-        private int _fuelSaleId;
+    /// <summary>Фискальный признак документа (ФМ)</summary>
+    public string? FiscalModule { get; set; }
 
-        #endregion
+    /// <summary>Чек продажи (base64 / текст)</summary>
+    public string? Check { get; set; }
 
-        #region Public Properties
+    /// <summary>Чек возврата (base64 / текст)</summary>
+    public string? ReturnCheck { get; set; }
 
-        /// <summary>
-        /// Фискальный документ ФД
-        /// </summary>
-        public int? FiscalDocument
-        {
-            get => _fiscalDocument;
-            set
-            {
-                _fiscalDocument = value;
-                OnPropertyChanged(nameof(FiscalDocument));
-            }
-        }
+    /// <summary>Регистрационный номер ККМ</summary>
+    public string? RegistrationNumber { get; set; }
 
-        /// <summary>
-        /// Фискальный модуль чека ФМ
-        /// </summary>
-        public string? FiscalModule
-        {
-            get => _fiscalModule;
-            set
-            {
-                _fiscalModule = value;
-                OnPropertyChanged(nameof(FiscalModule));
-            }
-        }
+    /// <summary>Id продажи топлива</summary>
+    public int FuelSaleId { get; set; }
 
-        /// <summary>
-        /// Чек продажи
-        /// </summary>
-        public string? Check
-        {
-            get => _check;
-            set
-            {
-                _check = value;
-                OnPropertyChanged(nameof(Check));
-            }
-        }
-
-        /// <summary>
-        /// Чек возврата
-        /// </summary>
-        public string? ReturnCheck
-        {
-            get => _returnCheck;
-            set
-            {
-                _returnCheck = value;
-                OnPropertyChanged(nameof(ReturnCheck));
-            }
-        }
-
-        /// <summary>
-        /// Регистрационный номер ККМ
-        /// </summary>
-        public string? RegistrationNumber
-        {
-            get => _registrationNumber;
-            set
-            {
-                _registrationNumber = value;
-                OnPropertyChanged(nameof(RegistrationNumber));
-            }
-        }
-
-        public int FuelSaleId
-        {
-            get => _fuelSaleId;
-            set
-            {
-                _fuelSaleId = value;
-                OnPropertyChanged(nameof(FuelSaleId));
-            }
-        }
-
-        /// <summary>
-        /// Продажа топлива
-        /// </summary>
-        public FuelSale FuelSale { get; set; } = null!;
-
-        #endregion
-
-        public override void Update(DomainObject updatedItem)
-        {
-            throw new NotImplementedException();
-        }
-    }
+    /// <summary>Продажа топлива</summary>
+    public FuelSale FuelSale { get; set; } = null!;
 }

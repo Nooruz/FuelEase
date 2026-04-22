@@ -1,168 +1,90 @@
-﻿using System.ComponentModel.DataAnnotations;
+using KIT.GasStation.Domain.Exceptions;
+using System.ComponentModel.DataAnnotations;
 
-namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Подземный резервуар АЗС
+/// </summary>
+[Display(Name = "Резервуар")]
+public class Tank : DomainObject
 {
-    /// <summary>
-    /// Резервуар
-    /// </summary>
-    [Display(Name = "Резервуар")]
-    public class Tank : DomainObject
+    #region Constructors
+
+    public Tank() { }
+
+    /// <summary>Копирующий конструктор</summary>
+    public Tank(Tank source)
     {
-        #region Private Members
-
-        private string _name;
-        private int _number;
-        private int _fuelId;
-        private decimal _size;
-        private decimal _minimumSize;
-        private Fuel _fuel;
-        private bool _isDeleted;
-
-        #endregion
-
-        #region Public Properties
-
-        /// <summary>
-        /// Наименование
-        /// </summary>
-        public string Name
-        {
-            get => _name;
-            set
-            {
-                _name = value;
-                OnPropertyChanged(nameof(Name));
-            }
-        }
-
-        /// <summary>
-        /// Код резервуара
-        /// </summary>
-        public int Number
-        {
-            get => _number;
-            set
-            {
-                _number = value;
-                OnPropertyChanged(nameof(Number));
-            }
-        }
-
-        /// <summary>
-        /// Код топливы
-        /// </summary>
-        public int FuelId
-        {
-            get => _fuelId;
-            set
-            {
-                _fuelId = value;
-                OnPropertyChanged(nameof(FuelId));
-            }
-        }
-
-        /// <summary>
-        /// Объем резервуара
-        /// </summary>
-        public decimal Size
-        {
-            get => _size; 
-            set
-            {
-                _size = value;
-                OnPropertyChanged(nameof(Size));
-            }
-        }
-
-        /// <summary>
-        /// Удалено?
-        /// </summary>
-        public bool IsDeleted
-        {
-            get => _isDeleted;
-            set
-            {
-                _isDeleted = value;
-                OnPropertyChanged(nameof(IsDeleted));
-            }
-        }
-
-        /// <summary>
-        /// Мертвый остаток
-        /// </summary>
-        public decimal MinimumSize
-        {
-            get => _minimumSize;
-            set
-            {
-                _minimumSize = value;
-                OnPropertyChanged(nameof(MinimumSize));
-            }
-        }
-
-        public Fuel Fuel
-        {
-            get => _fuel;
-            set
-            {
-                _fuel = value;
-                OnPropertyChanged(nameof(Fuel));
-            }
-        }
-
-        /// <summary>
-        /// Создано в
-        /// </summary>
-        public DateTime CreatedAt { get; set; }
-
-        /// <summary>
-        /// Удалено в
-        /// </summary>
-        public DateTime? DeletedAt { get; set; }
-
-        /// <summary>
-        /// Редактировано в
-        /// </summary>
-        public DateTime? UpdatedAt { get; set; }
-
-        public ICollection<FuelIntake> FuelIntakes { get; set; }
-        public ICollection<FuelSale> FuelSales { get; set; }
-        public ICollection<Nozzle> Nozzle { get; set; }
-        public ICollection<TankShiftCounter> TankShiftCounters { get; set; }
-
-        #endregion
-
-        #region Constructors
-
-        public Tank()
-        {
-            
-        }
-
-        public Tank(Tank tank)
-        {
-            Id = tank.Id;
-            Size = tank.Size;
-            MinimumSize = tank.MinimumSize;
-            Name = tank.Name;
-            FuelId = tank.FuelId;
-        }
-
-        #endregion
-
-        public override void Update(DomainObject updatedItem)
-        {
-            if (updatedItem is Tank tank)
-            {
-                Name = tank.Name;
-                Size = tank.Size;
-                MinimumSize = tank.MinimumSize;
-                FuelId = tank.FuelId;
-                IsDeleted = tank.IsDeleted;
-                UpdatedAt = tank.UpdatedAt;
-                CreatedAt = tank.CreatedAt;
-                DeletedAt = tank.DeletedAt;
-            }
-        }
+        Id = source.Id;
+        Name = source.Name;
+        Number = source.Number;
+        FuelId = source.FuelId;
+        Size = source.Size;
+        MinimumSize = source.MinimumSize;
+        IsDeleted = source.IsDeleted;
+        CreatedAt = source.CreatedAt;
+        UpdatedAt = source.UpdatedAt;
+        DeletedAt = source.DeletedAt;
     }
+
+    #endregion
+
+    #region Persisted Properties
+
+    /// <summary>Наименование резервуара</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Номер резервуара (технологический)</summary>
+    public int Number { get; set; }
+
+    /// <summary>Id топлива</summary>
+    public int FuelId { get; set; }
+
+    /// <summary>Полный объём резервуара (литры)</summary>
+    public decimal Size { get; set; }
+
+    /// <summary>Мёртвый остаток — минимальный уровень (литры)</summary>
+    public decimal MinimumSize { get; set; }
+
+    /// <summary>Признак мягкого удаления</summary>
+    public bool IsDeleted { get; set; }
+
+    /// <summary>Дата создания записи</summary>
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>Дата последнего изменения</summary>
+    public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Дата мягкого удаления</summary>
+    public DateTime? DeletedAt { get; set; }
+
+    #endregion
+
+    #region Navigation
+
+    public Fuel? Fuel { get; set; }
+    public ICollection<FuelIntake> FuelIntakes { get; set; } = new List<FuelIntake>();
+    public ICollection<FuelSale> FuelSales { get; set; } = new List<FuelSale>();
+    public ICollection<Nozzle> Nozzle { get; set; } = new List<Nozzle>();
+    public ICollection<TankShiftCounter> TankShiftCounters { get; set; } = new List<TankShiftCounter>();
+
+    #endregion
+
+    #region Business Methods
+
+    /// <summary>
+    /// Проверить, хватает ли топлива для отпуска указанного количества.
+    /// </summary>
+    public bool CanDispense(decimal requestedLitres, decimal currentLevel)
+        => currentLevel - requestedLitres >= MinimumSize;
+
+    /// <summary>Мягкое удаление</summary>
+    public void Delete()
+    {
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+    }
+
+    #endregion
 }

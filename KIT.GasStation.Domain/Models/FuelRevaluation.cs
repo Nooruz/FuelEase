@@ -1,65 +1,22 @@
-﻿namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Запись переоценки топлива (старая цена → новая цена).
+/// Устарела в пользу <see cref="FuelPriceHistory"/> — используйте FuelPriceHistory для новых записей.
+/// </summary>
+public class FuelRevaluation : DomainObject
 {
-    public class FuelRevaluation : DomainObject
-    {
-        #region Private Members
+    /// <summary>Дата переоценки</summary>
+    public DateTime CreatedDate { get; set; }
 
-        private DateTime _createdDate;
-        private int _fuelId;
-        private decimal _newPrice;
-        private decimal _oldPrice;
+    /// <summary>Id топлива</summary>
+    public int FuelId { get; set; }
 
-        #endregion
+    /// <summary>Новая цена</summary>
+    public decimal NewPrice { get; set; }
 
-        #region Public Properties
+    /// <summary>Старая цена</summary>
+    public decimal OldPrice { get; set; }
 
-        public DateTime CreatedDate
-        {
-            get => _createdDate;
-            set
-            {
-                _createdDate = value;
-                OnPropertyChanged(nameof(CreatedDate));
-            }
-        }
-
-        public int FuelId
-        {
-            get => _fuelId;
-            set
-            {
-                _fuelId = value;
-                OnPropertyChanged(nameof(FuelId));
-            }
-        }
-
-        public decimal NewPrice
-        {
-            get => _newPrice;
-            set
-            {
-                _newPrice = value;
-                OnPropertyChanged(nameof(NewPrice));
-            }
-        }
-
-        public decimal OldPrice
-        {
-            get => _oldPrice;
-            set
-            {
-                _oldPrice = value;
-                OnPropertyChanged(nameof(OldPrice));
-            }
-        }
-
-        public Fuel Fuel { get; set; }
-
-        #endregion
-
-        public override void Update(DomainObject updatedItem)
-        {
-
-        }
-    }
+    public Fuel? Fuel { get; set; }
 }

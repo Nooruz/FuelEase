@@ -84,6 +84,7 @@ namespace KIT.GasStation.ViewModels.Details
                 return;
             }
 
+#pragma warning disable CS0618 // Password используется как поле ввода пароля в форме
             if (!string.IsNullOrEmpty(CreatedUser.Password))
             {
                 if (CreatedUser.Password != ConfirmedPassword)
@@ -91,14 +92,20 @@ namespace KIT.GasStation.ViewModels.Details
                     _ = MessageBoxService.ShowMessage("Пароли не совпадают!", "Ошибка", MessageButton.OK, MessageIcon.Exclamation);
                     return;
                 }
+                // Хешируем пароль перед сохранением
+                CreatedUser.SetPassword(CreatedUser.Password);
             }
+#pragma warning restore CS0618
 
             if (CreatedUser.Id == 0)
             {
+                CreatedUser.CreatedDate = System.DateTime.Now;
+                CreatedUser.CreatedAt = System.DateTime.UtcNow;
                 _ = await _userService.CreateAsync(CreatedUser);
             }
             else
             {
+                CreatedUser.UpdatedAt = System.DateTime.UtcNow;
                 _ = await _userService.UpdateAsync(CreatedUser.Id, CreatedUser);
             }
 

@@ -1,38 +1,13 @@
-﻿namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Роль пользователя
+/// </summary>
+public class UserRole : DomainObject
 {
-    public class UserRole : DomainObject
-    {
-        #region Private Members
+    /// <summary>Наименование роли</summary>
+    public string Name { get; set; } = string.Empty;
 
-        private string _name;
-
-        #endregion
-
-        #region Public Properties
-
-        /// <summary>
-        /// Наименование
-        /// </summary>
-        public string Name
-        {
-            get => _name;
-            set
-            {
-                _name = value;
-                OnPropertyChanged(nameof(Name));
-            }
-        }
-
-        /// <summary>
-        /// Пользователи
-        /// </summary>
-        public ICollection<User> Users { get; set; }
-
-        #endregion
-
-        public override void Update(DomainObject updatedItem)
-        {
-
-        }
-    }
+    /// <summary>Пользователи с данной ролью</summary>
+    public ICollection<User> Users { get; set; } = new List<User>();
 }

@@ -1,414 +1,209 @@
-﻿using System.ComponentModel.DataAnnotations;
+using KIT.GasStation.Domain.Abstractions;
+using KIT.GasStation.Domain.Exceptions;
+using System.ComponentModel.DataAnnotations;
 
-namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Продажа топлива (отпуск через ТРК)
+/// </summary>
+public class FuelSale : AggregateRoot
 {
+    #region Persisted Properties
+
+    /// <summary>Id резервуара</summary>
+    public int TankId { get; set; }
+
+    /// <summary>Id ТРК (пистолета)</summary>
+    public int NozzleId { get; set; }
+
+    /// <summary>Id смены</summary>
+    public int ShiftId { get; set; }
+
+    /// <summary>Тип оплаты</summary>
+    public PaymentType PaymentType { get; set; }
+
+    /// <summary>Тип операции (продажа / возврат / корректировка)</summary>
+    public OperationType OperationType { get; set; }
+
+    /// <summary>Дата и время создания заявки</summary>
+    public DateTime CreateDate { get; set; }
+
+    /// <summary>Цена (сум/литр на момент продажи)</summary>
+    public decimal Price { get; set; }
+
+    /// <summary>Заказанная сумма</summary>
+    public decimal Sum { get; set; }
+
+    /// <summary>Фактически полученная сумма</summary>
+    public decimal ReceivedSum { get; set; }
+
+    /// <summary>Заказанное количество (литры)</summary>
+    public decimal Quantity { get; set; }
+
+    /// <summary>Фактически отпущенное количество (литры)</summary>
+    public decimal ReceivedQuantity { get; set; }
+
+    /// <summary>Показание счётчика ТРК на конец заправки</summary>
+    public decimal ReceivedCount { get; set; }
+
+    /// <summary>Сумма, переданная клиентом</summary>
+    public decimal? CustomerSum { get; set; }
+
+    /// <summary>Сдача клиенту</summary>
+    public decimal? ChangeSum { get; set; }
+
+    /// <summary>Режим — «залить на сумму» (true) или «залить литры» (false)</summary>
+    public bool IsForSum { get; set; }
+
+    /// <summary>Статус продажи</summary>
+    [EnumDataType(typeof(FuelSaleStatus))]
+    public FuelSaleStatus FuelSaleStatus { get; set; }
+
+    #endregion
+
+    #region Navigation
+
+    public Tank? Tank { get; set; }
+    public Shift? Shift { get; set; }
+    public DiscountSale? DiscountSale { get; set; }
+    public FiscalData? FiscalData { get; set; }
+    public Nozzle? Nozzle { get; set; }
+
+    #endregion
+
+    #region Business Methods
+
     /// <summary>
-    /// Продажи топлива
+    /// Завершить продажу — зафиксировать фактически отпущенное топливо.
     /// </summary>
-    public class FuelSale : DomainObject
+    public void Complete(decimal receivedSum, decimal receivedQuantity, decimal receivedCount)
     {
-        #region Private Members
+        if (FuelSaleStatus == FuelSaleStatus.Completed)
+            throw new DomainException("Продажа уже завершена.");
 
-        private int _tankId;
-        private int _shiftId;
-        private int _nozzleId;
-        private PaymentType _paymentType;
-        private OperationType _operationType;
-        private DateTime _createDate;
-        private decimal _price;
-        private decimal _sum;
-        private decimal _receivedSum;
-        private decimal _receivedQuantity;
-        private decimal _receivedCount;
-        private decimal _quantity;
-        private decimal? _customerSum;
-        private decimal? _changeSum;
-        private FuelSaleStatus _fuelSaleStatus;
-        private bool _isForSum;
-        
-        #endregion
-
-        #region Public Properties
-
-        /// <summary>
-        /// Id резервуара
-        /// </summary>
-        public int TankId
-        {
-            get => _tankId;
-            set
-            {
-                _tankId = value;
-                OnPropertyChanged(nameof(TankId));
-            }
-        }
-
-        /// <summary>
-        /// Id ТРК
-        /// </summary>
-        public int NozzleId
-        {
-            get => _nozzleId;
-            set
-            {
-                _nozzleId = value;
-                OnPropertyChanged(nameof(NozzleId));
-            }
-        }
-
-        /// <summary>
-        /// Тип оплаты
-        /// </summary>
-        public PaymentType PaymentType
-        {
-            get => _paymentType;
-            set
-            {
-                _paymentType = value;
-                OnPropertyChanged(nameof(PaymentType));
-            }
-        }
-
-        /// <summary>
-        /// Тип операции
-        /// </summary>
-        public OperationType OperationType
-        {
-            get => _operationType;
-            set
-            {
-                _operationType = value;
-                OnPropertyChanged(nameof(OperationType));
-            }
-        }
-
-        /// <summary>
-        /// Дата создании чека
-        /// </summary>
-        public DateTime CreateDate
-        {
-            get => _createDate;
-            set
-            {
-                _createDate = value;
-                OnPropertyChanged(nameof(CreateDate));
-            }
-        }
-
-        /// <summary>
-        /// Цена
-        /// </summary>
-        public decimal Price
-        {
-            get => _price;
-            set
-            {
-                _price = value;
-                OnPropertyChanged(nameof(Price));
-            }
-        }
-
-        /// <summary>
-        /// Сумма
-        /// </summary>
-        public decimal Sum
-        {
-            get => _sum;
-            set
-            {
-                _sum = value;
-                OnPropertyChanged(nameof(Sum));
-            }
-        }
-
-        /// <summary>
-        /// Полученная сумма
-        /// </summary>
-        public decimal ReceivedSum
-        {
-            get => _receivedSum;
-            set
-            {
-                _receivedSum = value;
-                OnPropertyChanged(nameof(ReceivedSum));
-            }
-        }
-
-        /// <summary>
-        /// Количество
-        /// </summary>
-        public decimal Quantity
-        {
-            get => _quantity;
-            set
-            {
-                _quantity = value;
-                OnPropertyChanged(nameof(Quantity));
-            }
-        }
-
-        /// <summary>
-        /// Полученная количество топлива
-        /// </summary>
-        public decimal ReceivedQuantity
-        {
-            get => _receivedQuantity;
-            set
-            {
-                _receivedQuantity = value;
-                OnPropertyChanged(nameof(ReceivedQuantity));
-            }
-        }
-
-        /// <summary>
-        /// Полученная счетчик показаний на конец
-        /// </summary>
-        public decimal ReceivedCount
-        {
-            get => _receivedCount;
-            set
-            {
-                _receivedCount = value;
-                OnPropertyChanged(nameof(ReceivedCount));
-            }
-        }
-
-        /// <summary>
-        /// Сумма клиента
-        /// </summary>
-        public decimal? CustomerSum
-        {
-            get => _customerSum;
-            set
-            {
-                _customerSum = value;
-                OnPropertyChanged(nameof(CustomerSum));
-            }
-        }
-
-        /// <summary>
-        /// Сдача
-        /// </summary>
-        public decimal? ChangeSum
-        {
-            get => _changeSum;
-            set
-            {
-                _changeSum = value;
-                OnPropertyChanged(nameof(ChangeSum));
-            }
-        }
-
-        /// <summary>
-        /// Id смены
-        /// </summary>
-        public int ShiftId
-        {
-            get => _shiftId;
-            set
-            {
-                _shiftId = value;
-                OnPropertyChanged(nameof(ShiftId));
-            }
-        }
-
-        /// <summary>
-        /// Залитие на сумму
-        /// </summary>
-        public bool IsForSum
-        {
-            get => _isForSum;
-            set
-            {
-                _isForSum = value;
-                OnPropertyChanged(nameof(IsForSum));
-            }
-        }
-
-        /// <summary>
-        /// Статус продажи
-        /// </summary>
-        [EnumDataType(typeof(FuelSaleStatus))]
-        public FuelSaleStatus FuelSaleStatus
-        {
-            get => _fuelSaleStatus;
-            set
-            {
-                _fuelSaleStatus = value;
-                OnPropertyChanged(nameof(FuelSaleStatus));
-            }
-        }
-
-        /// <summary>
-        /// Резервуар
-        /// </summary>
-        public Tank? Tank { get; set; }
-        
-        /// <summary>
-        /// Смена
-        /// </summary>
-        public Shift? Shift { get; set; }
-
-        /// <summary>
-        /// Скидки
-        /// </summary>
-        public DiscountSale? DiscountSale { get; set; }
-
-        /// <summary>
-        /// Фискальные данные
-        /// </summary>
-        public FiscalData? FiscalData { get; set; }
-
-        public Nozzle? Nozzle { get; set; }
-
-        #endregion
-
-        public override void Update(DomainObject updatedItem)
-        {
-            if (updatedItem is FuelSale fuelSale)
-            {
-                PaymentType = fuelSale.PaymentType;
-                Sum = fuelSale.Sum;
-                Quantity = fuelSale.Quantity;
-                ReceivedSum = fuelSale.ReceivedSum;
-                ReceivedQuantity = fuelSale.ReceivedQuantity;
-                FuelSaleStatus = fuelSale.FuelSaleStatus;
-            }
-        }
-
-        public FuelSale Clone()
-        {
-            return new FuelSale
-            {
-                TankId = TankId,
-                NozzleId = NozzleId,
-                PaymentType = PaymentType,
-                OperationType = OperationType,
-                CreateDate = CreateDate,
-                Price = Price,
-                Sum = Sum,
-                ReceivedSum = ReceivedSum,
-                Quantity = Quantity,
-                ReceivedQuantity = ReceivedQuantity,
-                ReceivedCount = ReceivedCount,
-                CustomerSum = CustomerSum,
-                ChangeSum = ChangeSum,
-                ShiftId = ShiftId,
-                IsForSum = IsForSum,
-                FuelSaleStatus = FuelSaleStatus,
-
-                // Навигационные свойства ставим NULL,
-                // чтобы Entity Framework не пытался трекать их
-                Tank = null,
-                Shift = null,
-                DiscountSale = null,
-                FiscalData = null,
-                Nozzle = null
-            };
-        }
-
+        ReceivedSum = receivedSum;
+        ReceivedQuantity = receivedQuantity;
+        ReceivedCount = receivedCount;
+        FuelSaleStatus = FuelSaleStatus.Completed;
     }
 
     /// <summary>
-    /// Статус продажи
+    /// Пометить как «обработано» (фискальный чек пробит).
     /// </summary>
-    public enum FuelSaleStatus
+    public void MarkProcessed()
     {
-        None,
+        if (FuelSaleStatus == FuelSaleStatus.Processed)
+            throw new DomainException("Продажа уже помечена как обработанная.");
 
-        /// <summary>
-        /// Обрабатывается
-        /// </summary>
-        [Display(Name = "Обрабатывается")]
-        InProcessed,
-
-        /// <summary>
-        /// Обработанный
-        /// </summary>
-        [Display(Name = "Обработана")]
-        Processed,
-
-        /// <summary>
-        /// Завершенный
-        /// </summary>
-        [Display(Name = "Завершенный")]
-        Completed,
-
-        /// <summary>
-        /// Незавершенный
-        /// </summary>
-        [Display(Name = "Незавершенный")]
-        Uncompleted
+        FuelSaleStatus = FuelSaleStatus.Processed;
     }
 
     /// <summary>
-    /// Тип оплаты
+    /// Начать обработку (статус InProcessed — отпуск идёт).
     /// </summary>
-    public enum PaymentType
+    public void StartProcessing()
     {
-        None,
-
-        /// <summary>
-        /// Наличными
-        /// </summary>
-        [Display(Name = "Наличными")]
-        Cash,
-
-        /// <summary>
-        /// Безналичными
-        /// </summary>
-        [Display(Name = "Безналичными")]
-        Cashless,
-
-        /// <summary>
-        /// Ведомость
-        /// </summary>
-        [Display(Name = "Ведомость")]
-        Statement,
-
-        /// <summary>
-        /// Талон
-        /// </summary>
-        [Display(Name = "Талон")]
-        Ticket,
-
-        /// <summary>
-        /// Дисконтная карта
-        /// </summary>
-        [Display(Name = "Дисконтная карта")]
-        DiscountCard,
-
-        /// <summary>
-        /// Топливная карта
-        /// </summary>
-        [Display(Name = "Топливная карта")]
-        FuelCard,
-
-        /// <summary>
-        /// Другое
-        /// </summary>
-        [Display(Name = "Другое")]
-        Other
+        FuelSaleStatus = FuelSaleStatus.InProcessed;
     }
 
-    public enum OperationType
+    /// <summary>
+    /// Отменить / аннулировать (Uncompleted).
+    /// </summary>
+    public void Cancel()
     {
-        /// <summary>
-        /// Продажа
-        /// </summary>
-        [Display(Name = "Продажа")]
-        Sale,
+        if (FuelSaleStatus == FuelSaleStatus.Completed)
+            throw new DomainException("Завершённую продажу нельзя аннулировать — используйте возврат.");
 
-        /// <summary>
-        /// Возврат
-        /// </summary>
-        [Display(Name = "Возврат")]
-        Return,
-
-        /// <summary>
-        /// Корректировка
-        /// </summary>
-        [Display(Name = "Корректировка")]
-        Correction
+        FuelSaleStatus = FuelSaleStatus.Uncompleted;
     }
+
+    /// <summary>
+    /// Создать копию для операции возврата.
+    /// </summary>
+    public FuelSale Clone() => new()
+    {
+        TankId = TankId,
+        NozzleId = NozzleId,
+        ShiftId = ShiftId,
+        PaymentType = PaymentType,
+        OperationType = OperationType,
+        CreateDate = CreateDate,
+        Price = Price,
+        Sum = Sum,
+        ReceivedSum = ReceivedSum,
+        Quantity = Quantity,
+        ReceivedQuantity = ReceivedQuantity,
+        ReceivedCount = ReceivedCount,
+        CustomerSum = CustomerSum,
+        ChangeSum = ChangeSum,
+        IsForSum = IsForSum,
+        FuelSaleStatus = FuelSaleStatus,
+        // Навигационные свойства — null, чтобы EF не дублировал трекинг
+        Tank = null,
+        Shift = null,
+        DiscountSale = null,
+        FiscalData = null,
+        Nozzle = null
+    };
+
+    #endregion
+}
+
+/// <summary>Статус продажи</summary>
+public enum FuelSaleStatus
+{
+    None,
+
+    [Display(Name = "Обрабатывается")]
+    InProcessed,
+
+    [Display(Name = "Обработана")]
+    Processed,
+
+    [Display(Name = "Завершена")]
+    Completed,
+
+    [Display(Name = "Незавершена")]
+    Uncompleted
+}
+
+/// <summary>Тип оплаты</summary>
+public enum PaymentType
+{
+    None,
+
+    [Display(Name = "Наличными")]
+    Cash,
+
+    [Display(Name = "Безналичными")]
+    Cashless,
+
+    [Display(Name = "Ведомость")]
+    Statement,
+
+    [Display(Name = "Талон")]
+    Ticket,
+
+    [Display(Name = "Дисконтная карта")]
+    DiscountCard,
+
+    [Display(Name = "Топливная карта")]
+    FuelCard,
+
+    [Display(Name = "Другое")]
+    Other
+}
+
+/// <summary>Тип операции</summary>
+public enum OperationType
+{
+    [Display(Name = "Продажа")]
+    Sale,
+
+    [Display(Name = "Возврат")]
+    Return,
+
+    [Display(Name = "Корректировка")]
+    Correction
 }

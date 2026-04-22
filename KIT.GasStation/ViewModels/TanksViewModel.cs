@@ -308,8 +308,9 @@ namespace KIT.GasStation.ViewModels
 
         private void FuelService_OnUpdated(Fuel obj)
         {
-            Fuel? fuel = Fuels.FirstOrDefault(f => f.Id == obj.Id);
-            fuel?.Update(obj);
+            int index = Fuels.ToList().FindIndex(f => f.Id == obj.Id);
+            if (index >= 0)
+                Fuels[index] = obj;
         }
 
         private void FuelService_OnDeleted(int id)
@@ -370,8 +371,9 @@ namespace KIT.GasStation.ViewModels
 
         private void NozzleService_OnUpdated(Nozzle updateNozzle)
         {
-            Nozzle? nozzle = Nozzles.FirstOrDefault(n => n.Id == updateNozzle.Id);
-            nozzle?.Update(updateNozzle);
+            int index = Nozzles.ToList().FindIndex(n => n.Id == updateNozzle.Id);
+            if (index >= 0)
+                Nozzles[index] = updateNozzle;
         }
 
         private void NozzleService_OnCreated(Nozzle createdNozzle)
@@ -413,3 +415,4 @@ namespace KIT.GasStation.ViewModels
         #endregion
     }
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    

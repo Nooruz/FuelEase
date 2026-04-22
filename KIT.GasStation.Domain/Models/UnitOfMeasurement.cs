@@ -1,32 +1,12 @@
-﻿namespace KIT.GasStation.Domain.Models
+namespace KIT.GasStation.Domain.Models;
+
+/// <summary>
+/// Единица измерения
+/// </summary>
+public class UnitOfMeasurement : DomainObject
 {
-    public class UnitOfMeasurement : DomainObject
-    {
-        #region Private Members
+    /// <summary>Наименование</summary>
+    public string Name { get; set; } = string.Empty;
 
-        private string _name;
-
-        #endregion
-
-        #region Public Properties
-
-        public string Name
-        {
-            get => _name;
-            set
-            {
-                _name = value;
-                OnPropertyChanged(nameof(Name));
-            }
-        }
-
-        public ICollection<Fuel> Fuels { get; set; }
-
-        #endregion
-
-        public override void Update(DomainObject updatedItem)
-        {
-
-        }
-    }
+    public ICollection<Fuel> Fuels { get; set; } = new List<Fuel>();
 }

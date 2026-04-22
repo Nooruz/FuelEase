@@ -1,89 +1,92 @@
-﻿using KIT.GasStation.Domain.Exceptions;
+using KIT.GasStation.Domain.Exceptions;
 using KIT.GasStation.Domain.Models;
 
-namespace KIT.GasStation.Domain.Services.AuthenticationServices
+namespace KIT.GasStation.Domain.Services.AuthenticationServices;
+
+public class AuthenticationService : IAuthenticationService
 {
-    public class AuthenticationService : IAuthenticationService
+    #region Private Members
+
+    private readonly IUserService _userService;
+
+    #endregion
+
+    #region Constructor
+
+    public AuthenticationService(IUserService userService)
     {
-        #region Private Members
+        _userService = userService;
+    }
 
-        private readonly IUserService _userService;
+    #endregion
 
-        #endregion
+    public async Task<User> Login(string username, string? password)
+    {
+        User storedUser = await _userService.GetByUsername(username)
+            ?? throw new InvalidUsernameOrPasswordException("Неверное имя или пароль.", username);
 
-        #region Constructor
-
-        public AuthenticationService(IUserService userService)
+        // Проверяем через domain method — поддерживает и хеш, и legacy plain-text
+        if (!storedUser.VerifyPassword(password ?? string.Empty))
         {
-            _userService = userService;
+            throw new InvalidUsernameOrPasswordException("Неверное имя или пароль.", username);
         }
 
-        #endregion
-
-        public async Task<User> Login(string username, string? password)
+        // Миграция: если пользователь ещё хранит plain-text пароль — хешируем при успешном входе
+#pragma warning disable CS0618
+        if (!string.IsNullOrEmpty(storedUser.Password) &&
+            string.IsNullOrEmpty(storedUser.PasswordHash))
         {
-            User storedUser = await _userService.GetByUsername(username) ?? throw new InvalidUsernameOrPasswordException("Неверное имя или пароль.", username, password);
-
-            // Если storedUser.Password равен null, то он становится пустой строкой и сравнение будет корректным
-            if ((storedUser.Password ?? string.Empty) != (password ?? string.Empty))
-            {
-                throw new InvalidUsernameOrPasswordException("Неверное имя или пароль.", username, password);
-            }
-
-            return storedUser;
+            storedUser.SetPassword(password!);
+            await _userService.UpdateAsync(storedUser.Id, storedUser);
         }
+#pragma warning restore CS0618
 
-        public async Task<RegistrationResult> Register(User user, string password, string confirmPassword)
+        return storedUser;
+    }
+
+    public async Task<RegistrationResult> Register(User user, string password, string confirmPassword)
+    {
+        if (password != confirmPassword)
+            return RegistrationResult.PasswordsDoNotMatch;
+
+        try
         {
-            if (password != confirmPassword)
-            {
-                return RegistrationResult.PasswordsDoNotMatch;
-            }
+            User? existing = await _userService.GetByUsername(user.FullName);
+            if (existing != null)
+                return RegistrationResult.UsernameAlreadyExists;
 
-            try
-            {
-                User editingUser = await _userService.GetByUsername(user.FullName);
-                if (editingUser != null)
-                {
-                    return RegistrationResult.UsernameAlreadyExists;
-                }
+            user.SetPassword(password);
+            user.CreatedDate = DateTime.Now;
+            user.CreatedAt = DateTime.UtcNow;
 
-                user.Password = password;
-
-                _ = await _userService.CreateAsync(user);
-                return RegistrationResult.Success;
-            }
-            catch
-            {
-                return RegistrationResult.OtherError;
-            }
+            _ = await _userService.CreateAsync(user);
+            return RegistrationResult.Success;
         }
-
-        public async Task<RegistrationResult> Update(User user, string password, string confirmPassword)
+        catch
         {
-            try
-            {
-                if (string.IsNullOrEmpty(password))
-                {
-                    _ = await _userService.UpdateAsync(user.Id, user);
-                }
-                else
-                {
-                    if (password != confirmPassword)
-                    {
-                        return RegistrationResult.PasswordsDoNotMatch;
-                    }
+            return RegistrationResult.OtherError;
+        }
+    }
 
-                    user.Password = password;
-
-                    _ = await _userService.UpdateAsync(user.Id, user);
-                }
-                return RegistrationResult.Success;
-            }
-            catch
+    public async Task<RegistrationResult> Update(User user, string password, string confirmPassword)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(password))
             {
-                return RegistrationResult.OtherError;
+                if (password != confirmPassword)
+                    return RegistrationResult.PasswordsDoNotMatch;
+
+                user.SetPassword(password);
             }
+
+            user.UpdatedAt = DateTime.UtcNow;
+            _ = await _userService.UpdateAsync(user.Id, user);
+            return RegistrationResult.Success;
+        }
+        catch
+        {
+            return RegistrationResult.OtherError;
         }
     }
 }
