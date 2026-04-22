@@ -1,0 +1,34 @@
+<base:BaseView
+    x:Class="KIT.GasStation.Views.Details.CashAmountView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:base="clr-namespace:KIT.GasStation.Views.Base"
+    xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+    xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+    Width="340">
+
+    <dxlc:LayoutControl Orientation="Vertical">
+
+        <dxlc:LayoutGroup>
+            <dxlc:LayoutItem Label="Введите сумму (сом)" LabelPosition="Top">
+                <dxe:TextEdit
+                    EditValue="{Binding Amount, UpdateSourceTrigger=PropertyChanged}"
+                    Mask="n2"
+                    MaskType="Numeric"
+                    MaskUseAsDisplayFormat="True"
+                    SelectAllOnGotFocus="True"
+                    SelectAllOnMouseUp="True" />
+            </dxlc:LayoutItem>
+        </dxlc:LayoutGroup>
+
+        <dxlc:LayoutGroup>
+            <Button
+                Command="{Binding OkCommand}"
+                Content="OK"
+                IsDefault="True" />
+            <Button Command="{Binding CloseCommand}" Content="Отмена" />
+        </dxlc:LayoutGroup>
+
+    </dxlc:LayoutControl>
+
+</base:BaseView>

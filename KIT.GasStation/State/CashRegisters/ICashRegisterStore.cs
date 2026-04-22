@@ -69,5 +69,15 @@ namespace KIT.GasStation.State.CashRegisters
         /// Возврат
         /// </summary>
         Task<FiscalData?> ReturnAsync(FiscalData fiscalData);
+
+        /// <summary>
+        /// Внесение наличных в кассу.
+        /// </summary>
+        Task DepositAsync(decimal amount);
+
+        /// <summary>
+        /// Изъятие наличных из кассы.
+        /// </summary>
+        Task WithdrawalAsync(decimal amount);
     }
 }

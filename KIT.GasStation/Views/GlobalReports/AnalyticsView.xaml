@@ -63,276 +63,65 @@
                     EditValue="{Binding SelectedPeriod, Mode=TwoWay}"
                     IsTextEditable="False"
                     ItemsSource="{Binding Periods}" />
-                <dx:WaitIndicator
-                    Width="24"
-                    Height="24"
+                <TextBlock
                     Margin="16,0,0,0"
                     VerticalAlignment="Center"
-                    Content="Загрузка..."
-                    DeferedVisibility="{Binding IsLoading}" />
+                    Foreground="#7B8CAA"
+                    Text="Загрузка..."
+                    Visibility="{Binding IsLoading, Converter={dx:BooleanToVisibilityConverter}}" />
             </StackPanel>
         </Border>
 
         <!--  ── Tabs ───────────────────────────────────────────────────────  -->
-        <dx:DXTabControl Grid.Row="1">
+        <dx:LoadingDecorator
+            Grid.Row="1"
+            IsSplashScreenShown="{Binding IsLoading}"
+            SplashScreenLocation="CenterContainer">
 
-            <!--  ════════════════════════════════ ПРОДАЖИ ═══════════════════  -->
-            <dx:DXTabItem Header="Продажи">
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="12,12,12,16">
+            <dx:DXTabControl>
 
-                        <!--  KPI row  -->
-                        <WrapPanel Margin="0,0,0,14">
-                            <Border Style="{StaticResource KpiTile}">
-                                <StackPanel>
-                                    <TextBlock Style="{StaticResource KpiValue}" Text="{Binding TotalRevenue, StringFormat={}{0:N0} сом}" />
-                                    <TextBlock Style="{StaticResource KpiLabel}" Text="Выручка" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource KpiTile}">
-                                <StackPanel>
-                                    <TextBlock Style="{StaticResource KpiValue}" Text="{Binding TotalVolume, StringFormat={}{0:N1} л}" />
-                                    <TextBlock Style="{StaticResource KpiLabel}" Text="Объём продаж" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource KpiTile}">
-                                <StackPanel>
-                                    <TextBlock Style="{StaticResource KpiValue}" Text="{Binding TotalTransactions}" />
-                                    <TextBlock Style="{StaticResource KpiLabel}" Text="Транзакций" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource KpiTile}">
-                                <StackPanel>
-                                    <TextBlock Style="{StaticResource KpiValue}" Text="{Binding AvgRevenuePerShift, StringFormat={}{0:N0} сом}" />
-                                    <TextBlock Style="{StaticResource KpiLabel}" Text="Ср. выручка за смену" />
-                                </StackPanel>
-                            </Border>
-                        </WrapPanel>
+                <!--  ════════════════════════════════ ПРОДАЖИ ═══════════════════  -->
+                <dx:DXTabItem Header="Продажи">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="12,12,12,16">
 
-                        <!--  Выручка по дням — area chart  -->
-                        <!--  Series.DataSource привязывается к коллекции ViewModel  -->
-                        <GroupBox Height="220" Margin="0,0,0,12" Header="Выручка по дням">
-                            <dxc:ChartControl>
-                                <dxc:ChartControl.Diagram>
-                                    <dxc:XYDiagram2D>
-                                        <dxc:XYDiagram2D.AxisX>
-                                            <dxc:AxisX2D>
-                                                <dxc:AxisX2D.DateTimeMeasureUnit>Day</dxc:AxisX2D.DateTimeMeasureUnit>
-                                                <dxc:AxisX2D.Label>
-                                                    <dxc:AxisLabel TextPattern="{}{A:dd.MM}" />
-                                                </dxc:AxisX2D.Label>
-                                            </dxc:AxisX2D>
-                                        </dxc:XYDiagram2D.AxisX>
-                                        <dxc:XYDiagram2D.Series>
-                                            <dxc:AreaSeries2D
-                                                ArgumentDataMember="Date"
-                                                DataSource="{Binding RevenueByDay}"
-                                                DisplayName="Выручка"
-                                                LabelsVisibility="False"
-                                                ValueDataMember="Value" />
-                                        </dxc:XYDiagram2D.Series>
-                                    </dxc:XYDiagram2D>
-                                </dxc:ChartControl.Diagram>
-                            </dxc:ChartControl>
-                        </GroupBox>
+                            <!--  KPI row  -->
+                            <WrapPanel Margin="0,0,0,14">
+                                <Border Style="{StaticResource KpiTile}">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource KpiValue}" Text="{Binding TotalRevenue, StringFormat={}{0:N0} сом}" />
+                                        <TextBlock Style="{StaticResource KpiLabel}" Text="Выручка" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource KpiTile}">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource KpiValue}" Text="{Binding TotalVolume, StringFormat={}{0:N1} л}" />
+                                        <TextBlock Style="{StaticResource KpiLabel}" Text="Объём продаж" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource KpiTile}">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource KpiValue}" Text="{Binding TotalTransactions}" />
+                                        <TextBlock Style="{StaticResource KpiLabel}" Text="Транзакций" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource KpiTile}">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource KpiValue}" Text="{Binding AvgRevenuePerShift, StringFormat={}{0:N0} сом}" />
+                                        <TextBlock Style="{StaticResource KpiLabel}" Text="Ср. выручка за смену" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
 
-                        <!--  Две диаграммы-пончика  -->
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <!--  Структура оплат  -->
-                            <GroupBox Grid.Column="0" Height="240" Header="Структура оплат">
+                            <!--  Выручка по дням — area chart  -->
+                            <!--  Series.DataSource привязывается к коллекции ViewModel  -->
+                            <GroupBox
+                                Height="220"
+                                Margin="0,0,0,12"
+                                Header="Выручка по дням">
                                 <dxc:ChartControl>
                                     <dxc:ChartControl.Diagram>
-                                        <dxc:SimpleDiagram2D>
-                                            <dxc:SimpleDiagram2D.Series>
-                                                <dxc:NestedDonutSeries2D
-                                                    ArgumentDataMember="Label"
-                                                    DataSource="{Binding RevenueByPaymentType}"
-                                                    DisplayName="Оплаты"
-                                                    HoleRadiusPercent="55"
-                                                    ValueDataMember="Value">
-                                                    <dxc:NestedDonutSeries2D.Label>
-                                                        <dxc:SeriesLabel />
-                                                    </dxc:NestedDonutSeries2D.Label>
-                                                </dxc:NestedDonutSeries2D>
-                                            </dxc:SimpleDiagram2D.Series>
-                                        </dxc:SimpleDiagram2D>
-                                    </dxc:ChartControl.Diagram>
-                                </dxc:ChartControl>
-                            </GroupBox>
-
-                            <!--  Объём по видам топлива  -->
-                            <GroupBox Grid.Column="2" Height="240" Header="Объём по видам топлива">
-                                <dxc:ChartControl>
-                                    <dxc:ChartControl.Diagram>
-                                        <dxc:SimpleDiagram2D>
-                                            <dxc:SimpleDiagram2D.Series>
-                                                <dxc:NestedDonutSeries2D
-                                                    ArgumentDataMember="Label"
-                                                    DataSource="{Binding VolumeByFuel}"
-                                                    DisplayName="Топливо"
-                                                    HoleRadiusPercent="55"
-                                                    ValueDataMember="Value">
-                                                    <dxc:NestedDonutSeries2D.Label>
-                                                        <dxc:SeriesLabel />
-                                                    </dxc:NestedDonutSeries2D.Label>
-                                                </dxc:NestedDonutSeries2D>
-                                            </dxc:SimpleDiagram2D.Series>
-                                        </dxc:SimpleDiagram2D>
-                                    </dxc:ChartControl.Diagram>
-                                </dxc:ChartControl>
-                            </GroupBox>
-
-                        </Grid>
-
-                        <!--  Продажи по часам суток — bar chart  -->
-                        <GroupBox Height="220" Margin="0,0,0,12" Header="Продажи по часам суток">
-                            <dxc:ChartControl>
-                                <dxc:ChartControl.Diagram>
-                                    <dxc:XYDiagram2D>
-                                        <dxc:XYDiagram2D.Series>
-                                            <dxc:BarSideBySideSeries2D
-                                                ArgumentDataMember="HourLabel"
-                                                DataSource="{Binding SalesByHour}"
-                                                DisplayName="Выручка"
-                                                LabelsVisibility="False"
-                                                ValueDataMember="Revenue" />
-                                        </dxc:XYDiagram2D.Series>
-                                    </dxc:XYDiagram2D>
-                                </dxc:ChartControl.Diagram>
-                            </dxc:ChartControl>
-                        </GroupBox>
-
-                        <!--  Выручка по последним сменам — stacked bar
-                              Каждая серия: одинаковый DataSource, разный ValueDataMember  -->
-                        <GroupBox Height="240" Header="Выручка по последним сменам">
-                            <dxc:ChartControl>
-                                <dxc:ChartControl.Diagram>
-                                    <dxc:XYDiagram2D>
-                                        <dxc:XYDiagram2D.Series>
-                                            <dxc:BarStackedSeries2D
-                                                ArgumentDataMember="Label"
-                                                DataSource="{Binding RevenueByShift}"
-                                                DisplayName="Наличные"
-                                                LabelsVisibility="False"
-                                                ValueDataMember="Cash" />
-                                            <dxc:BarStackedSeries2D
-                                                ArgumentDataMember="Label"
-                                                DataSource="{Binding RevenueByShift}"
-                                                DisplayName="Безналичные"
-                                                LabelsVisibility="False"
-                                                ValueDataMember="Cashless" />
-                                            <dxc:BarStackedSeries2D
-                                                ArgumentDataMember="Label"
-                                                DataSource="{Binding RevenueByShift}"
-                                                DisplayName="Талон"
-                                                LabelsVisibility="False"
-                                                ValueDataMember="Ticket" />
-                                            <dxc:BarStackedSeries2D
-                                                ArgumentDataMember="Label"
-                                                DataSource="{Binding RevenueByShift}"
-                                                DisplayName="Ведомость"
-                                                LabelsVisibility="False"
-                                                ValueDataMember="Statement" />
-                                        </dxc:XYDiagram2D.Series>
-                                    </dxc:XYDiagram2D>
-                                </dxc:ChartControl.Diagram>
-                            </dxc:ChartControl>
-                        </GroupBox>
-
-                    </StackPanel>
-                </ScrollViewer>
-            </dx:DXTabItem>
-
-            <!--  ══════════════════════════ ПРИЁМ ТОПЛИВА ══════════════════  -->
-            <dx:DXTabItem Header="Приём топлива">
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="12,12,12,16">
-
-                        <!--  KPI row  -->
-                        <WrapPanel Margin="0,0,0,14">
-                            <Border Style="{StaticResource KpiTile}">
-                                <StackPanel>
-                                    <TextBlock Style="{StaticResource KpiValue}" Text="{Binding TotalIntake, StringFormat={}{0:N1} л}" />
-                                    <TextBlock Style="{StaticResource KpiLabel}" Text="Принято топлива" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource KpiTile}">
-                                <StackPanel>
-                                    <TextBlock Style="{StaticResource KpiValue}" Text="{Binding AvgIntakePerEvent, StringFormat={}{0:N1} л}" />
-                                    <TextBlock Style="{StaticResource KpiLabel}" Text="Ср. объём поставки" />
-                                </StackPanel>
-                            </Border>
-                        </WrapPanel>
-
-                        <!--  Суммарный приём по дням — area chart  -->
-                        <GroupBox Height="220" Margin="0,0,0,12" Header="Суммарный приём по дням">
-                            <dxc:ChartControl>
-                                <dxc:ChartControl.Diagram>
-                                    <dxc:XYDiagram2D>
-                                        <dxc:XYDiagram2D.AxisX>
-                                            <dxc:AxisX2D>
-                                                <dxc:AxisX2D.DateTimeMeasureUnit>Day</dxc:AxisX2D.DateTimeMeasureUnit>
-                                                <dxc:AxisX2D.Label>
-                                                    <dxc:AxisLabel TextPattern="{}{A:dd.MM}" />
-                                                </dxc:AxisX2D.Label>
-                                            </dxc:AxisX2D>
-                                        </dxc:XYDiagram2D.AxisX>
-                                        <dxc:XYDiagram2D.Series>
-                                            <dxc:AreaSeries2D
-                                                ArgumentDataMember="Date"
-                                                DataSource="{Binding IntakeTotalByDay}"
-                                                DisplayName="Приём"
-                                                LabelsVisibility="False"
-                                                ValueDataMember="Value" />
-                                        </dxc:XYDiagram2D.Series>
-                                    </dxc:XYDiagram2D>
-                                </dxc:ChartControl.Diagram>
-                            </dxc:ChartControl>
-                        </GroupBox>
-
-                        <!--  Donut + Multi-series в одном ряду  -->
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="8" />
-                                <ColumnDefinition Width="2*" />
-                            </Grid.ColumnDefinitions>
-
-                            <!--  По видам топлива — donut  -->
-                            <GroupBox Grid.Column="0" Height="280" Header="По видам топлива">
-                                <dxc:ChartControl>
-                                    <dxc:ChartControl.Diagram>
-                                        <dxc:SimpleDiagram2D>
-                                            <dxc:SimpleDiagram2D.Series>
-                                                <dxc:NestedDonutSeries2D
-                                                    ArgumentDataMember="Label"
-                                                    DataSource="{Binding IntakeByFuel}"
-                                                    DisplayName="Топливо"
-                                                    HoleRadiusPercent="55"
-                                                    ValueDataMember="Value">
-                                                    <dxc:NestedDonutSeries2D.Label>
-                                                        <dxc:SeriesLabel />
-                                                    </dxc:NestedDonutSeries2D.Label>
-                                                </dxc:NestedDonutSeries2D>
-                                            </dxc:SimpleDiagram2D.Series>
-                                        </dxc:SimpleDiagram2D>
-                                    </dxc:ChartControl.Diagram>
-                                </dxc:ChartControl>
-                            </GroupBox>
-
-                            <!--  Динамика по видам топлива — multi-series area
-                                  ChartControl.DataSource + XYDiagram2D.SeriesDataMember + SeriesTemplate
-                                  DevExpress автоматически создаёт отдельную серию на каждый уникальный FuelName  -->
-                            <GroupBox Grid.Column="2" Height="280" Header="Динамика приёма по видам топлива">
-                                <dxc:ChartControl DataSource="{Binding IntakeSeries}">
-                                    <dxc:ChartControl.Diagram>
-                                        <dxc:XYDiagram2D SeriesDataMember="FuelName">
+                                        <dxc:XYDiagram2D>
                                             <dxc:XYDiagram2D.AxisX>
                                                 <dxc:AxisX2D>
                                                     <dxc:AxisX2D.DateTimeMeasureUnit>Day</dxc:AxisX2D.DateTimeMeasureUnit>
@@ -341,24 +130,275 @@
                                                     </dxc:AxisX2D.Label>
                                                 </dxc:AxisX2D>
                                             </dxc:XYDiagram2D.AxisX>
-                                            <dxc:XYDiagram2D.SeriesTemplate>
+                                            <dxc:XYDiagram2D.Series>
                                                 <dxc:AreaSeries2D
                                                     ArgumentDataMember="Date"
+                                                    DataSource="{Binding RevenueByDay}"
+                                                    DisplayName="Выручка"
                                                     LabelsVisibility="False"
-                                                    ValueDataMember="Quantity" />
-                                            </dxc:XYDiagram2D.SeriesTemplate>
+                                                    ValueDataMember="Value" />
+                                            </dxc:XYDiagram2D.Series>
                                         </dxc:XYDiagram2D>
                                     </dxc:ChartControl.Diagram>
                                 </dxc:ChartControl>
                             </GroupBox>
 
-                        </Grid>
+                            <!--  Две диаграммы-пончика  -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                    </StackPanel>
-                </ScrollViewer>
-            </dx:DXTabItem>
+                                <!--  Структура оплат  -->
+                                <GroupBox
+                                    Grid.Column="0"
+                                    Height="240"
+                                    Header="Структура оплат">
+                                    <dxc:ChartControl>
+                                        <dxc:ChartControl.Legends>
+                                            <dxc:Legend HorizontalPosition="RightOutside" VerticalPosition="Center" />
+                                        </dxc:ChartControl.Legends>
+                                        <dxc:ChartControl.Diagram>
+                                            <dxc:SimpleDiagram2D>
+                                                <dxc:SimpleDiagram2D.Series>
+                                                    <dxc:NestedDonutSeries2D
+                                                        ArgumentDataMember="Label"
+                                                        DataSource="{Binding RevenueByPaymentType}"
+                                                        DisplayName="Оплаты"
+                                                        HoleRadiusPercent="55"
+                                                        ValueDataMember="Value">
+                                                        <dxc:NestedDonutSeries2D.Label>
+                                                            <dxc:SeriesLabel />
+                                                        </dxc:NestedDonutSeries2D.Label>
+                                                    </dxc:NestedDonutSeries2D>
+                                                </dxc:SimpleDiagram2D.Series>
+                                            </dxc:SimpleDiagram2D>
+                                        </dxc:ChartControl.Diagram>
+                                    </dxc:ChartControl>
+                                </GroupBox>
 
-        </dx:DXTabControl>
+                                <!--  Объём по видам топлива  -->
+                                <GroupBox
+                                    Grid.Column="2"
+                                    Height="240"
+                                    Header="Объём по видам топлива">
+                                    <dxc:ChartControl>
+                                        <dxc:ChartControl.Legends>
+                                            <dxc:Legend HorizontalPosition="RightOutside" VerticalPosition="Center" />
+                                        </dxc:ChartControl.Legends>
+                                        <dxc:ChartControl.Diagram>
+                                            <dxc:SimpleDiagram2D>
+                                                <dxc:SimpleDiagram2D.Series>
+                                                    <dxc:NestedDonutSeries2D
+                                                        ArgumentDataMember="Label"
+                                                        DataSource="{Binding VolumeByFuel}"
+                                                        DisplayName="Топливо"
+                                                        HoleRadiusPercent="55"
+                                                        ValueDataMember="Value">
+                                                        <dxc:NestedDonutSeries2D.Label>
+                                                            <dxc:SeriesLabel />
+                                                        </dxc:NestedDonutSeries2D.Label>
+                                                    </dxc:NestedDonutSeries2D>
+                                                </dxc:SimpleDiagram2D.Series>
+                                            </dxc:SimpleDiagram2D>
+                                        </dxc:ChartControl.Diagram>
+                                    </dxc:ChartControl>
+                                </GroupBox>
+
+                            </Grid>
+
+                            <!--  Продажи по часам суток — bar chart  -->
+                            <GroupBox
+                                Height="220"
+                                Margin="0,0,0,12"
+                                Header="Продажи по часам суток">
+                                <dxc:ChartControl>
+                                    <dxc:ChartControl.Diagram>
+                                        <dxc:XYDiagram2D>
+                                            <dxc:XYDiagram2D.Series>
+                                                <dxc:BarSideBySideSeries2D
+                                                    ArgumentDataMember="HourLabel"
+                                                    DataSource="{Binding SalesByHour}"
+                                                    DisplayName="Выручка"
+                                                    LabelsVisibility="False"
+                                                    ValueDataMember="Revenue" />
+                                            </dxc:XYDiagram2D.Series>
+                                        </dxc:XYDiagram2D>
+                                    </dxc:ChartControl.Diagram>
+                                </dxc:ChartControl>
+                            </GroupBox>
+
+                            <!--
+                                Выручка по последним сменам — stacked bar
+                                Каждая серия: одинаковый DataSource, разный ValueDataMember
+                            -->
+                            <GroupBox Height="240" Header="Выручка по последним сменам">
+                                <dxc:ChartControl>
+                                    <dxc:ChartControl.Diagram>
+                                        <dxc:XYDiagram2D>
+                                            <dxc:XYDiagram2D.Series>
+                                                <dxc:BarStackedSeries2D
+                                                    ArgumentDataMember="Label"
+                                                    DataSource="{Binding RevenueByShift}"
+                                                    DisplayName="Наличные"
+                                                    LabelsVisibility="False"
+                                                    ValueDataMember="Cash" />
+                                                <dxc:BarStackedSeries2D
+                                                    ArgumentDataMember="Label"
+                                                    DataSource="{Binding RevenueByShift}"
+                                                    DisplayName="Безналичные"
+                                                    LabelsVisibility="False"
+                                                    ValueDataMember="Cashless" />
+                                                <dxc:BarStackedSeries2D
+                                                    ArgumentDataMember="Label"
+                                                    DataSource="{Binding RevenueByShift}"
+                                                    DisplayName="Талон"
+                                                    LabelsVisibility="False"
+                                                    ValueDataMember="Ticket" />
+                                                <dxc:BarStackedSeries2D
+                                                    ArgumentDataMember="Label"
+                                                    DataSource="{Binding RevenueByShift}"
+                                                    DisplayName="Ведомость"
+                                                    LabelsVisibility="False"
+                                                    ValueDataMember="Statement" />
+                                            </dxc:XYDiagram2D.Series>
+                                        </dxc:XYDiagram2D>
+                                    </dxc:ChartControl.Diagram>
+                                </dxc:ChartControl>
+                            </GroupBox>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </dx:DXTabItem>
+
+                <!--  ══════════════════════════ ПРИЁМ ТОПЛИВА ══════════════════  -->
+                <dx:DXTabItem Header="Приём топлива">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="12,12,12,16">
+
+                            <!--  KPI row  -->
+                            <WrapPanel Margin="0,0,0,14">
+                                <Border Style="{StaticResource KpiTile}">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource KpiValue}" Text="{Binding TotalIntake, StringFormat={}{0:N1} л}" />
+                                        <TextBlock Style="{StaticResource KpiLabel}" Text="Принято топлива" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource KpiTile}">
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource KpiValue}" Text="{Binding AvgIntakePerEvent, StringFormat={}{0:N1} л}" />
+                                        <TextBlock Style="{StaticResource KpiLabel}" Text="Ср. объём поставки" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!--  Суммарный приём по дням — area chart  -->
+                            <GroupBox
+                                Height="220"
+                                Margin="0,0,0,12"
+                                Header="Суммарный приём по дням">
+                                <dxc:ChartControl>
+                                    <dxc:ChartControl.Diagram>
+                                        <dxc:XYDiagram2D>
+                                            <dxc:XYDiagram2D.AxisX>
+                                                <dxc:AxisX2D>
+                                                    <dxc:AxisX2D.DateTimeMeasureUnit>Day</dxc:AxisX2D.DateTimeMeasureUnit>
+                                                    <dxc:AxisX2D.Label>
+                                                        <dxc:AxisLabel TextPattern="{}{A:dd.MM}" />
+                                                    </dxc:AxisX2D.Label>
+                                                </dxc:AxisX2D>
+                                            </dxc:XYDiagram2D.AxisX>
+                                            <dxc:XYDiagram2D.Series>
+                                                <dxc:AreaSeries2D
+                                                    ArgumentDataMember="Date"
+                                                    DataSource="{Binding IntakeTotalByDay}"
+                                                    DisplayName="Приём"
+                                                    LabelsVisibility="False"
+                                                    ValueDataMember="Value" />
+                                            </dxc:XYDiagram2D.Series>
+                                        </dxc:XYDiagram2D>
+                                    </dxc:ChartControl.Diagram>
+                                </dxc:ChartControl>
+                            </GroupBox>
+
+                            <!--  Donut + Multi-series в одном ряду  -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="2*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!--  По видам топлива — donut  -->
+                                <GroupBox
+                                    Grid.Column="0"
+                                    Height="280"
+                                    Header="По видам топлива">
+                                    <dxc:ChartControl>
+                                        <dxc:ChartControl.Legends>
+                                            <dxc:Legend HorizontalPosition="RightOutside" VerticalPosition="Center" />
+                                        </dxc:ChartControl.Legends>
+                                        <dxc:ChartControl.Diagram>
+                                            <dxc:SimpleDiagram2D>
+                                                <dxc:SimpleDiagram2D.Series>
+                                                    <dxc:NestedDonutSeries2D
+                                                        ArgumentDataMember="Label"
+                                                        DataSource="{Binding IntakeByFuel}"
+                                                        DisplayName="Топливо"
+                                                        HoleRadiusPercent="55"
+                                                        ValueDataMember="Value">
+                                                        <dxc:NestedDonutSeries2D.Label>
+                                                            <dxc:SeriesLabel />
+                                                        </dxc:NestedDonutSeries2D.Label>
+                                                    </dxc:NestedDonutSeries2D>
+                                                </dxc:SimpleDiagram2D.Series>
+                                            </dxc:SimpleDiagram2D>
+                                        </dxc:ChartControl.Diagram>
+                                    </dxc:ChartControl>
+                                </GroupBox>
+
+                                <!--
+                                    Динамика по видам топлива — multi-series area
+                                    ChartControl.DataSource + XYDiagram2D.SeriesDataMember + SeriesTemplate
+                                    DevExpress автоматически создаёт отдельную серию на каждый уникальный FuelName
+                                -->
+                                <GroupBox
+                                    Grid.Column="2"
+                                    Height="280"
+                                    Header="Динамика приёма по видам топлива">
+                                    <dxc:ChartControl DataSource="{Binding IntakeSeries}">
+                                        <dxc:ChartControl.Diagram>
+                                            <dxc:XYDiagram2D SeriesDataMember="FuelName">
+                                                <dxc:XYDiagram2D.AxisX>
+                                                    <dxc:AxisX2D>
+                                                        <dxc:AxisX2D.DateTimeMeasureUnit>Day</dxc:AxisX2D.DateTimeMeasureUnit>
+                                                        <dxc:AxisX2D.Label>
+                                                            <dxc:AxisLabel TextPattern="{}{A:dd.MM}" />
+                                                        </dxc:AxisX2D.Label>
+                                                    </dxc:AxisX2D>
+                                                </dxc:XYDiagram2D.AxisX>
+                                                <dxc:XYDiagram2D.SeriesTemplate>
+                                                    <dxc:AreaSeries2D
+                                                        ArgumentDataMember="Date"
+                                                        LabelsVisibility="False"
+                                                        ValueDataMember="Quantity" />
+                                                </dxc:XYDiagram2D.SeriesTemplate>
+                                            </dxc:XYDiagram2D>
+                                        </dxc:ChartControl.Diagram>
+                                    </dxc:ChartControl>
+                                </GroupBox>
+
+                            </Grid>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </dx:DXTabItem>
+
+            </dx:DXTabControl>
+        </dx:LoadingDecorator>
+
 
     </Grid>
 

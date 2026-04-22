@@ -84,8 +84,6 @@ namespace KIT.GasStation.ViewModels
             {
                 _selectedFuelSale = value;
                 OnPropertyChanged(nameof(SelectedFuelSale));
-                OnPropertyChanged(nameof(PrintReceiptTitle));
-                OnPropertyChanged(nameof(IsVisiblePrintReceipt));
             }
         }
         public FiscalData SelectedFiscalData
@@ -95,34 +93,6 @@ namespace KIT.GasStation.ViewModels
             {
                 _selectedFiscalData = value;
                 OnPropertyChanged(nameof(SelectedFiscalData));
-            }
-        }
-        public string PrintReceiptTitle
-        {
-            get
-            {
-                if (SelectedFuelSale?.ReceivedSum > 0)
-                {
-                    return $"Создать чек на {SelectedFuelSale.ReceivedSum:N2} сом";
-                }
-                else
-                {
-                    return string.Empty;
-                }
-            }
-        }
-        public bool IsVisiblePrintReceipt
-        {
-            get
-            {
-                if (SelectedFuelSale?.ReceivedSum > 0)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
             }
         }
         public List<KeyValuePair<OperationType, string>> OperationTypes => new(EnumHelper.GetLocalizedEnumValues<OperationType>());

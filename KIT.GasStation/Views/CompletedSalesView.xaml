@@ -18,18 +18,13 @@
             <dxg:GridControl
                 ItemsSource="{Binding FuelSales}"
                 SelectedItem="{Binding SelectedFuelSale}"
-                ShowLoadingPanel="{Binding ShowLoadingPanel}">
+                ShowLoadingPanel="{Binding ShowFuelSaleLoadingPanel}">
                 <dxg:GridControl.View>
                     <dxg:TableView
                         AllowEditing="False"
                         ShowGroupPanel="False"
                         ShowTotalSummary="True">
                         <dxg:TableView.RowCellMenuCustomizations>
-                            <dxb:BarButtonItem
-                                BarItemDisplayMode="ContentAndGlyph"
-                                Command="{Binding DataContext.ReturnCommand, RelativeSource={RelativeSource AncestorType={x:Type base:BaseView}, Mode=FindAncestor}}"
-                                Content="Возврат товара ККМ"
-                                Glyph="{dx:DXImage SvgImages/Outlook Inspired/Reset.svg}" />
                             <dxb:BarButtonItem
                                 BarItemDisplayMode="ContentAndGlyph"
                                 Command="{Binding DataContext.PrintSaleReceiptCommand, RelativeSource={RelativeSource AncestorType={x:Type base:BaseView}, Mode=FindAncestor}}"
@@ -82,7 +77,10 @@
         <dxlc:GroupBox Height="200" Header="Фискальные чеки (ККМ)">
 
             <dxlc:LayoutGroup Orientation="Vertical">
-                <dxg:GridControl ItemsSource="{Binding SelectedFuelSale.FiscalDatas}" SelectedItem="{Binding SelectedFiscalData}">
+                <dxg:GridControl
+                    ItemsSource="{Binding SelectedFuelSale.FiscalDatas}"
+                    SelectedItem="{Binding SelectedFiscalData}"
+                    ShowLoadingPanel="{Binding ShowFiscalDataLoadingPanel}">
                     <dxg:GridControl.View>
                         <dxg:TableView AllowEditing="False" ShowGroupPanel="False" />
                     </dxg:GridControl.View>
@@ -98,9 +96,12 @@
                                 ValueMember="Key" />
                         </dxg:GridColumn.EditSettings>
                     </dxg:GridColumn>
-                    <dxg:GridColumn FieldName="Discount.Amount" Header="Сумма скидки" >
+                    <dxg:GridColumn FieldName="Discount.Amount" Header="Сумма скидки">
                         <dxg:GridColumn.EditSettings>
-                            <dxe:TextEditSettings MaskUseAsDisplayFormat="True" MaskType="Numeric" Mask="n"/>
+                            <dxe:TextEditSettings
+                                Mask="n"
+                                MaskType="Numeric"
+                                MaskUseAsDisplayFormat="True" />
                         </dxg:GridColumn.EditSettings>
                     </dxg:GridColumn>
                 </dxg:GridControl>

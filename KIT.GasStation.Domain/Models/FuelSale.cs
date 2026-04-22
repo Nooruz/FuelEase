@@ -359,8 +359,7 @@ namespace KIT.GasStation.Domain.Models
                 if (ReceivedSum <= 0)
                     return false;
 
-
-                return Sum < TotalFiscalNet;
+                return Sum > TotalFiscalNet;
             }
         }
 

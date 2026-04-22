@@ -5,7 +5,9 @@ using KIT.GasStation.ViewModels.Base;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels.GlobalReports
@@ -22,16 +24,18 @@ namespace KIT.GasStation.ViewModels.GlobalReports
         private bool _isLoading;
 
         // Sales
-        private List<DateValuePoint> _revenueByDay = new();
-        private List<LabelValuePoint> _revenueByPaymentType = new();
-        private List<LabelValuePoint> _volumeByFuel = new();
-        private List<HourPoint> _salesByHour = new();
-        private List<ShiftRevenuePoint> _revenueByShift = new();
+        private readonly ObservableCollection<DateValuePoint> _revenueByDay = new();
+        private readonly ObservableCollection<LabelValuePoint> _revenueByPaymentType = new();
+        private readonly ObservableCollection<LabelValuePoint> _volumeByFuel = new();
+        private readonly ObservableCollection<HourPoint> _salesByHour = new();
+        private readonly ObservableCollection<ShiftRevenuePoint> _revenueByShift = new();
 
         // Intake
-        private List<DateValuePoint> _intakeTotalByDay = new();
-        private List<LabelValuePoint> _intakeByFuel = new();
-        private List<IntakeDatePoint> _intakeSeries = new();
+        private readonly ObservableCollection<DateValuePoint> _intakeTotalByDay = new();
+        private readonly ObservableCollection<LabelValuePoint> _intakeByFuel = new();
+        private readonly ObservableCollection<IntakeDatePoint> _intakeSeries = new();
+
+        private CancellationTokenSource? _loadDataCts;
 
         // KPIs
         private decimal _totalRevenue;
@@ -45,7 +49,7 @@ namespace KIT.GasStation.ViewModels.GlobalReports
 
         #region Period
 
-        public List<PeriodOption> Periods { get; } = new()
+        public IReadOnlyList<PeriodOption> Periods { get; } = new List<PeriodOption>
         {
             new PeriodOption("7 дней",  7),
             new PeriodOption("30 дней", 30),
@@ -80,67 +84,35 @@ namespace KIT.GasStation.ViewModels.GlobalReports
         #region Sales Chart Data
 
         /// <summary>Выручка по дням — area chart.</summary>
-        public List<DateValuePoint> RevenueByDay
-        {
-            get => _revenueByDay;
-            set { _revenueByDay = value; OnPropertyChanged(nameof(RevenueByDay)); }
-        }
+        public ObservableCollection<DateValuePoint> RevenueByDay => _revenueByDay;
 
         /// <summary>Структура оплат — donut.</summary>
-        public List<LabelValuePoint> RevenueByPaymentType
-        {
-            get => _revenueByPaymentType;
-            set { _revenueByPaymentType = value; OnPropertyChanged(nameof(RevenueByPaymentType)); }
-        }
+        public ObservableCollection<LabelValuePoint> RevenueByPaymentType => _revenueByPaymentType;
 
         /// <summary>Объём по видам топлива — donut.</summary>
-        public List<LabelValuePoint> VolumeByFuel
-        {
-            get => _volumeByFuel;
-            set { _volumeByFuel = value; OnPropertyChanged(nameof(VolumeByFuel)); }
-        }
+        public ObservableCollection<LabelValuePoint> VolumeByFuel => _volumeByFuel;
 
         /// <summary>Продажи по часам суток — bar chart.</summary>
-        public List<HourPoint> SalesByHour
-        {
-            get => _salesByHour;
-            set { _salesByHour = value; OnPropertyChanged(nameof(SalesByHour)); }
-        }
+        public ObservableCollection<HourPoint> SalesByHour => _salesByHour;
 
         /// <summary>Выручка по последним сменам — stacked bar.</summary>
-        public List<ShiftRevenuePoint> RevenueByShift
-        {
-            get => _revenueByShift;
-            set { _revenueByShift = value; OnPropertyChanged(nameof(RevenueByShift)); }
-        }
+        public ObservableCollection<ShiftRevenuePoint> RevenueByShift => _revenueByShift;
 
         #endregion
 
         #region Intake Chart Data
 
         /// <summary>Суммарный приём по дням — area chart.</summary>
-        public List<DateValuePoint> IntakeTotalByDay
-        {
-            get => _intakeTotalByDay;
-            set { _intakeTotalByDay = value; OnPropertyChanged(nameof(IntakeTotalByDay)); }
-        }
+        public ObservableCollection<DateValuePoint> IntakeTotalByDay => _intakeTotalByDay;
 
         /// <summary>Приём по видам топлива — donut.</summary>
-        public List<LabelValuePoint> IntakeByFuel
-        {
-            get => _intakeByFuel;
-            set { _intakeByFuel = value; OnPropertyChanged(nameof(IntakeByFuel)); }
-        }
+        public ObservableCollection<LabelValuePoint> IntakeByFuel => _intakeByFuel;
 
         /// <summary>
         /// Плоский список для multi-series chart (один ряд на каждый вид топлива).
         /// DevExpress строит серии автоматически по полю FuelName.
         /// </summary>
-        public List<IntakeDatePoint> IntakeSeries
-        {
-            get => _intakeSeries;
-            set { _intakeSeries = value; OnPropertyChanged(nameof(IntakeSeries)); }
-        }
+        public ObservableCollection<IntakeDatePoint> IntakeSeries => _intakeSeries;
 
         #endregion
 
@@ -212,31 +184,44 @@ namespace KIT.GasStation.ViewModels.GlobalReports
 
         private async Task LoadDataAsync()
         {
+            _loadDataCts?.Cancel();
+            _loadDataCts?.Dispose();
+            _loadDataCts = new CancellationTokenSource();
+            var token = _loadDataCts.Token;
+
             try
             {
                 IsLoading = true;
 
                 var cutoff = DateTime.Today.AddDays(-SelectedPeriod.Days);
 
-                var allSales = (await _fuelSaleService.GetAllAsync())
-                    .Where(s => s.FuelSaleStatus == FuelSaleStatus.Completed
-                             && s.CreateDate >= cutoff)
+                var salesTask = _fuelSaleService.GetAllAsync();
+                var intakesTask = _fuelIntakeService.GetAllAsync();
+
+                await Task.WhenAll(salesTask, intakesTask);
+                token.ThrowIfCancellationRequested();
+
+                var allSales = salesTask.Result
+                    .Where(s => s.FuelSaleStatus == FuelSaleStatus.Completed && s.CreateDate >= cutoff)
                     .ToList();
 
-                var allIntakes = (await _fuelIntakeService.GetAllAsync())
+                var allIntakes = intakesTask.Result
                     .Where(i => i.CreateDate >= cutoff)
                     .ToList();
 
                 BuildSalesCharts(allSales);
                 BuildIntakeCharts(allIntakes);
             }
-            catch (Exception ex)
+            catch (OperationCanceledException)
             {
-                _logger.LogError(ex, "Ошибка загрузки данных аналитики");
+                // Ignore intermediate refresh requests (e.g., quick period switching).
             }
             finally
             {
-                IsLoading = false;
+                if (!token.IsCancellationRequested)
+                {
+                    IsLoading = false;
+                }
             }
         }
 
@@ -252,37 +237,33 @@ namespace KIT.GasStation.ViewModels.GlobalReports
             TotalTransactions = sales.Count;
 
             // ── Выручка по дням ──────────────────────────────────────────────
-            RevenueByDay = sales
+            ReplaceCollection(RevenueByDay, sales
                 .GroupBy(s => s.CreateDate.Date)
                 .OrderBy(g => g.Key)
-                .Select(g => new DateValuePoint(g.Key, g.Sum(s => s.ReceivedSum)))
-                .ToList();
+                .Select(g => new DateValuePoint(g.Key, g.Sum(s => s.ReceivedSum))));
 
             // ── Структура оплат ───────────────────────────────────────────────
-            RevenueByPaymentType = sales
+            ReplaceCollection(RevenueByPaymentType, sales
                 .GroupBy(s => s.PaymentType)
                 .Where(g => g.Sum(s => s.ReceivedSum) > 0)
-                .Select(g => new LabelValuePoint(PaymentTypeLabel(g.Key), g.Sum(s => s.ReceivedSum)))
-                .ToList();
+                .Select(g => new LabelValuePoint(PaymentTypeLabel(g.Key), g.Sum(s => s.ReceivedSum))));
 
             // ── Объём по видам топлива ────────────────────────────────────────
-            VolumeByFuel = sales
+            ReplaceCollection(VolumeByFuel, sales
                 .Where(s => s.Tank?.Fuel != null)
                 .GroupBy(s => s.Tank!.Fuel.Name)
-                .Select(g => new LabelValuePoint(g.Key, g.Sum(s => s.ReceivedQuantity)))
-                .ToList();
+                .Select(g => new LabelValuePoint(g.Key, g.Sum(s => s.ReceivedQuantity))));
 
             // ── Продажи по часам суток ────────────────────────────────────────
-            SalesByHour = Enumerable.Range(0, 24)
+            ReplaceCollection(SalesByHour, Enumerable.Range(0, 24)
                 .Select(h =>
                 {
                     var hourSales = sales.Where(s => s.CreateDate.Hour == h).ToList();
                     return new HourPoint(h, hourSales.Count, hourSales.Sum(s => s.ReceivedSum));
-                })
-                .ToList();
+                }));
 
             // ── Выручка по последним 20 сменам ────────────────────────────────
-            RevenueByShift = sales
+            ReplaceCollection(RevenueByShift, sales
                 .GroupBy(s => new { s.ShiftId, s.Shift?.Number, s.Shift?.OpeningDate })
                 .OrderBy(g => g.Key.ShiftId)
                 .TakeLast(20)
@@ -291,8 +272,7 @@ namespace KIT.GasStation.ViewModels.GlobalReports
                     cash: g.Where(s => s.PaymentType == PaymentType.Cash).Sum(s => s.ReceivedSum),
                     cashless: g.Where(s => s.PaymentType == PaymentType.Cashless).Sum(s => s.ReceivedSum),
                     ticket: g.Where(s => s.PaymentType == PaymentType.Ticket).Sum(s => s.ReceivedSum),
-                    statement: g.Where(s => s.PaymentType == PaymentType.Statement).Sum(s => s.ReceivedSum)))
-                .ToList();
+                    statement: g.Where(s => s.PaymentType == PaymentType.Statement).Sum(s => s.ReceivedSum))));
 
             var shiftCount = RevenueByShift.Count;
             AvgRevenuePerShift = shiftCount > 0
@@ -313,32 +293,39 @@ namespace KIT.GasStation.ViewModels.GlobalReports
                 : 0;
 
             // ── Суммарный приём по дням ───────────────────────────────────────
-            IntakeTotalByDay = intakes
+            ReplaceCollection(IntakeTotalByDay, intakes
                 .GroupBy(i => i.CreateDate.Date)
                 .OrderBy(g => g.Key)
-                .Select(g => new DateValuePoint(g.Key, g.Sum(i => i.Quantity)))
-                .ToList();
+                .Select(g => new DateValuePoint(g.Key, g.Sum(i => i.Quantity))));
 
             // ── Приём по видам топлива — donut ────────────────────────────────
-            IntakeByFuel = intakes
+            ReplaceCollection(IntakeByFuel, intakes
                 .Where(i => i.Tank?.Fuel != null)
                 .GroupBy(i => i.Tank!.Fuel.Name)
-                .Select(g => new LabelValuePoint(g.Key, g.Sum(i => i.Quantity)))
-                .ToList();
+                .Select(g => new LabelValuePoint(g.Key, g.Sum(i => i.Quantity))));
 
             // ── Multi-series: каждый вид топлива — отдельная линия ────────────
-            IntakeSeries = intakes
+            ReplaceCollection(IntakeSeries, intakes
                 .Where(i => i.Tank?.Fuel != null)
                 .Select(i => new IntakeDatePoint(i.CreateDate.Date, i.Tank!.Fuel.Name, i.Quantity))
                 .GroupBy(p => new { p.Date, p.FuelName })
                 .OrderBy(g => g.Key.Date)
-                .Select(g => new IntakeDatePoint(g.Key.Date, g.Key.FuelName, g.Sum(p => p.Quantity)))
-                .ToList();
+                .ThenBy(g => g.Key.FuelName)
+                .Select(g => new IntakeDatePoint(g.Key.Date, g.Key.FuelName, g.Sum(p => p.Quantity))));
         }
 
         #endregion
 
         #region Helpers
+
+        private static void ReplaceCollection<T>(ObservableCollection<T> target, IEnumerable<T> items)
+        {
+            target.Clear();
+            foreach (var item in items)
+            {
+                target.Add(item);
+            }
+        }
 
         private static string PaymentTypeLabel(PaymentType type) => type switch
         {
@@ -360,6 +347,11 @@ namespace KIT.GasStation.ViewModels.GlobalReports
 
         protected override void Dispose(bool disposing)
         {
+            if (disposing)
+            {
+                _loadDataCts?.Cancel();
+                _loadDataCts?.Dispose();
+            }
             base.Dispose(disposing);
         }
 

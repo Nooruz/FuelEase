@@ -54,6 +54,10 @@
                         <!--<MenuItem Header="Произвольный чек"
                   Command="{Binding CashRegisterCustomReceiptCommand}"/>-->
                         <MenuItem Command="{Binding CashRegisterGetStateCommand}" Header="Состояние ККМ" />
+                        <Separator />
+                        <MenuItem Command="{Binding CashDepositCommand}" Header="Внесение наличных в кассу" />
+                        <MenuItem Command="{Binding CashWithdrawalCommand}" Header="Изъятие наличных из кассы" />
+
                     </MenuItem>
 
                     <MenuItem Header="Настройки и отчёты">

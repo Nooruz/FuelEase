@@ -51,6 +51,16 @@ namespace KIT.GasStation.CashRegisters.Services
         /// </summary>
         Task<ShiftSalesReport> GetShiftSalesReportAsync();
 
+        /// <summary>
+        /// Внесение наличных в кассу (не является продажей).
+        /// </summary>
+        Task DepositAsync(decimal amount);
+
+        /// <summary>
+        /// Изъятие наличных из кассы (не является возвратом).
+        /// </summary>
+        Task WithdrawalAsync(decimal amount);
+
         #endregion
     }
 }

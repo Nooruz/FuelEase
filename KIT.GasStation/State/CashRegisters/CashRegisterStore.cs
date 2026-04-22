@@ -176,6 +176,7 @@ namespace KIT.GasStation.State.CashRegisters
             OpenAt = _state.OpenedAt;
             ShiftNumber = _state.ShiftNumber;
             OnPropertyChanged(nameof(ShiftStateMessage));
+            await GetShiftSalesReportAsync();
             return _state;
         }
 
@@ -210,6 +211,18 @@ namespace KIT.GasStation.State.CashRegisters
             });
 
             return result;
+        }
+
+        public async Task DepositAsync(decimal amount)
+        {
+            await _cashRegisterService.DepositAsync(amount);
+            await GetShiftSalesReportAsync();
+        }
+
+        public async Task WithdrawalAsync(decimal amount)
+        {
+            await _cashRegisterService.WithdrawalAsync(amount);
+            await GetShiftSalesReportAsync();
         }
 
         #endregion

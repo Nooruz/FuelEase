@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace KIT.GasStation.ViewModels
@@ -100,6 +101,8 @@ namespace KIT.GasStation.ViewModels
             _cashRegisterStore = cashRegisterStore;
             _fiscalDataService = fiscalDataService;
             _logger = logger;
+
+            _fiscalDataService.OnCreated += FiscalDataService_OnCreated;
         }
 
         #endregion
@@ -147,6 +150,40 @@ namespace KIT.GasStation.ViewModels
             }
         }
 
+        [Command]
+        public async Task PrintSaleReceipt()
+        {
+            try
+            {
+                var result = MessageBoxService.ShowMessage($"Создать чек на {SelectedFuelSale.ReceivedSum} сом?", "Создание чека", MessageButton.YesNo);
+
+                if (result == MessageResult.No)
+                {
+                    return;
+                }
+
+                ShowFuelSaleLoadingPanel = true;
+
+                var fiscalData = SelectedFuelSale.CreateReceivedFiscalData();
+
+                var newFiscalData = await _cashRegisterStore.SaleAsync(fiscalData);
+
+                if (newFiscalData != null)
+                {
+                    await _fiscalDataService.CreateAsync(newFiscalData);
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK);
+            }
+            finally
+            {
+                ShowFuelSaleLoadingPanel = false;
+            }
+        }
+
         public async Task StartAsync()
         {
             await GetData();
@@ -155,6 +192,23 @@ namespace KIT.GasStation.ViewModels
         #endregion
 
         #region Private Voids
+
+        private void FiscalDataService_OnCreated(FiscalData fiscalData)
+        {
+            try
+            {
+                var fuelSale = FuelSales.FirstOrDefault(x => x.Id == fiscalData.FuelSaleId);
+
+                if (fuelSale == null)
+                    return;
+
+                fuelSale.FiscalDatas.Add(fiscalData);
+            }
+            catch (Exception e)
+            {
+                _logger?.LogError(e, e.Message);
+            }
+        }
 
         private async Task GetData()
         {

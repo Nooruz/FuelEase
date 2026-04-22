@@ -14,6 +14,7 @@ using KIT.GasStation.State.Notifications;
 using KIT.GasStation.State.Shifts;
 using KIT.GasStation.State.Users;
 using KIT.GasStation.ViewModels.Base;
+using KIT.GasStation.ViewModels.Details;
 using KIT.GasStation.ViewModels.Factories;
 using KIT.GasStation.Views;
 using KIT.GasStation.Views.Details;
@@ -673,6 +674,65 @@ namespace KIT.GasStation.ViewModels
                         MessageBoxService.ShowMessage("Смена ККМ превысила 24 часа. Необходимо закрыть смену ККМ.", "Внимание!", MessageButton.OK, MessageIcon.Warning);
                         break;
                 }
+            }
+            catch (CashRegisterException e)
+            {
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+            }
+            finally
+            {
+                _splashScreenService.Close();
+            }
+        }
+
+        /// <summary>
+        /// Внесение наличных в кассу
+        /// </summary>
+        [Command]
+        public async Task CashDeposit()
+        {
+            try
+            {
+                var viewModel = new CashAmountViewModel(_cashRegisterStore, CashOperationType.Deposit)
+                {
+                    Title = "Внесение наличных в кассу"
+                };
+
+                WindowService.Show(nameof(CashAmountView), viewModel);
+
+            }
+            catch (CashRegisterException e)
+            {
+                MessageBoxService.ShowMessage(e.Message, "Ошибка", MessageButton.OK, MessageIcon.Error);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+            }
+            finally
+            {
+                _splashScreenService.Close();
+            }
+        }
+
+        /// <summary>
+        /// Изъятие наличных из кассы
+        /// </summary>
+        [Command]
+        public async Task CashWithdrawal()
+        {
+            try
+            {
+                var viewModel = new CashAmountViewModel(_cashRegisterStore, CashOperationType.Withdrawal)
+                {
+                    Title = "Изъятие наличных из кассы"
+                };
+
+                WindowService.Show(nameof(CashAmountView), viewModel);
             }
             catch (CashRegisterException e)
             {

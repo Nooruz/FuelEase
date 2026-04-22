@@ -328,6 +328,42 @@ namespace KIT.GasStation.NewCas
             }
         }
 
+        /// <inheritdoc/>
+        public async Task DepositAsync(decimal amount)
+        {
+            var request = new CashOpRequest
+            {
+                Amount = amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
+            };
+
+            var response = await SendRequest("/fiscal/bills/registerDeposit", request);
+
+            var result = JsonSerializer.Deserialize<OpenAndCloseRecResp>(
+                await response.Content.ReadAsStringAsync())
+                ?? throw new CashRegisterException("ККМ вернула пустой ответ при внесении.");
+
+            if (result.Status != OpenAndCloseRecRespStatus.Success)
+                throw new CashRegisterException($"Ошибка ККМ при внесении: {result.ErrorMessage}");
+        }
+
+        /// <inheritdoc/>
+        public async Task WithdrawalAsync(decimal amount)
+        {
+            var request = new CashOpRequest
+            {
+                Amount = amount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
+            };
+
+            var response = await SendRequest("/fiscal/bills/registerWithdrawal", request);
+
+            var result = JsonSerializer.Deserialize<OpenAndCloseRecResp>(
+                await response.Content.ReadAsStringAsync())
+                ?? throw new CashRegisterException("ККМ вернула пустой ответ при изъятии.");
+
+            if (result.Status != OpenAndCloseRecRespStatus.Success)
+                throw new CashRegisterException($"Ошибка ККМ при изъятии: {result.ErrorMessage}");
+        }
+
         #region Private Helpers
 
         private async Task<HttpResponseMessage?> SendRequest(string endpoint, object data)

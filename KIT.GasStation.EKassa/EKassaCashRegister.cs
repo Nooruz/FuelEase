@@ -306,6 +306,42 @@ namespace KIT.GasStation.EKassa
 
         #endregion
 
+        /// <inheritdoc/>
+        public async Task DepositAsync(decimal amount)
+        {
+            _logger.Information("Внесение в кассу: {Amount} сом", amount);
+
+            var request = new CashOperationRequest
+            {
+                FiscalNumber = _cashRegister.RegistrationNumber,
+                OperationType = 5, // 5 = внесение
+                Amount = (int)(amount * 100), // тийины
+                Txt = _settings.TapeType == TapeType.TXT ? true : null,
+                Txt80 = _settings.TapeType == TapeType.TXT80 ? true : null,
+            };
+
+            var data = await _client.CashOperationAsync(request);
+            PrintText(data.Txt);
+        }
+
+        /// <inheritdoc/>
+        public async Task WithdrawalAsync(decimal amount)
+        {
+            _logger.Information("Изъятие из кассы: {Amount} сом", amount);
+
+            var request = new CashOperationRequest
+            {
+                FiscalNumber = _cashRegister.RegistrationNumber,
+                OperationType = 6, // 6 = изъятие
+                Amount = (int)(amount * 100), // тийины
+                Txt = _settings.TapeType == TapeType.TXT ? true : null,
+                Txt80 = _settings.TapeType == TapeType.TXT80 ? true : null,
+            };
+
+            var data = await _client.CashOperationAsync(request);
+            PrintText(data.Txt);
+        }
+
         #region Private Voids
 
         /// <summary>

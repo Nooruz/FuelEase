@@ -46,9 +46,9 @@
                                     <dxb:BarButtonItem
                                         BarItemDisplayMode="ContentAndGlyph"
                                         Command="{Binding DataContext.PrintReceiptCommand, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}"
-                                        Content="{Binding DataContext.PrintReceiptTitle, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}"
+                                        Content="{Binding DataContext.SelectedFuelSale.PrintReceivedSaleReceiptTitle, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}"
                                         Glyph="{dx:DXImage SvgImages/RichEdit/PrintLayoutView.svg}"
-                                        IsVisible="{Binding DataContext.IsVisiblePrintReceipt, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" />
+                                        IsVisible="{Binding DataContext.SelectedFuelSale.IsVisiblePrintReceivedSaleReceipt, RelativeSource={RelativeSource AncestorType={x:Type local:BaseView}, Mode=FindAncestor}}" />
                                 </dxg:TableView.RowCellMenuCustomizations>
                             </dxg:TableView>
                         </dxg:GridControl.View>
